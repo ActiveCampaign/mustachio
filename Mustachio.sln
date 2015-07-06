@@ -5,14 +5,14 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mustachio", "Mustachio\Mustachio.csproj", "{4504C65B-A0EC-4601-82EF-D2542414BC86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mustachio.Tests", "MustachioTests\Mustachio.Tests.csproj", "{29EB8E0D-5490-4886-857E-31695DE45B1B}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{A77DD285-5579-4D79-BEE3-659AA9C4927C}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mustachio.Tests", "Mustachio.Tests\Mustachio.Tests.csproj", "{29EB8E0D-5490-4886-857E-31695DE45B1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

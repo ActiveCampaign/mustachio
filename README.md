@@ -1,5 +1,5 @@
 # mustachio
-Lightweight, powerful, nutritious template engine.
+Lightweight, powerful, nutritious, templating engine.
 
 
 #### How to use mustachio:

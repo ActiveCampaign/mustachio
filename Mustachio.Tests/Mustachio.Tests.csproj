@@ -49,6 +49,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PerfHarness.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ParserFixture.cs" />
     <Compile Include="TemplateFixture.cs" />

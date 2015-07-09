@@ -10,5 +10,7 @@ namespace Mustachio
 
         }
 
+        public int? LineNumber { get; set; }
+        public int? CharacterOnLine { get; set; }
     }
 }

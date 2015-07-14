@@ -48,7 +48,7 @@ namespace Mustachio.Tests
         [Fact]
         public void ParsingThrowsAnExceptionWhenConditionalGroupsAreMismatched()
         {
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse("{{#Collection}}Collection has elements{{/AnotherCollection}}"));
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse("{{#Collection}}Collection has elements{{/AnotherCollection}}"));
         }
 
         [Fact]
@@ -81,12 +81,13 @@ namespace Mustachio.Tests
             Parser.Parse("{{#each ACollection}}{{.}}{{/each}}");
         }
 
-        [Fact]
-        public void ParserThrowsAnExceptionWhenEachIsMismatched()
+        [Theory]
+        [InlineData("{{#ACollection}}{{.}}{{/each}}")]
+        [InlineData("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}")]
+        [InlineData("{{/each}}")]
+        public void ParserThrowsAnExceptionWhenEachIsMismatched(string invalidTemplate)
         {
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse("{{#ACollection}}{{.}}{{/each}}"));
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}"));
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse("{{/each}}"));
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse(invalidTemplate));
         }
 
         [Fact]
@@ -183,13 +184,13 @@ namespace Mustachio.Tests
         [Fact]
         public void ParserThrowsParserExceptionForEmptyEach()
         {
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse("{{#each}}"));
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse("{{#each}}"));
         }
 
         [Fact]
         public void ParserThrowsParserExceptionForEachWithoutPath()
         {
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse("{{#eachs}}{{name}}{{/each}}"));
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse("{{#eachs}}{{name}}{{/each}}"));
         }
 
         [Theory]
@@ -212,7 +213,7 @@ namespace Mustachio.Tests
         [InlineData("{{^element}}{{name}}")]
         public void ParserThrowsParserExceptionForUnclosedGroups(string invalidTemplate)
         {
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse(invalidTemplate));
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse(invalidTemplate));
         }
 
         [Fact]
@@ -514,7 +515,7 @@ namespace Mustachio.Tests
         [InlineData("{{%}}")]
         public void ParserShouldThrowForInvalidPaths(string template)
         {
-            Assert.Throws(typeof(TemplateParseException), () => Parser.Parse(template));
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse(template));
         }
 
         [Theory]
@@ -526,6 +527,29 @@ namespace Mustachio.Tests
         {
             Parser.Parse(template);
         }
+
+
+        [Theory]
+        [InlineData("1{{first name}}", 1)]
+        [InlineData("ss{{#each company.name}}\nasdf", 1)]
+        [InlineData("xzyhj{{#company.address_line_1}}\nasdf{{dsadskl-sasa@}}\n{{/each}}", 3)]
+        [InlineData("fff{{#each company.address_line_1}}\n{{dsadskl-sasa@}}\n{{/each}}", 1)]
+        [InlineData("a{{name}}dd\ndd{{/each}}dd", 1)]
+        public void ParserShouldThrowWithCharacterLocationInformation(string template, int expectedErrorCount)
+        {
+            var didThrow = false;
+            try
+            {
+                Parser.Parse(template);
+            }
+            catch (AggregateException ex)
+            {
+                didThrow = true;
+                Assert.Equal(expectedErrorCount, ex.InnerExceptions.Count);
+            }
+            Assert.True(didThrow);
+        }
+
 
     }
 }

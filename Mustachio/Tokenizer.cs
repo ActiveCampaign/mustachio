@@ -8,22 +8,45 @@ namespace Mustachio
     /// <summary>
     /// Reads in a mustache template and lexes it into tokens.
     /// </summary>
-    /// <exception cref="Mustachio.TemplateParseException"></exception>
+    /// <exception cref="Mustachio.IndexedParseException"></exception>
     internal class Tokenizer
     {
+        internal class CharacterLocation
+        {
+            public int Line { get; set; }
+            public int Character { get; set; }
+        }
+
         private static readonly Regex _tokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
             RegexOptions.Compiled | RegexOptions.Compiled);
 
-        private static readonly Regex _newlineFinder = new Regex("\n");
+        private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);
 
-        private static int FindLineForLocation(string content, int character, ref int[] lines)
+        private static CharacterLocation HumanizeCharacterLocation(string content, int characterIndex, ref int[] lines)
         {
             if (lines == null)
             {
                 lines = _newlineFinder.Matches(content).OfType<Match>().Select(k => k.Index).ToArray();
             }
-            var line = Array.BinarySearch(lines, character);
-            return line < 0 ? ~line : line;
+            var line = Array.BinarySearch(lines, characterIndex);
+            line = line < 0 ? ~line : line;
+
+            var charIdx = characterIndex;
+            if (line < lines.Length && line > 0)
+            {
+                charIdx = characterIndex - (lines[line - 1] + 1);
+            }
+            else if (line > 0)
+            {
+                charIdx = characterIndex - (lines.LastOrDefault() + 1);
+            }
+            var retval = new CharacterLocation
+            {
+                Line = line,
+                //if the line index is less than the line length (every case except when we have no new lines..)
+                Character = charIdx
+            };
+            return retval;
         }
 
         public static IEnumerable<TokenPair> Tokenize(string templateString)
@@ -34,6 +57,7 @@ namespace Mustachio
 
             var idx = 0;
 
+            var parseErrors = new List<IndexedParseException>();
             int[] lines = null;
 
             foreach (Match m in matches)
@@ -51,20 +75,20 @@ namespace Mustachio
 
                     if (token.StartsWith(" ") && token.Trim() != "")
                     {
-                        yield return new TokenPair(TokenType.CollectionOpen, Validated(token, templateString, m.Index, ref lines).Trim());
+                        yield return new TokenPair(TokenType.CollectionOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors).Trim());
                     }
                     else
                     {
-                        var line = FindLineForLocation(templateString, m.Index, ref lines);
-                        throw new TemplateParseException(@"The 'each' block being opened near on line {0} requires a model path to be specified in the form '{{{{#each <name>}}}}'.", line) { LineNumber = line };
+                        var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+                        parseErrors.Add(new IndexedParseException(location, @"The 'each' block being opened near on line {0} requires a model path to be specified in the form '{{{{#each <name>}}}}'.", location.Line));
                     }
                 }
                 else if (m.Value.StartsWith("{{/each"))
                 {
                     if (m.Value != "{{/each}}")
                     {
-                        var line = FindLineForLocation(templateString, m.Index, ref lines);
-                        throw new TemplateParseException(@"The syntax to close the 'each' block on line {0} should be: '{{{{/each}}}}'.", line) { LineNumber = line };
+                        var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+                        parseErrors.Add(new IndexedParseException(location, @"The syntax to close the 'each' block on line {0} should be: '{{{{/each}}}}'.", location.Line));
                     }
                     else if (scopestack.Any() && scopestack.Peek().Item1.StartsWith("{{#each"))
                     {
@@ -73,8 +97,8 @@ namespace Mustachio
                     }
                     else
                     {
-                        var line = FindLineForLocation(templateString, m.Index, ref lines);
-                        throw new TemplateParseException(@"An 'each' block is being closed on line {0}, but no corresponding opening element ('{{{{#each <name>}}}}') has was detected.", line) { LineNumber = line };
+                        var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+                        parseErrors.Add(new IndexedParseException(location, @"An 'each' block is being closed on line {0}, but no corresponding opening element ('{{{{#each <name>}}}}') was detected.", location.Line));
                     }
                 }
                 else if (m.Value.StartsWith("{{#"))
@@ -83,13 +107,13 @@ namespace Mustachio
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim();
                     if (scopestack.Any() && scopestack.Peek().Item1 == token)
                     {
-                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines));
+                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                     }
                     else
                     {
                         scopestack.Push(Tuple.Create(token, m.Index));
                     }
-                    yield return new TokenPair(TokenType.ElementOpen, Validated(token, templateString, m.Index, ref lines));
+                    yield return new TokenPair(TokenType.ElementOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                 }
                 else if (m.Value.StartsWith("{{^"))
                 {
@@ -98,13 +122,13 @@ namespace Mustachio
 
                     if (scopestack.Any() && scopestack.Peek().Item1 == token)
                     {
-                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines));
+                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                     }
                     else
                     {
                         scopestack.Push(Tuple.Create(token, m.Index));
                     }
-                    yield return new TokenPair(TokenType.InvertedElementOpen, Validated(token, templateString, m.Index, ref lines));
+                    yield return new TokenPair(TokenType.InvertedElementOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                 }
                 else if (m.Value.StartsWith("{{/"))
                 {
@@ -113,19 +137,19 @@ namespace Mustachio
                     if (scopestack.Any() && scopestack.Peek().Item1 == token)
                     {
                         scopestack.Pop();
-                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines));
+                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                     }
                     else
                     {
-                        var line = FindLineForLocation(templateString, m.Index, ref lines);
-                        throw new TemplateParseException("It appears that open and closing elements are mismatched on line {0}.", line) { LineNumber = line };
+                        var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+                        parseErrors.Add(new IndexedParseException(location, "It appears that open and closing elements are mismatched on line {0}.", location.Line));
                     }
                 }
                 else if (m.Value.StartsWith("{{{") | m.Value.StartsWith("{{&"))
                 {
                     //escaped single element
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('&').Trim();
-                    yield return new TokenPair(TokenType.UnescapedSingleValue, Validated(token, templateString, m.Index, ref lines));
+                    yield return new TokenPair(TokenType.UnescapedSingleValue, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                 }
                 else if (m.Value.StartsWith("{{!"))
                 {
@@ -135,7 +159,7 @@ namespace Mustachio
                 {
                     //unsingle value.
                     var token = m.Value.TrimStart('{').TrimEnd('}').Trim();
-                    yield return new TokenPair(TokenType.EscapedSingleValue, Validated(token, templateString, m.Index, ref lines));
+                    yield return new TokenPair(TokenType.EscapedSingleValue, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
                 }
 
                 //move forward in the string.
@@ -150,32 +174,33 @@ namespace Mustachio
             #region Assert that any scopes opened must be closed.
             if (scopestack.Any())
             {
-                var lineNumbers = scopestack.Reverse().Select(k => FindLineForLocation(templateString, k.Item2, ref lines));
-
-                var scopes = String.Join(",", scopestack.Select(k =>
+                var scopes = scopestack.Select(k =>
                 {
                     var value = k.Item1.Trim('{', '#', '}');
                     if (value.StartsWith("each "))
                     {
                         value = value.Substring(5);
                     }
-                    return "'" + value + "'";
-                }).Reverse().ToArray());
-                if (scopes.Length > 1)
-                {
+                    return new { scope = "'" + value + "'", location = HumanizeCharacterLocation(templateString, k.Item2, ref lines) };
+                }).Reverse()
+                .ToArray();
 
-                    throw new TemplateParseException("Scope blocks to the following paths were opened but not closed: " + scopes +
-                        ", please close them using appropriate syntax.") { LineNumber = lineNumbers.First() };
-                }
-                else
+                foreach (var unclosedScope in scopes)
                 {
                     //var line = FindLineForLocation(templateString, m.Index, ref lines);
-                    throw new TemplateParseException("A scope block to the following path was opened but not closed:" + scopes +
-                        ", please close it using the appropriate syntax.") { LineNumber = lineNumbers.First() };
+                    parseErrors.Add(new IndexedParseException(unclosedScope.location,
+                        "A scope block to the following path was opened but not closed: {0} on line {1}, please close it using the appropriate syntax.",
+                        unclosedScope.scope, unclosedScope.location.Line));
                 }
             }
             #endregion
 
+            //We want to throw an aggregate template exception, but in due time.
+            if (parseErrors.Any())
+            {
+                var innerExceptions = parseErrors.OrderBy(k => k.LineNumber).ThenBy(k => k.CharacterOnLine).ToArray();
+                throw new AggregateException(innerExceptions);
+            }
             yield break;
         }
 
@@ -184,14 +209,14 @@ namespace Mustachio
         /// </summary>
         private static readonly Regex _negativePathSpec = new Regex("([.]{3,})|([^\\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))", RegexOptions.Singleline | RegexOptions.Compiled);
 
-        private static string Validated(string token, string content, int index, ref int[] lines)
+        private static string Validated(string token, string content, int index, ref int[] lines, ref List<IndexedParseException> exceptions)
         {
             token = token.Trim();
 
             if (_negativePathSpec.Match(token).Success)
             {
-                var line = FindLineForLocation(content, index, ref lines);
-                throw new TemplateParseException("The path '{0}' on line {1} is not valid. Please see documentation for examples of valid paths.", token, line) { LineNumber = line };
+                var location = HumanizeCharacterLocation(content, index, ref lines);
+                exceptions.Add(new IndexedParseException(location, "The path '{0}' on line {1} is not valid. Please see documentation for examples of valid paths.", token, location.Line));
             }
             return token;
         }

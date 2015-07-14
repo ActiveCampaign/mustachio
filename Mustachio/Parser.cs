@@ -210,7 +210,7 @@ namespace Mustachio
                     }
                     else
                     {
-                        throw new TemplateParseException("'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
+                        throw new IndexedParseException("'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
                     }
                 }
             };

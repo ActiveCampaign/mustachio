@@ -80,7 +80,7 @@ namespace Mustachio
                     else
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, @"The 'each' block being opened near on line {0} requires a model path to be specified in the form '{{{{#each <name>}}}}'.", location.Line));
+                        parseErrors.Add(new IndexedParseException(location, @"The 'each' block being opened requires a model path to be specified in the form '{{{{#each <name>}}}}'."));
                     }
                 }
                 else if (m.Value.StartsWith("{{/each"))
@@ -88,7 +88,7 @@ namespace Mustachio
                     if (m.Value != "{{/each}}")
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, @"The syntax to close the 'each' block on line {0} should be: '{{{{/each}}}}'.", location.Line));
+                        parseErrors.Add(new IndexedParseException(location, @"The syntax to close the 'each' block should be: '{{{{/each}}}}'."));
                     }
                     else if (scopestack.Any() && scopestack.Peek().Item1.StartsWith("{{#each"))
                     {
@@ -98,7 +98,7 @@ namespace Mustachio
                     else
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, @"An 'each' block is being closed on line {0}, but no corresponding opening element ('{{{{#each <name>}}}}') was detected.", location.Line));
+                        parseErrors.Add(new IndexedParseException(location, @"An 'each' block is being closed, but no corresponding opening element ('{{{{#each <name>}}}}') was detected."));
                     }
                 }
                 else if (m.Value.StartsWith("{{#"))
@@ -142,7 +142,7 @@ namespace Mustachio
                     else
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, "It appears that open and closing elements are mismatched on line {0}.", location.Line));
+                        parseErrors.Add(new IndexedParseException(location, "It appears that open and closing elements are mismatched."));
                     }
                 }
                 else if (m.Value.StartsWith("{{{") | m.Value.StartsWith("{{&"))
@@ -189,8 +189,8 @@ namespace Mustachio
                 {
                     //var line = FindLineForLocation(templateString, m.Index, ref lines);
                     parseErrors.Add(new IndexedParseException(unclosedScope.location,
-                        "A scope block to the following path was opened but not closed: {0} on line {1}, please close it using the appropriate syntax.",
-                        unclosedScope.scope, unclosedScope.location.Line));
+                        "A scope block to the following path was opened but not closed: '{0}', please close it using the appropriate syntax.",
+                        unclosedScope.scope));
                 }
             }
             #endregion
@@ -216,7 +216,7 @@ namespace Mustachio
             if (_negativePathSpec.Match(token).Success)
             {
                 var location = HumanizeCharacterLocation(content, index, ref lines);
-                exceptions.Add(new IndexedParseException(location, "The path '{0}' on line {1} is not valid. Please see documentation for examples of valid paths.", token, location.Line));
+                exceptions.Add(new IndexedParseException(location, "The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
             }
             return token;
         }

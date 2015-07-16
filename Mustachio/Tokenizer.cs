@@ -32,6 +32,7 @@ namespace Mustachio
             line = line < 0 ? ~line : line;
 
             var charIdx = characterIndex;
+            //in both of these cases, we want to increment the char index by one to account for the '\n' that is skipped in the indexes.
             if (line < lines.Length && line > 0)
             {
                 charIdx = characterIndex - (lines[line - 1] + 1);
@@ -40,11 +41,12 @@ namespace Mustachio
             {
                 charIdx = characterIndex - (lines.LastOrDefault() + 1);
             }
+
             var retval = new CharacterLocation
             {
-                Line = line,
-                //if the line index is less than the line length (every case except when we have no new lines..)
-                Character = charIdx
+                //Humans count from 1, so let's do that, too (hence the "++" on these).
+                Line = line++,
+                Character = charIdx++
             };
             return retval;
         }

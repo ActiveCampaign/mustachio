@@ -45,8 +45,8 @@ namespace Mustachio
             var retval = new CharacterLocation
             {
                 //Humans count from 1, so let's do that, too (hence the "++" on these).
-                Line = line++,
-                Character = charIdx++
+                Line = line + 1,
+                Character = charIdx + 1
             };
             return retval;
         }

@@ -559,9 +559,7 @@ namespace Mustachio.Tests
             var model = new Dictionary<string, object>(){
                 {"content" , content}
             };
-
             Assert.Equal(expected, Parser.Parse(template)(model));
         }
-
     }
 }

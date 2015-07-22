@@ -141,11 +141,11 @@ namespace Mustachio
                     {
                         if (token.Type == TokenType.EscapedSingleValue)
                         {
-                            builder.Append(c);
+                            builder.Append(HtmlEncodeString(c.ToString()));
                         }
                         else
                         {
-                            builder.Append(HtmlEncodeString(c.ToString()));
+                            builder.Append(c);
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 ﻿using Mustachio;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -550,6 +551,17 @@ namespace Mustachio.Tests
             Assert.True(didThrow);
         }
 
+        [Theory]
+        [InlineData("<wbr>", "{{content}}", "&lt;wbr&gt;")]
+        [InlineData("<wbr>", "{{{content}}}", "<wbr>")]
+        public void ValueEscapingIsActivatedBasedOnValueInterpolationMustacheSyntax(string content, string template, string expected)
+        {
+            var model = new Dictionary<string, object>(){
+                {"content" , content}
+            };
+
+            Assert.Equal(expected, Parser.Parse(template)(model));
+        }
 
     }
 }

@@ -1,3 +1,4 @@
+<img src="http://assets.wildbit.com/postmark/misc/mustachio-logo@2x.png" alt="Mustachio" width="148" height="149">
 # Mustachio
 A Lightweight, powerful, flavorful, templating engine.
 

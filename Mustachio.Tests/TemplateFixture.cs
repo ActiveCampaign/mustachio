@@ -20,7 +20,7 @@ namespace Mustachio.Tests
         }
 
         [Fact]
-        public void HtmlIsEscapedWhenUsingTheEscapeSyntaxes()
+        public void HtmlIsNotEscapedWhenUsingUnsafeSyntaxes()
         {
             var model = new Dictionary<string, object>();
 
@@ -29,15 +29,15 @@ namespace Mustachio.Tests
             var plainText = @"{{{stuff}}}";
             var rendered = Mustachio.Parser.Parse(plainText)(model);
 
-            Assert.Equal("&lt;b&gt;inner&lt;/b&gt;", rendered);
+            Assert.Equal("<b>inner</b>", rendered);
 
             plainText = @"{{&stuff}}";
             rendered = Mustachio.Parser.Parse(plainText)(model);
-            Assert.Equal("&lt;b&gt;inner&lt;/b&gt;", rendered);
+            Assert.Equal("<b>inner</b>", rendered);
         }
 
         [Fact]
-        public void HtmlIsNotEscapedByDefault()
+        public void HtmlIsEscapedByDefault()
         {
             var model = new Dictionary<string, object>();
 
@@ -46,7 +46,7 @@ namespace Mustachio.Tests
             var plainText = @"{{stuff}}";
             var rendered = Mustachio.Parser.Parse(plainText)(model);
 
-            Assert.Equal("<b>inner</b>", rendered);
+            Assert.Equal("&lt;b&gt;inner&lt;/b&gt;", rendered);
         }
 
         [Fact]

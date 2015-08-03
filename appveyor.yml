@@ -52,7 +52,7 @@ test:
     - '**\*.Tests.dll'
 
 after_test:
-  - ps: nuget.exe pack ./Mustachio/Mustachio.nuspec -Version $env:APPVEYOR_BUILD_VERSION}
+  - ps: nuget.exe pack ./Mustachio/Mustachio.nuspec -Version $env:APPVEYOR_BUILD_VERSION
 
 artifacts:
   # pushing all *.nupkg files in directory

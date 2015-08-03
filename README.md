@@ -1,9 +1,9 @@
-<img src="http://assets.wildbit.com/postmark/misc/mustachio-logo@2x.png" alt="Mustachio" width="148" height="149">
+<img src="http://assets.wildbit.com/postmark/misc/mustachio-logo@2x.png" alt="Mustachio Logo" title="Pistachio + Mustache =&gt; Mustachio" width="148" height="149">
+
 # Mustachio
-A Lightweight, powerful, flavorful, templating engine.
+A Lightweight, powerful, flavorful, templating engine for C# and other .net-based languages.
 
-
-#### How to use mustachio:
+#### How to use Mustachio:
 
 ```csharp
 // Parse the template:
@@ -17,6 +17,14 @@ model.sender = "Sally";
 
 // Combine the model with the template to get content:
 var content = template(model);
+```
+
+#### Installing Mustachio:
+
+Mustachio can be installed via NuGet:
+
+```bash
+Install-Package Mustachio
 ```
 
 ##### Key differences between Mustachio and [Mustache](https://mustache.github.io/)

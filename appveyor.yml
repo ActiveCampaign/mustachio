@@ -37,7 +37,6 @@ configuration: Release
 
 build:
   project: ./Mustachio.sln  # path to Visual Studio solution or project
-  publish_nuget: true              # package projects with .nuspec files and push to artifacts
 
   # MSBuild verbosity level
   # quiet|minimal|normal|detailed

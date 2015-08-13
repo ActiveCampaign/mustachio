@@ -183,7 +183,7 @@ namespace Mustachio
                     {
                         value = value.Substring(5);
                     }
-                    return new { scope = "'" + value + "'", location = HumanizeCharacterLocation(templateString, k.Item2, ref lines) };
+                    return new { scope = value, location = HumanizeCharacterLocation(templateString, k.Item2, ref lines) };
                 }).Reverse()
                 .ToArray();
 

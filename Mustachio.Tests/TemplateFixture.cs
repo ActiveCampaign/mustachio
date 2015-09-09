@@ -105,5 +105,22 @@ namespace Mustachio.Tests
                 "<li>name 1 and version 1 and has a CEO: Smith</li>" +
                 "<li>name 2 and version 2 and has a CEO: Smith</li>", result);
         }
+
+        [Fact]
+        public void TemplateShouldProcessVariablesInInvertedGroup()
+        {
+            var model = new Dictionary<String, object>
+            {
+                { "not_here" , false },
+                { "placeholder" , "a placeholder value" }
+            };
+
+            var template = "{{^not_here}}{{../placeholder}}{{/not_here}}";
+
+            var result = Parser.Parse(template)(model);
+
+            Assert.Equal("a placeholder value", result);
+
+        }
     }
 }

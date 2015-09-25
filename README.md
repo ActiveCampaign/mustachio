@@ -25,7 +25,7 @@ var content = template(model);
 
 #### Installing Mustachio:
 
-Mustachio can be installed via NuGet:
+Mustachio can be installed via [NuGet](https://www.nuget.org/packages/Mustachio/):
 
 ```bash
 Install-Package Mustachio

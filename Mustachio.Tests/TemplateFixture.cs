@@ -1,4 +1,5 @@
-﻿using Mustachio;
+﻿using System.Collections;
+using Mustachio;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -121,7 +122,26 @@ namespace Mustachio.Tests
             var result = Parser.Parse(template)(model);
 
             Assert.Equal("a placeholder value", result);
+        }
 
+        [InlineData(new int[]{})]
+        [InlineData(false)]
+        [InlineData("")]
+        [InlineData(0.0)]
+        [InlineData(0)]
+        [Theory]
+        public void TemplatesShoudlNotRenderFalseyComplexStructures(object falseyModelValue)
+        {
+            var model = new Dictionary<String, object>
+            {
+                { "outer_level", falseyModelValue}
+            };
+
+            var template = "{{#outer_level}}Shouldn't be rendered!{{inner_level}}{{/outer_level}}";
+
+            var result = Parser.Parse(template)(model);
+
+            Assert.Equal(String.Empty, result);
         }
 
         [InlineData(new int[]{})]
@@ -137,12 +157,58 @@ namespace Mustachio.Tests
                 { "locations", falseyModelValue}
             };
 
-            var template = "{{#each locations}}Found a location!{{/each}}";
+            var template = "{{#each locations}}Shouldn't be rendered!{{/each}}";
 
             var result = Parser.Parse(template)(model);
 
             Assert.Equal(String.Empty, result);
+        }
 
+        [InlineData(0)]
+        [InlineData(0.0)]
+        [Theory]
+        public void TemplateShouldRenderZeroValue(object value)
+        {
+            var model = new Dictionary<String, object>
+            {
+                { "times_won", value}
+            };
+
+            var template = "You've won {{times_won}} times!";
+
+            var result = Parser.Parse(template)(model);
+
+            Assert.Equal("You've won 0 times!", result);
+        }
+
+        [Fact]
+        public void TemplateShouldRenderFalseValue()
+        {
+            var model = new Dictionary<String, object>
+            {
+                { "times_won", false}
+            };
+
+            var template = "You've won {{times_won}} times!";
+
+            var result = Parser.Parse(template)(model);
+
+            Assert.Equal("You've won False times!", result);
+        }
+
+        [Fact]
+        public void TemplateShouldNotRenderNullValue()
+        {
+            var model = new Dictionary<String, object>
+            {
+                { "times_won", null}
+            };
+
+            var template = "You've won {{times_won}} times!";
+
+            var result = Parser.Parse(template)(model);
+
+            Assert.Equal("You've won  times!", result);
         }
     }
 }

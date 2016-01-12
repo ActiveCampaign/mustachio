@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -70,12 +71,15 @@ namespace Mustachio
         /// <returns></returns>
         public bool Exists()
         {
-            //this should ALSO handle an empty list, which counts as "false" in mustache land.
-            return Value != null && Value as bool? != false &&
+            return Value != null &&
+                Value as bool? != false &&
                 Value as double? != 0 &&
                 Value as int? != 0 &&
                 Value as string != String.Empty &&
-                (Value as IEnumerable<object> == null || (Value as IEnumerable<object>).Any());
+                // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
+                // OR if it IS an enumerable and .Any() returns true, then it exists as well
+                (Value as IEnumerable == null || (Value as IEnumerable).Cast<object>().Any()
+                );
         }
 
         /// <summary>

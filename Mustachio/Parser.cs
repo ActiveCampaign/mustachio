@@ -137,7 +137,7 @@ namespace Mustachio
                 {
                     //try to locate the value in the context, if it exists, append it.
                     var c = context.GetContextForPath(token.Value);
-                    if (c.Exists())
+                    if (c.Value != null)
                     {
                         if (token.Type == TokenType.EscapedSingleValue)
                         {

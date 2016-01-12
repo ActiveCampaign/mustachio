@@ -71,7 +71,10 @@ namespace Mustachio
         public bool Exists()
         {
             //this should ALSO handle an empty list, which counts as "false" in mustache land.
-            return Value != null && Value as bool? != false && Value as double? != 0 &&
+            return Value != null && Value as bool? != false &&
+                Value as double? != 0 &&
+                Value as int? != 0 &&
+                Value as string != String.Empty &&
                 (Value as IEnumerable<object> == null || (Value as IEnumerable<object>).Any());
         }
 

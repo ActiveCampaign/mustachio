@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Extensions;
 
 namespace Mustachio.Tests
 {
@@ -120,6 +121,27 @@ namespace Mustachio.Tests
             var result = Parser.Parse(template)(model);
 
             Assert.Equal("a placeholder value", result);
+
+        }
+
+        [InlineData(new int[]{})]
+        [InlineData(false)]
+        [InlineData("")]
+        [InlineData(0.0)]
+        [InlineData(0)]
+        [Theory]
+        public void TemplateShouldTreatFalseyValuesAsEmptyArray(object falseyModelValue)
+        {
+            var model = new Dictionary<String, object>
+            {
+                { "locations", falseyModelValue}
+            };
+
+            var template = "{{#each locations}}Found a location!{{/each}}";
+
+            var result = Parser.Parse(template)(model);
+
+            Assert.Equal(String.Empty, result);
 
         }
     }

@@ -137,7 +137,7 @@ namespace Mustachio
                 {
                     //try to locate the value in the context, if it exists, append it.
                     var c = context.GetContextForPath(token.Value);
-                    if (c.Exists())
+                    if (c.Value != null)
                     {
                         if (token.Type == TokenType.EscapedSingleValue)
                         {
@@ -190,28 +190,28 @@ namespace Mustachio
             {
                 //if we're in the same scope, just negating, then we want to use the same object
                 var c = context.GetContextForPath(token.Value);
+
                 //"falsey" values by Javascript standards...
-                if (c.Exists())
+                if (!c.Exists()) return;
+
+                if (c.Value is IEnumerable && !(c.Value is String) && !(c.Value is IDictionary<string, object>))
                 {
-                    if (c.Value is IEnumerable && !(c.Value is String) && !(c.Value is IDictionary<string, object>))
+                    var index = 0;
+                    foreach (object i in c.Value as IEnumerable)
                     {
-                        var index = 0;
-                        foreach (object i in c.Value as IEnumerable)
+                        var innerContext = new ContextObject()
                         {
-                            var innerContext = new ContextObject()
-                            {
-                                Value = i,
-                                Key = String.Format("[{0}]", index),
-                                Parent = c
-                            };
-                            innerTemplate(builder, innerContext);
-                            index++;
-                        }
+                            Value = i,
+                            Key = String.Format("[{0}]", index),
+                            Parent = c
+                        };
+                        innerTemplate(builder, innerContext);
+                        index++;
                     }
-                    else
-                    {
-                        throw new IndexedParseException("'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
-                    }
+                }
+                else
+                {
+                    throw new IndexedParseException("'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
                 }
             };
         }

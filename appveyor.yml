@@ -72,10 +72,3 @@ deploy:
     skip_symbols: true
     on:
       appveyor_repo_tag: true
-
-notifications:
-  # HipChat
-  - provider: HipChat
-    auth_token:
-      secure: OqT/6oTT5wCUSt4rajfZ/Ye1K0lz8nUJzj2KFtoIwmMo6QtjSuGIhf/RGIu0uXIr
-    room: Postmark

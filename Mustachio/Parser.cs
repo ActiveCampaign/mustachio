@@ -18,11 +18,13 @@ namespace Mustachio
         /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
         /// </summary>
         /// <param name="template">The content of the template to be parsed.</param>
+        /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
+        /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-        public static Func<IDictionary<String, object>, String> Parse(string template)
+        public static Func<IDictionary<String, object>, String> Parse(string template, bool disableContentEscaping = false)
         {
             var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(template));
-            var internalTemplate = Parse(tokens);
+            var internalTemplate = Parse(tokens, new ParsingOptions { DisableContentSafety = disableContentEscaping });
             return (model) =>
             {
                 var retval = new StringBuilder();
@@ -39,14 +41,17 @@ namespace Mustachio
         /// <summary>
         /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
         /// </summary>
-        /// <param name="templateSource"></param>
+        /// <param name="templateSource">The template content to parse.</param>
+        /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
+        /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-        public static ExtendedParseInformation ParseWithModelInference(string templateSource)
+        public static ExtendedParseInformation ParseWithModelInference(string templateSource, bool disableContentEscaping = false)
         {
             var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(templateSource));
+            var options = new ParsingOptions { DisableContentSafety = disableContentEscaping };
             var inferredModel = new InferredTemplateModel();
 
-            var internalTemplate = Parse(tokens, inferredModel);
+            var internalTemplate = Parse(tokens, options, inferredModel);
             Func<IDictionary<String, object>, String> template = (model) =>
             {
                 var retval = new StringBuilder();
@@ -68,10 +73,10 @@ namespace Mustachio
             return result;
         }
 
-        private static Action<StringBuilder, ContextObject> Parse(Queue<TokenPair> tokens, InferredTemplateModel currentScope = null)
+        private static Action<StringBuilder, ContextObject> Parse(Queue<TokenPair> tokens, ParsingOptions options, InferredTemplateModel currentScope = null)
         {
             var buildArray = new List<Action<StringBuilder, ContextObject>>();
-
+            
             while (tokens.Any())
             {
                 var currentToken = tokens.Dequeue();
@@ -83,13 +88,13 @@ namespace Mustachio
                         buildArray.Add(HandleContent(currentToken.Value));
                         break;
                     case TokenType.CollectionOpen:
-                        buildArray.Add(HandleCollectionOpen(currentToken, tokens, currentScope));
+                        buildArray.Add(HandleCollectionOpen(currentToken, tokens, options,  currentScope));
                         break;
                     case TokenType.ElementOpen:
-                        buildArray.Add(HandleElementOpen(currentToken, tokens, currentScope));
+                        buildArray.Add(HandleElementOpen(currentToken, tokens, options, currentScope));
                         break;
                     case TokenType.InvertedElementOpen:
-                        buildArray.Add(HandleInvertedElementOpen(currentToken, tokens, currentScope));
+                        buildArray.Add(HandleInvertedElementOpen(currentToken, tokens, options, currentScope));
                         break;
                     case TokenType.CollectionClose:
                     case TokenType.ElementClose:
@@ -104,7 +109,7 @@ namespace Mustachio
                         };
                     case TokenType.EscapedSingleValue:
                     case TokenType.UnescapedSingleValue:
-                        buildArray.Add(HandleSingleValue(currentToken, currentScope));
+                        buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
                         break;
                 }
             }
@@ -123,7 +128,7 @@ namespace Mustachio
             return HttpUtility.HtmlEncode(context);
         }
 
-        private static Action<StringBuilder, ContextObject> HandleSingleValue(TokenPair token, InferredTemplateModel scope)
+        private static Action<StringBuilder, ContextObject> HandleSingleValue(TokenPair token, ParsingOptions options, InferredTemplateModel scope )
         {
 
             if (scope != null)
@@ -139,7 +144,7 @@ namespace Mustachio
                     var c = context.GetContextForPath(token.Value);
                     if (c.Value != null)
                     {
-                        if (token.Type == TokenType.EscapedSingleValue)
+                        if (token.Type == TokenType.EscapedSingleValue && !options.DisableContentSafety)
                         {
                             builder.Append(HtmlEncodeString(c.ToString()));
                         }
@@ -157,14 +162,15 @@ namespace Mustachio
             return (builder, context) => builder.Append(token);
         }
 
-        private static Action<StringBuilder, ContextObject> HandleInvertedElementOpen(TokenPair token, Queue<TokenPair> remainder, InferredTemplateModel scope)
+        private static Action<StringBuilder, ContextObject> HandleInvertedElementOpen(TokenPair token, Queue<TokenPair> remainder,
+            ParsingOptions options, InferredTemplateModel scope)
         {
             if (scope != null)
             {
                 scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
             }
 
-            var innerTemplate = Parse(remainder, scope);
+            var innerTemplate = Parse(remainder, options, scope);
 
             return (builder, context) =>
             {
@@ -177,14 +183,14 @@ namespace Mustachio
             };
         }
 
-        private static Action<StringBuilder, ContextObject> HandleCollectionOpen(TokenPair token, Queue<TokenPair> remainder, InferredTemplateModel scope)
+        private static Action<StringBuilder, ContextObject> HandleCollectionOpen(TokenPair token, Queue<TokenPair> remainder, ParsingOptions options, InferredTemplateModel scope)
         {
             if (scope != null)
             {
                 scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Collection);
             }
 
-            var innerTemplate = Parse(remainder, scope);
+            var innerTemplate = Parse(remainder, options, scope);
 
             return (builder, context) =>
             {
@@ -216,14 +222,14 @@ namespace Mustachio
             };
         }
 
-        private static Action<StringBuilder, ContextObject> HandleElementOpen(TokenPair token, Queue<TokenPair> remainder, InferredTemplateModel scope)
+        private static Action<StringBuilder, ContextObject> HandleElementOpen(TokenPair token, Queue<TokenPair> remainder, ParsingOptions options, InferredTemplateModel scope)
         {
             if (scope != null)
             {
                 scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
             }
 
-            var innerTemplate = Parse(remainder, scope);
+            var innerTemplate = Parse(remainder, options, scope);
 
             return (builder, context) =>
             {

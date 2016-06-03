@@ -561,5 +561,16 @@ namespace Mustachio.Tests
             };
             Assert.Equal(expected, Parser.Parse(template)(model));
         }
+
+        [Theory]
+        [InlineData("<wbr>", "{{content}}", "<wbr>")]
+        [InlineData("<wbr>", "{{{content}}}", "<wbr>")]
+        public void ValueEscapingIsDisabledWhenRequested(string content, string template, string expected)
+        {
+            var model = new Dictionary<string, object>(){
+                {"content" , content}
+            };
+            Assert.Equal(expected, Parser.Parse(template, true)(model));
+        }
     }
 }

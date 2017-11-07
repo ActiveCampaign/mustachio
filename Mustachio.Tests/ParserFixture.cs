@@ -31,7 +31,13 @@ namespace Mustachio.Tests
 
 	public class ParserFixture
 	{
-		public static Encoding DefaultEncoding { get; set; } = new UnicodeEncoding(true, false, false);
+		private static Encoding _defaultEncoding = new UnicodeEncoding(true, false, false);
+
+		public static Encoding DefaultEncoding
+		{
+			get { return _defaultEncoding; }
+			set { _defaultEncoding = value; }
+		}
 
 		[Fact]
 		public void ParserCanProcessCompoundConditionalGroup()

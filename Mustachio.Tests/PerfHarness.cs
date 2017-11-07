@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,35 @@ using Xunit.Extensions;
 
 namespace Mustachio.Tests
 {
+	public static class StreamExtentions
+	{
+		public static string Stringify(this Stream source, bool disposeOriginal, Encoding encoding)
+		{
+			try
+			{
+				source.Seek(0, SeekOrigin.Begin);
+				var stream = source as MemoryStream;
+				if (stream != null)
+				{
+					return encoding.GetString(stream.ToArray());
+				}
+
+				using (var ms = new MemoryStream())
+				{
+					source.CopyToAsync(ms);
+					return ms.Stringify(disposeOriginal, encoding);
+				}
+			}
+			finally
+			{
+				if (disposeOriginal)
+				{
+					source.Dispose();
+				}
+			}
+		}
+	}
+
     public class PerfHarness
     {
         [Theory]
@@ -31,16 +61,16 @@ namespace Mustachio.Tests
                 baseTemplate += model.Item2 + "\r\n";
             }
 
-            Func<IDictionary<string, object>, string> template = null;
+            Func<IDictionary<string, object>, Stream> template = null;
 
             //make sure this class is JIT'd before we start timing.
-            Parser.Parse("asdf");
+            Parser.ParseWithOptions(new ParserOptions("asdf"));
 
             var totalTime = Stopwatch.StartNew();
             var parseTime = Stopwatch.StartNew();
             for (var i = 0; i < runs; i++)
             {
-                template = Parser.Parse(baseTemplate);
+                template = Parser.ParseWithOptions(new ParserOptions(baseTemplate)).ParsedTemplate;
             }
 
             parseTime.Stop();

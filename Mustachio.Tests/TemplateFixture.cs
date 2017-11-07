@@ -17,8 +17,8 @@ namespace Mustachio.Tests
         public void TemplateRendersContentWithNoVariables()
         {
             var plainText = "ASDF";
-            var template = Mustachio.Parser.Parse("ASDF");
-            Assert.Equal(plainText, template(null));
+            var template = Parser.ParseWithOptions(new ParserOptions("ASDF", null, ParserFixture.DefaultEncoding));
+            Assert.Equal(plainText, template.ParsedTemplate(null).Stringify(true, ParserFixture.DefaultEncoding));
         }
 
         [Fact]
@@ -29,12 +29,12 @@ namespace Mustachio.Tests
             model["stuff"] = "<b>inner</b>";
 
             var plainText = @"{{{stuff}}}";
-            var rendered = Mustachio.Parser.Parse(plainText)(model);
+            var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("<b>inner</b>", rendered);
 
             plainText = @"{{&stuff}}";
-            rendered = Mustachio.Parser.Parse(plainText)(model);
+            rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
             Assert.Equal("<b>inner</b>", rendered);
         }
 
@@ -46,7 +46,7 @@ namespace Mustachio.Tests
             model["stuff"] = "<b>inner</b>";
 
             var plainText = @"{{stuff}}";
-            var rendered = Mustachio.Parser.Parse(plainText)(model);
+            var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("&lt;b&gt;inner&lt;/b&gt;", rendered);
         }
@@ -58,7 +58,7 @@ namespace Mustachio.Tests
 
             var plainText = @"as{{!stu
             ff}}df";
-            var rendered = Mustachio.Parser.Parse(plainText)(model);
+            var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("asdf", rendered);
         }
@@ -69,7 +69,7 @@ namespace Mustachio.Tests
             var model = new Dictionary<string, object>();
 
             var plainText = @"{{^stuff}}No Stuff Here.{{/stuff}}";
-            var rendered = Mustachio.Parser.Parse(plainText)(model);
+            var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("No Stuff Here.", rendered);
         }
@@ -80,7 +80,7 @@ namespace Mustachio.Tests
         {
             var template = @"{{#each Company.ceo.products}}<li>{{ name }} and {{version}} and has a CEO: {{../../last_name}}</li>{{/each}}";
 
-            var parsedTemplate = Parser.Parse(template);
+            var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding));
 
             var model = new Dictionary<string, object>();
 
@@ -101,7 +101,7 @@ namespace Mustachio.Tests
 
             ceo["products"] = products;
 
-            var result = parsedTemplate(model);
+            var result = parsedTemplate.ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("<li>name 0 and version 0 and has a CEO: Smith</li>" +
                 "<li>name 1 and version 1 and has a CEO: Smith</li>" +
@@ -119,7 +119,7 @@ namespace Mustachio.Tests
 
             var template = "{{^not_here}}{{../placeholder}}{{/not_here}}";
 
-            var result = Parser.Parse(template)(model);
+            var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("a placeholder value", result);
         }
@@ -139,7 +139,7 @@ namespace Mustachio.Tests
 
             var template = "{{#outer_level}}Shouldn't be rendered!{{inner_level}}{{/outer_level}}";
 
-            var result = Parser.Parse(template)(model);
+            var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal(String.Empty, result);
         }
@@ -159,7 +159,7 @@ namespace Mustachio.Tests
 
             var template = "{{#each locations}}Shouldn't be rendered!{{/each}}";
 
-            var result = Parser.Parse(template)(model);
+            var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal(String.Empty, result);
         }
@@ -176,7 +176,7 @@ namespace Mustachio.Tests
 
             var template = "You've won {{times_won}} times!";
 
-            var result = Parser.Parse(template)(model);
+            var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("You've won 0 times!", result);
         }
@@ -191,7 +191,7 @@ namespace Mustachio.Tests
 
             var template = "You've won {{times_won}} times!";
 
-            var result = Parser.Parse(template)(model);
+            var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("You've won False times!", result);
         }
@@ -206,7 +206,7 @@ namespace Mustachio.Tests
 
             var template = "You've won {{times_won}} times!";
 
-            var result = Parser.Parse(template)(model);
+            var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding)).ParsedTemplate(model).Stringify(true, ParserFixture.DefaultEncoding);
 
             Assert.Equal("You've won  times!", result);
         }

@@ -9,27 +9,34 @@ namespace Mustachio
 	public class ParserOptions
 	{
 		public ParserOptions(string template)
+			: this(template, null)
+		{
+		}
+
+		public ParserOptions(string template, Stream sourceStream)
+			: this(template, sourceStream, null)
+		{
+		}
+
+		public ParserOptions(string template, Stream sourceStream, Encoding encoding)
 		{
 			Template = template;
-			Encoding = Encoding.UTF8;
-			SourceStream = new MemoryStream();
+			SourceStream = sourceStream ?? new MemoryStream();
+			Encoding = encoding ?? Encoding.UTF8;
 		}
 
-		public ParserOptions(string template, Stream sourceStream) : this(template)
-		{
-			SourceStream = sourceStream;
-		}
-
-		public ParserOptions(string template, Stream sourceStream, Encoding encoding) : this(template, sourceStream)
-		{
-			Encoding = encoding;
-		}
-
-		public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false) : this(template, sourceStream, encoding)
+		public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
+			: this(template, sourceStream, encoding)
 		{
 			MaxSize = maxSize;
 			DisableContentEscaping = disableContentEscaping;
 			WithModelInference = withModelInference;
+		}
+
+		public ParserOptions(string template, Stream sourceStream, Encoding encoding, bool disableContentEscaping = false, bool withModelInference = false)
+			: this(template, sourceStream, encoding, 0, disableContentEscaping, withModelInference)
+		{
+
 		}
 
 		/// <summary>

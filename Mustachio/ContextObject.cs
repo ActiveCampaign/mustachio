@@ -15,8 +15,9 @@ namespace Mustachio
         public object Value { get; set; }
 
         public string Key { get; set; }
+	    public ParserOptions Options { get; set; }
 
-        private ContextObject GetContextForPath(Queue<String> elements)
+	    private ContextObject GetContextForPath(Queue<String> elements)
         {
             var retval = this;
             if (elements.Any())
@@ -40,7 +41,8 @@ namespace Mustachio
                 {
                     //ALWAYS return the context, even if the value is null.
                     var innerContext = new ContextObject();
-                    innerContext.Key = element;
+	                innerContext.Options = Options;
+					innerContext.Key = element;
                     innerContext.Parent = this;
                     var ctx = this.Value as IDictionary<string, object>;
                     if (ctx != null)
@@ -49,6 +51,14 @@ namespace Mustachio
                         ctx.TryGetValue(element, out o);
                         innerContext.Value = o;
                     }
+	                else if (this.Value != null)
+	                {
+		                var propertyInfo = Value.GetType().GetProperty(element);
+		                if (propertyInfo != null)
+		                {
+							innerContext.Value = propertyInfo.GetValue(Value);
+		                }
+	                }
                     retval = innerContext.GetContextForPath(elements);
                 }
             }
@@ -83,7 +93,7 @@ namespace Mustachio
         }
 
         /// <summary>
-        /// The set of allowed types that may be printed. Complex types (such as arrays and dictionaries) 
+        /// The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)
         /// should not be printed, or their printing should be specialized.
         /// </summary>
         private static HashSet<Type> _printableTypes = new HashSet<Type>
@@ -100,6 +110,7 @@ namespace Mustachio
             typeof(byte),
             typeof(sbyte),
             typeof(decimal),
+            typeof(DateTime),
             typeof(int?),
             typeof(bool?),
             typeof(double?),
@@ -109,7 +120,8 @@ namespace Mustachio
             typeof(long?),
             typeof(byte?),
             typeof(sbyte?),
-            typeof(decimal?)
+            typeof(decimal?),
+            typeof(DateTime?),
         };
 
         public override string ToString()

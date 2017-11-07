@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Mustachio
 {
@@ -8,7 +9,7 @@ namespace Mustachio
     /// </summary>
     public class ExtendedParseInformation
     {
-        public Func<IDictionary<string, object>, String> ParsedTemplate { get; set; }
+        public Func<IDictionary<string, object>, Stream> ParsedTemplate { get; set; }
 
         public InferredTemplateModel InferredModel { get; set; }
     }

@@ -26,6 +26,7 @@ namespace Mustachio
 			SourceStream = sourceStream ?? new MemoryStream();
 			Encoding = encoding ?? Encoding.UTF8;
 			Formatters = new Dictionary<Type, FormatTemplateElement>();
+			Null = string.Empty;
 		}
 
 		public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
@@ -86,6 +87,6 @@ namespace Mustachio
 		/// <summary>
 		/// Defines how NULL values are exposed to the Template default is String.Empty
 		/// </summary>
-		public string Null { get; set; } = string.Empty;
+		public string Null { get; set; }
 	}
 }

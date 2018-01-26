@@ -17,6 +17,8 @@ namespace Mustachio
 	/// </summary>
 	public class Parser
 	{
+		private const int BufferSize = 2042;
+
 		/// <summary>
 		///	Parses the Template with the given options
 		/// </summary>
@@ -45,7 +47,7 @@ namespace Mustachio
 			var internalTemplate = Parse(tokens, parsingOptions, parsingOptions.WithModelInference ? inferredModel : null);
 			Func<IDictionary<string, object>, Stream> template = model =>
 			{
-				using (var streamWriter = new StreamWriter(parsingOptions.SourceStream, parsingOptions.Encoding, 2042, true))
+				using (var streamWriter = new StreamWriter(parsingOptions.SourceStream, parsingOptions.Encoding, BufferSize, true))
 				{
 					var context = new ContextObject
 					{
@@ -103,6 +105,15 @@ namespace Mustachio
 								a(builder, context);
 							}
 						};
+					case TokenType.Format:
+						buildArray.Add(HandleFormattingValue(currentToken, options, currentScope));
+						break;
+					case TokenType.PrintFormatted:
+						buildArray.Add(PrintFormattedValues(currentToken, options, currentScope));
+						break;
+					case TokenType.PrintSelf:
+						buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
+						break;
 					case TokenType.EscapedSingleValue:
 					case TokenType.UnescapedSingleValue:
 						buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
@@ -115,6 +126,29 @@ namespace Mustachio
 				foreach (var a in buildArray)
 				{
 					a(builder, context);
+				}
+			};
+		}
+
+		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken, ParserOptions options, InferredTemplateModel currentScope)
+		{
+			return (builder, context) =>
+			{
+				if (context != null)
+				{
+					HandleContent(context.Value?.ToString())(builder, context);
+				}
+			};
+		}
+
+		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken, ParserOptions options, InferredTemplateModel currentScope)
+		{
+			return (builder, context) =>
+			{
+				if (context != null)
+				{
+					var c = context.GetContextForPath(currentToken.Value);
+					context.Value = c.Format(currentToken.FormatAs);
 				}
 			};
 		}
@@ -155,11 +189,16 @@ namespace Mustachio
 
 		internal static void WriteContent(StreamWriter builder, string content, ContextObject context)
 		{
+			content = content ?? context.Options.Null;
+
 			var sourceCount = builder.BaseStream.Length;
-			var cl = content.Length;
+			var binaryContent = context.Options.Encoding.GetBytes(content);
+
+
+			var cl = binaryContent.Length;
 			if (context.Options.MaxSize == 0)
 			{
-				builder.Write(content);
+				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
 				return;
 			}
 
@@ -170,16 +209,16 @@ namespace Mustachio
 			var overflow = sourceCount + cl - context.Options.MaxSize;
 			if (overflow < 0)
 			{
-				builder.Write(content);
+				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
 				return;
 			}
 			if (overflow < content.Length)
 			{
-				builder.Write(content.Remove((int)(cl - overflow - 1)));
+				builder.BaseStream.Write(binaryContent, 0, (int) (cl - overflow));
 			}
 			else
 			{
-				builder.Write(content);
+				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
 			}
 		}
 

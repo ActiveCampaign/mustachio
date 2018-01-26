@@ -11,11 +11,16 @@ namespace Mustachio
         UnescapedSingleValue,
         InvertedElementOpen,
         ElementOpen,
+		ElementFormat,
         ElementClose,
         Comment,
         Content,
         CollectionOpen,
-        CollectionClose
+        CollectionClose,
+		Format,
+	    StoreFormatted,
+	    PrintFormatted,
+		PrintSelf
     }
 
     /// <summary>
@@ -30,6 +35,8 @@ namespace Mustachio
         }
 
         public TokenType Type { get; set; }
+
+	    public string FormatAs { get; set; }
 
         public string Value { get; set; }
 

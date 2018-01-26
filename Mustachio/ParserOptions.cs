@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Mustachio
@@ -23,6 +25,7 @@ namespace Mustachio
 			Template = template;
 			SourceStream = sourceStream ?? new MemoryStream();
 			Encoding = encoding ?? Encoding.UTF8;
+			Formatters = new Dictionary<Type, FormatTemplateElement>();
 		}
 
 		public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
@@ -38,6 +41,11 @@ namespace Mustachio
 		{
 
 		}
+
+		/// <summary>
+		/// Adds an Formatter overwrite or new Formatter for an Type
+		/// </summary>
+		public IDictionary<Type, FormatTemplateElement> Formatters { get; private set; }
 
 		/// <summary>
 		///		The template content to parse.
@@ -62,6 +70,7 @@ namespace Mustachio
 		/// </summary>
 		public long MaxSize { get; private set; }
 
+
 		/// <summary>
 		/// The target Stream that should be targeted for writing the Template
 		/// Default is an Empty MemoryStream
@@ -73,5 +82,10 @@ namespace Mustachio
 		/// Default is UTF8
 		/// </summary>
 		public Encoding Encoding { get; private set; }
+
+		/// <summary>
+		/// Defines how NULL values are exposed to the Template default is String.Empty
+		/// </summary>
+		public string Null { get; set; } = string.Empty;
 	}
 }

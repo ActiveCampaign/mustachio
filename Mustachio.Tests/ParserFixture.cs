@@ -91,6 +91,61 @@ namespace Mustachio.Tests
 		}
 
 		[Theory]
+		[InlineData("d")]
+		[InlineData("D")]
+		[InlineData("f")]
+		[InlineData("F")]
+		public void ParserCanFormat(string dtFormat)
+		{
+			var data = DateTime.UtcNow;
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}}", null, DefaultEncoding));
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal(result, data.ToString(dtFormat));
+		}
+
+		[Fact]
+		public void ParserCanFormatAndCombine()
+		{
+			var data = DateTime.UtcNow;
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}}", null, DefaultEncoding));
+			//this should compile as its valid but not work as the Default
+			//settings for DateTime are ToString(Arg) so it should return a string and not an object
+			Assert.Equal(string.Empty, resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+												   .Stringify(true, DefaultEncoding));
+		}
+
+		[Fact]
+		public void ParserChangeDefaultFormatter()
+		{
+			var data = DateTime.UtcNow;
+			var options = new ParserOptions("{{data(d).AnyInt}}", null, DefaultEncoding);
+			options.Formatters.Add(typeof(DateTime), (dt, arg) => new
+			{
+				Dt = dt,
+				AnyInt = 2
+			});
+			var resuts = Parser.ParseWithOptions(options);
+			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
+			Assert.Equal("2", resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+												   .Stringify(true, DefaultEncoding));
+		}
+
+		[Theory]
+		[InlineData("{{data(d))}}")]
+		[InlineData("{{data(d)ddd}}")]
+
+		[InlineData("{{data((d)}}")]
+		[InlineData("{{data((d))}}")]
+		[InlineData("{{data)}}")]
+		[InlineData("{{data(}}")]
+
+		public void ParserThrowsAnExceptionWhenFormatIsMismatched(string invalidTemplate)
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(invalidTemplate)));
+		}
+
+		[Theory]
 		[InlineData("{{#ACollection}}{{.}}{{/each}}")]
 		[InlineData("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}")]
 		[InlineData("{{/each}}")]
@@ -519,9 +574,11 @@ namespace Mustachio.Tests
 		[InlineData("{{]}}")]
 		[InlineData("{{)}}")]
 		[InlineData("{{(}}")]
+		[InlineData("{{()}}")]
 		[InlineData("{{~}}")]
 		[InlineData("{{$}}")]
 		[InlineData("{{%}}")]
+
 		public void ParserShouldThrowForInvalidPaths(string template)
 		{
 			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(template)));

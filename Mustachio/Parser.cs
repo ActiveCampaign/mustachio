@@ -136,7 +136,12 @@ namespace Mustachio
 			{
 				if (context != null)
 				{
-					HandleContent(context.Value?.ToString())(builder, context);
+					string value = null;
+					if (context.Value != null)
+					{
+						value = context.Value.ToString();
+					}
+					HandleContent(value)(builder, context);
 				}
 			};
 		}

@@ -107,7 +107,14 @@ namespace Mustachio
 		public static FormatTemplateElement DefaultToString = (value, formatArgument) => value.ToString();
 
 		public static FormatTemplateElement DefaultToStringWithFormatting = (value, formatArgument) =>
-			(value as IFormattable)?.ToString(formatArgument, null) ?? value.ToString();
+		{
+			if ((value is IFormattable))
+			{
+				return (value as IFormattable).ToString(formatArgument, null);
+			}
+			return value.ToString();
+		};
+
 
 		/// <summary>
 		/// The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)

@@ -50,6 +50,21 @@ We think the model inference feature is compelling, because it allows for error 
 In our use case (email templating), including partials would complicate the general process of creating the templates, and allow unknown users to create potentially unbound processing requirements on our servers. It is possible to detect these cycles while parsing templates, so, if this is important to our customers, or the broader OSS community, partial template support may be added to Mustachio in the future.
 
 
+###### Infos about new features
+ 
+Its now possible to add plain objects to the Dictionary.They will be called by reflection. Also you can now spezify the excact Size of the template to limit it (this could be come handy if you are in a hostet env). Also there is a new Operator {{?}}. Use it the access the current value direct. This will invoke ToString on the object in the current scope. Its good for cases where you are looping through a collection of primitives like:
+ 
+{{#each Data.ArrayOfInts}}
+Current int: {{?}}
+{{/each}}
+ 
+###### Formatter
+Use the ContextObject.PrintableTypes collection to create own formatter for your types or add one to the new ParserOptions object for just one call. To invoke them in your template use the new Function syntax:
+{{Just.One.Formattable(AnyStringFormat).Thing}}
 
+The formatter CAN return a new object on wich you can call new Propertys or it can return a string.
+There are formatter prepaired for all Primitve types. That means per default you can call on an object hat contains a DateTime:
+
+{{MyObject.DateTime(D)}}
 
 

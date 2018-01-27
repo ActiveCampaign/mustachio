@@ -5,6 +5,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions;
@@ -26,6 +27,33 @@ namespace Mustachio.Tests
 		internal static string EliminateWhitespace(this string subject)
 		{
 			return WHITESPACE_NORMALIZER.Replace(subject, "");
+		}
+	}
+
+	public class ParserCancellationional
+	{
+		private readonly CancellationTokenSource _tokenSource;
+		private string _valueCancel;
+
+		public ParserCancellationional(CancellationTokenSource tokenSource)
+		{
+			_tokenSource = tokenSource;
+			ValueA = nameof(ValueA);
+			ValueB = nameof(ValueB);
+			ValueCancel = nameof(ValueCancel);
+		}
+
+		public string ValueA { get; set; }
+		public string ValueB { get; set; }
+
+		public string ValueCancel
+		{
+			get
+			{
+				_tokenSource.Cancel();
+				return _valueCancel;
+			}
+			set { _valueCancel = value; }
 		}
 	}
 
@@ -88,6 +116,19 @@ namespace Mustachio.Tests
 		public void ParserCanProcessEachConstruct()
 		{
 			Parser.ParseWithOptions(new ParserOptions("{{#each ACollection}}{{.}}{{/each}}"));
+		}
+
+		[Fact]
+		public async Task TestCancelation()
+		{
+			var token = new CancellationTokenSource();
+			var model = new ParserCancellationional(token);
+			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data.ValueA}}{{data.ValueCancel}}{{data.ValueB}}", null, DefaultEncoding));
+			var template = extendedParseInformation.ParsedTemplateWithCancelation(new Dictionary<string, object>()
+			{
+				{"data", model}
+			}, token.Token).Stringify(true, DefaultEncoding);
+			Assert.Equal(model.ValueA + model.ValueCancel, template);
 		}
 
 		[Theory]

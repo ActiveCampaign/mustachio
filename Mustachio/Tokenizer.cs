@@ -247,7 +247,7 @@ namespace Mustachio
 		/// Specifies combnations of paths that don't work.
 		/// </summary>
 		//private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))|([()]{2,})|([)]\w+)|([(][\w]*$)|(^\w*[)])", RegexOptions.Singleline | RegexOptions.Compiled);
-		private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))", RegexOptions.Singleline | RegexOptions.Compiled);
+		private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))", RegexOptions.Singleline | RegexOptions.Compiled);
 		private static readonly Regex _positiveArgumentSpec = new Regex(@"(.+\(+[^()]\))", RegexOptions.Singleline | RegexOptions.Compiled);
 
 		private static string Validated(string token, string content, int index, ref int[] lines, ref List<IndexedParseException> exceptions)

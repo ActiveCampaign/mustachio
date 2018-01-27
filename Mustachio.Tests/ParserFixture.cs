@@ -131,6 +131,65 @@ namespace Mustachio.Tests
 			Assert.Equal(model.ValueA + model.ValueCancel, template);
 		}
 
+		class CollectionContextInfo
+		{
+			public int IndexProp { get; set; }
+			public bool FirstProp { get; set; }
+			public bool MiddelProp { get; set; }
+			public bool LastProp { get; set; }
+
+			public bool OddProp { get; set; }
+			public bool EvenProp { get; set; }
+
+			public override string ToString()
+			{
+				return $"{IndexProp},{FirstProp},{MiddelProp},{LastProp},{OddProp},{EvenProp}.";
+			}
+		}
+
+		[Fact]
+		public async Task TestCollectionContext()
+		{
+			var template = "{{#each data}}{{$index}},{{$first}},{{$middel}},{{$last}},{{$odd}},{{$even}}.{{/each}}";
+
+			var elementdata = new List<CollectionContextInfo>()
+			{
+				new CollectionContextInfo()
+				{
+					IndexProp = 0,
+					EvenProp = true,
+					OddProp = false,
+					LastProp = false,
+					FirstProp = true,
+					MiddelProp = false
+				},
+				new CollectionContextInfo()
+				{
+					IndexProp = 1,
+					EvenProp = false,
+					OddProp = true,
+					LastProp = false,
+					FirstProp = false,
+					MiddelProp = true
+				},
+				new CollectionContextInfo()
+				{
+					IndexProp = 2,
+					EvenProp = true,
+					OddProp = false,
+					LastProp = true,
+					FirstProp = false,
+					MiddelProp = false
+				},
+			};
+
+			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
+			var genTemplate = parsedTemplate.ParsedTemplate(new Dictionary<string, object>() {{"data", elementdata}})
+				.Stringify(true, DefaultEncoding);
+			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
+			Assert.Equal(realData, genTemplate);
+		}
+
 		[Theory]
 		[InlineData("d")]
 		[InlineData("D")]

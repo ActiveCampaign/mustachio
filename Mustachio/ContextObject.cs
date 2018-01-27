@@ -9,27 +9,86 @@ namespace Mustachio
 {
 	public delegate object FormatTemplateElement(object sourceObject, string argument);
 
+
+	public class ContextCollection : ContextObject
+	{
+		public ContextCollection(long index, bool last)
+		{
+			Index = index;
+			Last = last;
+		}
+
+		public long Index { get; private set; }
+		public bool Last { get; private set; }
+
+		protected override ContextObject HandlePathContext(Queue<string> elements, string path)
+		{
+			var innerContext = new ContextObject();
+			innerContext.Options = Options;
+			innerContext.Key = path;
+			innerContext.Parent = this;
+
+			object value = null;
+
+			if (path.Equals("$first"))
+			{
+				value = Index == 0;
+			}
+			else if (path.Equals("$index"))
+			{
+				value = Index;
+			}
+			else if (path.Equals("$middel"))
+			{
+				value = Index != 0 && !Last;
+			}
+			else if (path.Equals("$last"))
+			{
+				value = Last;
+			}
+			else if (path.Equals("$odd"))
+			{
+				value = Index % 2 != 0;
+			}
+			else if (path.Equals("$even"))
+			{
+				value = Index % 2 == 0;
+			}
+			innerContext.Value = value;
+			return value == null ? null : innerContext;
+		}
+	}
+
+
 	public class ContextObject
 	{
 		private static readonly Regex _pathFinder = new Regex("(\\.\\.[\\\\/]{1})|([^.]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
 		public ContextObject Parent { get; set; }
-
 		public object Value { get; set; }
-
 		public bool AbortGeneration { get; set; }
-
 		public string Key { get; set; }
 		public ParserOptions Options { get; set; }
 		public CancellationToken CancellationToken { get; set; }
+
+		protected virtual ContextObject HandlePathContext(Queue<string> elements, string currentElement)
+		{
+			return null;
+		}
 
 		private ContextObject GetContextForPath(Queue<String> elements)
 		{
 			var retval = this;
 			if (elements.Any())
 			{
-				var element = elements.Dequeue();
-				if (element.StartsWith(".."))
+				var path = elements.Dequeue();
+				var preHandeld = HandlePathContext(elements, path);
+				if (preHandeld != null)
+				{
+					return preHandeld;
+				}
+
+				if (path.StartsWith(".."))
 				{
 					if (Parent != null)
 					{
@@ -42,11 +101,11 @@ namespace Mustachio
 						retval = GetContextForPath(elements);
 					}
 				}
-				else if (element.Equals("?"))
+				else if (path.Equals("?"))
 				{
 					var innerContext = new ContextObject();
 					innerContext.Options = Options;
-					innerContext.Key = element;
+					innerContext.Key = path;
 					innerContext.Parent = this;
 					innerContext.Value = Value;
 					return innerContext;
@@ -57,18 +116,18 @@ namespace Mustachio
 					//ALWAYS return the context, even if the value is null.
 					var innerContext = new ContextObject();
 					innerContext.Options = Options;
-					innerContext.Key = element;
+					innerContext.Key = path;
 					innerContext.Parent = this;
 					var ctx = this.Value as IDictionary<string, object>;
 					if (ctx != null)
 					{
 						object o;
-						ctx.TryGetValue(element, out o);
+						ctx.TryGetValue(path, out o);
 						innerContext.Value = o;
 					}
 					else if (this.Value != null)
 					{
-						var propertyInfo = Value.GetType().GetProperty(element);
+						var propertyInfo = Value.GetType().GetProperty(path);
 						if (propertyInfo != null)
 						{
 							innerContext.Value = propertyInfo.GetValue(Value);
@@ -145,8 +204,8 @@ namespace Mustachio
 		private Type GetMostMatchingType(Type type)
 		{
 			return Options.Formatters.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key
-			       ?? (PrintableTypes.FirstOrDefault(e => e.Key == type).Key
-			           ?? PrintableTypes.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key);
+				   ?? (PrintableTypes.FirstOrDefault(e => e.Key == type).Key
+					   ?? PrintableTypes.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key);
 		}
 
 		private FormatTemplateElement GetMostMatchingFormatter(Type type)

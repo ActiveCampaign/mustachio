@@ -159,10 +159,15 @@ namespace Mustachio
 			};
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken, ParserOptions options, InferredTemplateModel currentScope)
+		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken, ParserOptions options, InferredTemplateModel scope)
 		{
 			return (builder, context) =>
 			{
+				if (scope != null)
+				{
+					scope = scope.GetInferredModelForPath(currentToken.Value, InferredTemplateModel.UsedAs.Scalar);
+				}
+
 				if (context != null)
 				{
 					var c = context.GetContextForPath(currentToken.Value);
@@ -291,18 +296,46 @@ namespace Mustachio
 				if (c.Value is IEnumerable && !(c.Value is string) && !(c.Value is IDictionary<string, object>))
 				{
 					var index = 0;
-					foreach (var i in c.Value as IEnumerable)
+					var enumumerator = ((IEnumerable)c.Value).GetEnumerator();
+					if (enumumerator.MoveNext())
 					{
-						var innerContext = new ContextObject
+						var current = enumumerator.Current;
+						object next;
+						do
 						{
-							Value = i,
-							Key = string.Format("[{0}]", index),
-							Options = options,
-							Parent = c
-						};
-						innerTemplate(builder, innerContext);
-						index++;
+							if (enumumerator.MoveNext())
+							{
+								next = enumumerator.Current;
+							}
+							else
+							{
+								next = null;
+							}
+							var innerContext = new ContextCollection(index, next == null)
+							{
+								Value = current,
+								Key = string.Format("[{0}]", index),
+								Options = options,
+								Parent = c
+							};
+							innerTemplate(builder, innerContext);
+							index++;
+							current = next;
+						} while (current != null);
 					}
+
+					//var collection = (c.Value as IEnumerable).Cast<object>().ToArray();
+					//for (int i = 0; i < collection.Length; i++)
+					//{
+					//	var innerContext = new ContextCollection(i, i == collection.Length)
+					//	{
+					//		Value = i,
+					//		Key = string.Format("[{0}]", i),
+					//		Options = options,
+					//		Parent = c
+					//	};
+					//	innerTemplate(builder, innerContext);
+					//}
 				}
 				else
 				{

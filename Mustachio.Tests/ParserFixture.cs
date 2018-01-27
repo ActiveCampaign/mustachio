@@ -676,7 +676,6 @@ namespace Mustachio.Tests
 		[InlineData("{{(}}")]
 		[InlineData("{{()}}")]
 		[InlineData("{{~}}")]
-		[InlineData("{{$}}")]
 		[InlineData("{{%}}")]
 
 		public void ParserShouldThrowForInvalidPaths(string template)

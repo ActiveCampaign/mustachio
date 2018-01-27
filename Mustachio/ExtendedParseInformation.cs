@@ -1,16 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace Mustachio
 {
-    /// <summary>
-    /// Provided when parsing a template and getting information about the embedded variables.
-    /// </summary>
-    public class ExtendedParseInformation
+	public delegate Stream TemplateGeneration(IDictionary<string, object> data);
+	/// <summary>
+	/// Provided when parsing a template and getting information about the embedded variables.
+	/// </summary>
+	public class ExtendedParseInformation
     {
-        public Func<IDictionary<string, object>, Stream> ParsedTemplate { get; set; }
+	    public TemplateGeneration ParsedTemplate
+	    {
+		    get { return data => ParsedTemplateWithCancelation(data, CancellationToken.None); }
+	    }
 
-        public InferredTemplateModel InferredModel { get; set; }
+	    public TemplateGenerationWithCancel ParsedTemplateWithCancelation { get; set; }
+
+		public InferredTemplateModel InferredModel { get; set; }
     }
 }

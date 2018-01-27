@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Mustachio
 {
@@ -16,8 +17,11 @@ namespace Mustachio
 
 		public object Value { get; set; }
 
+		public bool AbortGeneration { get; set; }
+
 		public string Key { get; set; }
 		public ParserOptions Options { get; set; }
+		public CancellationToken CancellationToken { get; set; }
 
 		private ContextObject GetContextForPath(Queue<String> elements)
 		{

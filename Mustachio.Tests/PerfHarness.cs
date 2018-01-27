@@ -61,7 +61,7 @@ namespace Mustachio.Tests
                 baseTemplate += model.Item2 + "\r\n";
             }
 
-            Func<IDictionary<string, object>, Stream> template = null;
+	        TemplateGeneration template = null;
 
             //make sure this class is JIT'd before we start timing.
             Parser.ParseWithOptions(new ParserOptions("asdf"));

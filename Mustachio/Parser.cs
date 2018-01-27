@@ -5,12 +5,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Web;
 
 #endregion
 
 namespace Mustachio
 {
+	public delegate Stream TemplateGenerationWithCancel(IDictionary<string, object> data, CancellationToken token);
+
 	/// <summary>
 	///     The main entry point for this library. Use the static "Parse" methods to create template functions.
 	///     Functions are safe for reuse, so you may parse and cache the resulting function.
@@ -45,7 +48,7 @@ namespace Mustachio
 			var inferredModel = new InferredTemplateModel();
 
 			var internalTemplate = Parse(tokens, parsingOptions, parsingOptions.WithModelInference ? inferredModel : null);
-			Func<IDictionary<string, object>, Stream> template = model =>
+			TemplateGenerationWithCancel template = (model, token) =>
 			{
 				using (var streamWriter = new StreamWriter(parsingOptions.SourceStream, parsingOptions.Encoding, BufferSize, true))
 				{
@@ -53,7 +56,8 @@ namespace Mustachio
 					{
 						Value = model,
 						Key = "",
-						Options = parsingOptions
+						Options = parsingOptions,
+						CancellationToken = token,
 					};
 					internalTemplate(streamWriter, context);
 					streamWriter.Flush();
@@ -64,7 +68,7 @@ namespace Mustachio
 			var result = new ExtendedParseInformation
 			{
 				InferredModel = inferredModel,
-				ParsedTemplate = template
+				ParsedTemplateWithCancelation = template
 			};
 
 			return result;
@@ -100,7 +104,7 @@ namespace Mustachio
 						// and if we're not, this should have been detected by the tokenizer!
 						return (builder, context) =>
 						{
-							foreach (var a in buildArray)
+							foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
 							{
 								a(builder, context);
 							}
@@ -123,11 +127,20 @@ namespace Mustachio
 
 			return (builder, context) =>
 			{
-				foreach (var a in buildArray)
+				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
 				{
 					a(builder, context);
 				}
 			};
+		}
+
+		private static bool StopOrAbortBuilding(ContextObject context)
+		{
+			if (context.AbortGeneration || context.CancellationToken.IsCancellationRequested)
+			{
+				return false;
+			}
+			return true;
 		}
 
 		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken, ParserOptions options, InferredTemplateModel currentScope)
@@ -199,7 +212,6 @@ namespace Mustachio
 			var sourceCount = builder.BaseStream.Length;
 			var binaryContent = context.Options.Encoding.GetBytes(content);
 
-
 			var cl = binaryContent.Length;
 			if (context.Options.MaxSize == 0)
 			{
@@ -209,6 +221,7 @@ namespace Mustachio
 
 			if (sourceCount >= context.Options.MaxSize - 1)
 			{
+				context.AbortGeneration = true;
 				return;
 			}
 			var overflow = sourceCount + cl - context.Options.MaxSize;

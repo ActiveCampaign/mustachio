@@ -34,14 +34,9 @@ namespace Mustachio
 				throw new ArgumentNullException("parsingOptions");
 			}
 
-			if (parsingOptions.SourceStream == null)
+			if (parsingOptions.SourceFactory == null)
 			{
 				throw new ArgumentNullException("parsingOptions", "The given Stream is null");
-			}
-
-			if (!parsingOptions.SourceStream.CanWrite)
-			{
-				throw new InvalidOperationException("The stream is ReadOnly");
 			}
 
 			var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(parsingOptions.Template));
@@ -50,7 +45,13 @@ namespace Mustachio
 			var internalTemplate = Parse(tokens, parsingOptions, parsingOptions.WithModelInference ? inferredModel : null);
 			TemplateGenerationWithCancel template = (model, token) =>
 			{
-				using (var streamWriter = new StreamWriter(parsingOptions.SourceStream, parsingOptions.Encoding, BufferSize, true))
+				var sourceStream = parsingOptions.SourceFactory();
+				if (!sourceStream.CanWrite)
+				{
+					throw new InvalidOperationException("The stream is ReadOnly");
+				}
+
+				using (var streamWriter = new StreamWriter(sourceStream, parsingOptions.Encoding, BufferSize, true))
 				{
 					var context = new ContextObject
 					{
@@ -62,7 +63,7 @@ namespace Mustachio
 					internalTemplate(streamWriter, context);
 					streamWriter.Flush();
 				}
-				return parsingOptions.SourceStream;
+				return sourceStream;
 			};
 
 			var result = new ExtendedParseInformation

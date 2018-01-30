@@ -11,25 +11,48 @@ namespace Mustachio
 	public class ParserOptions
 	{
 		public ParserOptions(string template)
-			: this(template, null)
+			: this(template, (Func<Stream>)null)
 		{
 		}
 
-		public ParserOptions(string template, Stream sourceStream)
+		//public ParserOptions(string template, Stream sourceStream)
+		//	: this(template, () => sourceStream, null)
+		//{
+		//}
+
+		//public ParserOptions(string template, Stream sourceStream, Encoding encoding)
+		//	: this(template, () => sourceStream, encoding)
+		//{
+
+		//}
+
+		//public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
+		//	: this(template, () => sourceStream, encoding, maxSize, disableContentEscaping, withModelInference)
+		//{
+
+		//}
+
+		//public ParserOptions(string template, Stream sourceStream, Encoding encoding, bool disableContentEscaping = false, bool withModelInference = false)
+		//	: this(template, () => sourceStream, encoding, 0, disableContentEscaping, withModelInference)
+		//{
+
+		//}
+
+		public ParserOptions(string template, Func<Stream> sourceStream)
 			: this(template, sourceStream, null)
 		{
 		}
 
-		public ParserOptions(string template, Stream sourceStream, Encoding encoding)
+		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding)
 		{
 			Template = template;
-			SourceStream = sourceStream ?? new MemoryStream();
+			SourceFactory = sourceStream ?? new Func<Stream>(() => new MemoryStream());
 			Encoding = encoding ?? Encoding.UTF8;
 			Formatters = new Dictionary<Type, FormatTemplateElement>();
 			Null = string.Empty;
 		}
 
-		public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
+		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
 			: this(template, sourceStream, encoding)
 		{
 			MaxSize = maxSize;
@@ -37,7 +60,7 @@ namespace Mustachio
 			WithModelInference = withModelInference;
 		}
 
-		public ParserOptions(string template, Stream sourceStream, Encoding encoding, bool disableContentEscaping = false, bool withModelInference = false)
+		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding, bool disableContentEscaping = false, bool withModelInference = false)
 			: this(template, sourceStream, encoding, 0, disableContentEscaping, withModelInference)
 		{
 
@@ -72,11 +95,16 @@ namespace Mustachio
 		public long MaxSize { get; private set; }
 
 
+		///// <summary>
+		///// The target Stream that should be targeted for writing the Template
+		///// Default is an Empty MemoryStream
+		///// </summary>
+		//public Stream SourceStream { get; private set; }
+
 		/// <summary>
-		/// The target Stream that should be targeted for writing the Template
-		/// Default is an Empty MemoryStream
+		/// If no static SourceStream is used the SourceFactory can be used to create a new stream for each template
 		/// </summary>
-		public Stream SourceStream { get; private set; }
+		public Func<Stream> SourceFactory { get; private set; }
 
 		/// <summary>
 		/// In what encoding should the text be written

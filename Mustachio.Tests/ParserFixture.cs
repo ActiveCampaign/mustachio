@@ -38,9 +38,9 @@ namespace Mustachio.Tests
 		public ParserCancellationional(CancellationTokenSource tokenSource)
 		{
 			_tokenSource = tokenSource;
-			ValueA = nameof(ValueA);
-			ValueB = nameof(ValueB);
-			ValueCancel = nameof(ValueCancel);
+			ValueA = "ValueA";
+			ValueB = "ValueB";
+			ValueCancel = "ValueCancel";
 		}
 
 		public string ValueA { get; set; }

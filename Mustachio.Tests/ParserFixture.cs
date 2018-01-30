@@ -143,7 +143,7 @@ namespace Mustachio.Tests
 
 			public override string ToString()
 			{
-				return $"{IndexProp},{FirstProp},{MiddelProp},{LastProp},{OddProp},{EvenProp}.";
+				return string.Format("{0},{1},{2},{3},{4},{5}.", IndexProp, FirstProp, MiddelProp, LastProp, OddProp, EvenProp);
 			}
 		}
 

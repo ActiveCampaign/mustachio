@@ -3,7 +3,7 @@
 namespace Mustachio
 {
     /// <summary>
-    /// Indicates a parse error including line and character info. 
+    /// Indicates a parse error including line and character info.
     /// </summary>
     public class IndexedParseException : ParseException
     {
@@ -19,8 +19,13 @@ namespace Mustachio
         {
 
         }
-
+		/// <summary>
+		/// The line of the expression in the expression
+		/// </summary>
         public int LineNumber { get; set; }
+		/// <summary>
+		/// The character from left in the line of the expression
+		/// </summary>
         public int CharacterOnLine { get; set; }
     }
 }

@@ -42,6 +42,7 @@
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ContextCollection.cs" />
     <Compile Include="ContextObject.cs" />
     <Compile Include="ExtendedParseInformation.cs" />
     <Compile Include="InferredTemplateModel.cs" />

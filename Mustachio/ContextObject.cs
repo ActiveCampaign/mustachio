@@ -7,70 +7,57 @@ using System.Threading;
 
 namespace Mustachio
 {
+	/// <summary>
+	/// delegate for formatting template pars
+	/// </summary>
+	/// <param name="sourceObject">the object that this formatter should be applyed to</param>
+	/// <param name="argument">the string argument as given in the template</param>
+	/// <returns>a new object or the same object or a string</returns>
 	public delegate object FormatTemplateElement(object sourceObject, string argument);
 
-
-	public class ContextCollection : ContextObject
-	{
-		public ContextCollection(long index, bool last)
-		{
-			Index = index;
-			Last = last;
-		}
-
-		public long Index { get; private set; }
-		public bool Last { get; private set; }
-
-		protected override ContextObject HandlePathContext(Queue<string> elements, string path)
-		{
-			var innerContext = new ContextObject();
-			innerContext.Options = Options;
-			innerContext.Key = path;
-			innerContext.Parent = this;
-
-			object value = null;
-
-			if (path.Equals("$first"))
-			{
-				value = Index == 0;
-			}
-			else if (path.Equals("$index"))
-			{
-				value = Index;
-			}
-			else if (path.Equals("$middel"))
-			{
-				value = Index != 0 && !Last;
-			}
-			else if (path.Equals("$last"))
-			{
-				value = Last;
-			}
-			else if (path.Equals("$odd"))
-			{
-				value = Index % 2 != 0;
-			}
-			else if (path.Equals("$even"))
-			{
-				value = Index % 2 == 0;
-			}
-			innerContext.Value = value;
-			return value == null ? null : innerContext;
-		}
-	}
-
-
+	/// <summary>
+	/// The current context for any given expression
+	/// </summary>
 	public class ContextObject
 	{
 		private static readonly Regex _pathFinder = new Regex("(\\.\\.[\\\\/]{1})|([^.]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
+		/// <summary>
+		/// The parent of the current context or null if its the root context
+		/// </summary>
 		public ContextObject Parent { get; set; }
+
+		/// <summary>
+		/// The evaluated value of the expression
+		/// </summary>
 		public object Value { get; set; }
+
+		/// <summary>
+		/// is an abort currenty requested
+		/// </summary>
 		public bool AbortGeneration { get; set; }
+		/// <summary>
+		/// The name of the property or key inside the value or indexer expression for lists
+		/// </summary>
 		public string Key { get; set; }
+
+		/// <summary>
+		/// With what options are the template currently is running
+		/// </summary>
 		public ParserOptions Options { get; set; }
+
+		/// <summary>
+		///
+		/// </summary>
 		public CancellationToken CancellationToken { get; set; }
 
+		/// <summary>
+		/// if overwritten by a class it returns a context object for any non standard key or operation.
+		/// if non of that <value>null</value>
+		/// </summary>
+		/// <param name="elements"></param>
+		/// <param name="currentElement"></param>
+		/// <returns></returns>
 		protected virtual ContextObject HandlePathContext(Queue<string> elements, string currentElement)
 		{
 			return null;
@@ -118,14 +105,14 @@ namespace Mustachio
 					innerContext.Options = Options;
 					innerContext.Key = path;
 					innerContext.Parent = this;
-					var ctx = this.Value as IDictionary<string, object>;
+					var ctx = Value as IDictionary<string, object>;
 					if (ctx != null)
 					{
 						object o;
 						ctx.TryGetValue(path, out o);
 						innerContext.Value = o;
 					}
-					else if (this.Value != null)
+					else if (Value != null)
 					{
 						var propertyInfo = Value.GetType().GetProperty(path);
 						if (propertyInfo != null)
@@ -163,19 +150,17 @@ namespace Mustachio
 				Value as string != String.Empty &&
 				// We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
 				// OR if it IS an enumerable and .Any() returns true, then it exists as well
-				(Value as IEnumerable == null || (Value as IEnumerable).Cast<object>().Any()
+				(!(Value is IEnumerable) || ((IEnumerable) Value).Cast<object>().Any()
 				);
 		}
 
-		public static FormatTemplateElement DefaultToString = (value, formatArgument) => value.ToString();
-
+		/// <summary>
+		/// The default to string operator for any PrintableType
+		/// </summary>
 		public static FormatTemplateElement DefaultToStringWithFormatting = (value, formatArgument) =>
 		{
-			if ((value is IFormattable))
-			{
-				return (value as IFormattable).ToString(formatArgument, null);
-			}
-			return value.ToString();
+			var o = value as IFormattable;
+			return o != null ? o.ToString(formatArgument, null) : value.ToString();
 		};
 
 
@@ -186,7 +171,7 @@ namespace Mustachio
 		/// </summary>
 		public static Dictionary<Type, FormatTemplateElement> PrintableTypes = new Dictionary<Type, FormatTemplateElement>()
 		{
-			{typeof(IFormattable), (value, formatArgument) => (value as IFormattable).ToString(formatArgument, null)},
+			{typeof(IFormattable), (value, formatArgument) => ((IFormattable) value).ToString(formatArgument, null)},
 			{typeof(string), DefaultToStringWithFormatting},
 			{typeof(bool), DefaultToStringWithFormatting},
 			{typeof(char), DefaultToStringWithFormatting},

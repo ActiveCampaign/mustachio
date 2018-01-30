@@ -147,15 +147,16 @@ namespace Mustachio
 		{
 			return (builder, context) =>
 			{
-				if (context != null)
+				if (context == null)
 				{
-					string value = null;
-					if (context.Value != null)
-					{
-						value = context.Value.ToString();
-					}
-					HandleContent(value)(builder, context);
+					return;
 				}
+				string value = null;
+				if (context.Value != null)
+				{
+					value = context.Value.ToString();
+				}
+				HandleContent(value)(builder, context);
 			};
 		}
 
@@ -168,11 +169,12 @@ namespace Mustachio
 					scope = scope.GetInferredModelForPath(currentToken.Value, InferredTemplateModel.UsedAs.Scalar);
 				}
 
-				if (context != null)
+				if (context == null)
 				{
-					var c = context.GetContextForPath(currentToken.Value);
-					context.Value = c.Format(currentToken.FormatAs);
+					return;
 				}
+				var c = context.GetContextForPath(currentToken.Value);
+				context.Value = c.Format(currentToken.FormatAs);
 			};
 		}
 

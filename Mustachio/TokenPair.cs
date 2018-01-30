@@ -18,7 +18,6 @@ namespace Mustachio
         CollectionOpen,
         CollectionClose,
 		Format,
-	    StoreFormatted,
 	    PrintFormatted,
 		PrintSelf
     }

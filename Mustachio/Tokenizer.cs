@@ -20,7 +20,8 @@ namespace Mustachio
 		private static readonly Regex _tokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
 			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
 
-		private static readonly Regex _formatFinder = new Regex(@"(\w[^.(]*)+(?:(?:\(){1}(\w)(?:\)){1})?(\.|$){1}");
+		private static readonly Regex _formatFinder = new Regex(@"(?:(\w+|\s+|\d+)[^.(]*)+(?:(?:\(){1}(\w*)(?:\)){1})?(?:\.|$){1}");
+		private static readonly Regex _formatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
 
 		private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);
 
@@ -170,7 +171,7 @@ namespace Mustachio
 				{
 					//unsingle value.
 					var token = m.Value.TrimStart('{').TrimEnd('}').Trim();
-					if (new Regex(@"(?:\(){1}(\w)(?:\)){1}").IsMatch(token))
+					if (_formatInExpressionFinder.IsMatch(token))
 					{
 						var tokesHandeld = 0;
 						foreach (Match tokenFormats in _formatFinder.Matches(token))

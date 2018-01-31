@@ -23,7 +23,7 @@ namespace Mustachio
 		private const int BufferSize = 2042;
 
 		/// <summary>
-		///	Parses the Template with the given options
+		///     Parses the Template with the given options
 		/// </summary>
 		/// <param name="parsingOptions">a set of options</param>
 		/// <returns></returns>
@@ -58,7 +58,7 @@ namespace Mustachio
 						Value = model,
 						Key = "",
 						Options = parsingOptions,
-						CancellationToken = token,
+						CancellationToken = token
 					};
 					internalTemplate(streamWriter, context);
 					streamWriter.Flush();
@@ -144,7 +144,8 @@ namespace Mustachio
 			return true;
 		}
 
-		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken, ParserOptions options, InferredTemplateModel currentScope)
+		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken, ParserOptions options,
+			InferredTemplateModel currentScope)
 		{
 			return (builder, context) =>
 			{
@@ -161,7 +162,8 @@ namespace Mustachio
 			};
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken, ParserOptions options, InferredTemplateModel scope)
+		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken,
+			ParserOptions options, InferredTemplateModel scope)
 		{
 			return (builder, context) =>
 			{
@@ -275,6 +277,7 @@ namespace Mustachio
 			};
 		}
 
+
 		private static Action<StreamWriter, ContextObject> HandleCollectionOpen(TokenPair token, Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
@@ -299,7 +302,7 @@ namespace Mustachio
 				if (c.Value is IEnumerable && !(c.Value is string) && !(c.Value is IDictionary<string, object>))
 				{
 					var index = 0;
-					var enumumerator = ((IEnumerable)c.Value).GetEnumerator();
+					var enumumerator = ((IEnumerable) c.Value).GetEnumerator();
 					if (enumumerator.MoveNext())
 					{
 						var current = enumumerator.Current;
@@ -326,19 +329,6 @@ namespace Mustachio
 							current = next;
 						} while (current != null);
 					}
-
-					//var collection = (c.Value as IEnumerable).Cast<object>().ToArray();
-					//for (int i = 0; i < collection.Length; i++)
-					//{
-					//	var innerContext = new ContextCollection(i, i == collection.Length)
-					//	{
-					//		Value = i,
-					//		Key = string.Format("[{0}]", i),
-					//		Options = options,
-					//		Parent = c
-					//	};
-					//	innerTemplate(builder, innerContext);
-					//}
 				}
 				else
 				{

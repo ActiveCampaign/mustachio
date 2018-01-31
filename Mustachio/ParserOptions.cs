@@ -15,29 +15,6 @@ namespace Mustachio
 		{
 		}
 
-		//public ParserOptions(string template, Stream sourceStream)
-		//	: this(template, () => sourceStream, null)
-		//{
-		//}
-
-		//public ParserOptions(string template, Stream sourceStream, Encoding encoding)
-		//	: this(template, () => sourceStream, encoding)
-		//{
-
-		//}
-
-		//public ParserOptions(string template, Stream sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
-		//	: this(template, () => sourceStream, encoding, maxSize, disableContentEscaping, withModelInference)
-		//{
-
-		//}
-
-		//public ParserOptions(string template, Stream sourceStream, Encoding encoding, bool disableContentEscaping = false, bool withModelInference = false)
-		//	: this(template, () => sourceStream, encoding, 0, disableContentEscaping, withModelInference)
-		//{
-
-		//}
-
 		public ParserOptions(string template, Func<Stream> sourceStream)
 			: this(template, sourceStream, null)
 		{
@@ -70,6 +47,19 @@ namespace Mustachio
 		/// Adds an Formatter overwrite or new Formatter for an Type
 		/// </summary>
 		public IDictionary<Type, FormatTemplateElement> Formatters { get; private set; }
+
+		public void AddFormatter<T>(Func<T, string, object> formatter)
+		{
+			Formatters.Add(typeof(T), (sourceObject, argument) =>
+			{
+				if (!(sourceObject is T))
+				{
+					return sourceObject;
+				}
+
+				return formatter((T) sourceObject, argument);
+			});
+		}
 
 		/// <summary>
 		///		The template content to parse.

@@ -51,6 +51,8 @@ namespace Mustachio
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; }
 
+		public string FormatAs { get; set; }
+
 		/// <summary>
 		/// if overwritten by a class it returns a context object for any non standard key or operation.
 		/// if non of that <value>null</value>
@@ -94,7 +96,7 @@ namespace Mustachio
 					innerContext.Options = Options;
 					innerContext.Key = path;
 					innerContext.Parent = this;
-					innerContext.Value = Value;
+					innerContext.Value = CallMostMatchingFormatterForFormatter(Value.GetType(), FormatAs, Value);
 					return innerContext;
 				}
 				//TODO: handle array accessors and maybe "special" keys.
@@ -188,30 +190,71 @@ namespace Mustachio
 
 		private Type GetMostMatchingType(Type type)
 		{
-			return Options.Formatters.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key
-				   ?? (PrintableTypes.FirstOrDefault(e => e.Key == type).Key
-					   ?? PrintableTypes.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key);
+			if (Options.Formatters.FirstOrDefault(e => e.Key == type).Key != null)
+			{
+				return Options.Formatters.FirstOrDefault(e => e.Key == type).Key;
+			}
+			else
+			{
+				if (Options.Formatters.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key != null)
+				{
+					return Options.Formatters.FirstOrDefault(e => { return e.Key != null && e.Key.IsAssignableFrom(type); }).Key;
+				}
+				if (PrintableTypes.FirstOrDefault(e => e.Key == type).Key != null)
+				{
+					return PrintableTypes.FirstOrDefault(e => e.Key == type).Key;
+				}
+				else
+				{
+					return PrintableTypes.FirstOrDefault(e => { return e.Key != null && e.Key.IsAssignableFrom(type); }).Key;
+				}
+			}
 		}
 
 		private FormatTemplateElement GetMostMatchingFormatter(Type type)
 		{
+			if (type == null)
+			{
+				return null;
+			}
+
 			FormatTemplateElement formatter;
 			if (Options.Formatters.TryGetValue(type, out formatter))
 			{
 				return formatter;
 			}
 
-			return PrintableTypes.FirstOrDefault(e => e.Key == type).Value;
+			if (PrintableTypes.TryGetValue(type, out formatter))
+			{
+				return formatter;
+			}
+
+			return null;
+		}
+
+		private object CallMostMatchingFormatterForFormatter(Type type, string arguments, object value)
+		{
+			if (string.IsNullOrWhiteSpace(arguments))
+			{
+				return value;
+			}
+
+			return CallMostMatchingFormatter(type, arguments, value);
 		}
 
 		private object CallMostMatchingFormatter(Type type, string arguments)
 		{
+			return CallMostMatchingFormatter(type, arguments, Value);
+		}
+
+		private object CallMostMatchingFormatter(Type type, string arguments, object value)
+		{
 			var hasFormatter = GetMostMatchingFormatter(type);
 			if (hasFormatter == null)
 			{
-				return Value;
+				return value;
 			}
-			return hasFormatter(Value, arguments);
+			return hasFormatter(value, arguments);
 		}
 
 		public override string ToString()
@@ -219,7 +262,7 @@ namespace Mustachio
 			var retval = Value;
 			if (Value != null)
 			{
-				retval = CallMostMatchingFormatter(GetMostMatchingType(Value.GetType()), null);
+				retval = CallMostMatchingFormatter(GetMostMatchingType(Value.GetType()), FormatAs);
 			}
 			return retval.ToString();
 		}
@@ -232,6 +275,11 @@ namespace Mustachio
 				retval = CallMostMatchingFormatter(GetMostMatchingType(Value.GetType()), argument);
 			}
 			return retval;
+		}
+
+		public bool IsFormattable()
+		{
+			return !string.IsNullOrWhiteSpace(FormatAs);
 		}
 	}
 }

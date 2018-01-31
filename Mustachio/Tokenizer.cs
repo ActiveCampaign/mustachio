@@ -25,18 +25,19 @@ namespace Mustachio
 
 		private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);
 
-		private static CharacterLocation HumanizeCharacterLocation(string content, int characterIndex, ref int[] lines)
+		private static CharacterLocation HumanizeCharacterLocation(string content, int characterIndex, List<int> lines)
 		{
 			if (lines == null)
 			{
-				lines = _newlineFinder.Matches(content).OfType<Match>().Select(k => k.Index).ToArray();
+				lines = new List<int>();
+				lines.AddRange(_newlineFinder.Matches(content).OfType<Match>().Select(k => k.Index));
 			}
-			var line = Array.BinarySearch(lines, characterIndex);
+			var line = Array.BinarySearch(lines.ToArray(), characterIndex);
 			line = line < 0 ? ~line : line;
 
 			var charIdx = characterIndex;
 			//in both of these cases, we want to increment the char index by one to account for the '\n' that is skipped in the indexes.
-			if (line < lines.Length && line > 0)
+			if (line < lines.Count && line > 0)
 			{
 				charIdx = characterIndex - (lines[line - 1] + 1);
 			}
@@ -54,6 +55,30 @@ namespace Mustachio
 			return retval;
 		}
 
+		private static IEnumerable<TokenPair> TokenizeFormattables(string token, string templateString, Match m, List<int> lines, List<IndexedParseException> parseErrors)
+		{
+			var tokesHandeld = 0;
+			foreach (Match tokenFormats in _formatFinder.Matches(token))
+			{
+				var found = tokenFormats.Groups[0].Value;
+				var scalarValue = tokenFormats.Groups[1].Value;
+				var formatterArgument = tokenFormats.Groups[2].Value;
+				tokesHandeld += found.Trim().Length;
+				if (string.IsNullOrWhiteSpace(formatterArgument))
+				{
+					yield return new TokenPair(TokenType.Format, Validated(scalarValue, templateString, m.Index, lines, parseErrors));
+				}
+				else
+				{
+					yield return new TokenPair(TokenType.Format, ValidateArgumentHead(scalarValue, formatterArgument, found.TrimEnd('.'), templateString, m.Index, lines, parseErrors)) { FormatAs = formatterArgument };
+				}
+			}
+			if (tokesHandeld != token.Length)
+			{
+				yield return new TokenPair(TokenType.Format, Validated(token.Substring(tokesHandeld), templateString, m.Index, lines, parseErrors));
+			}
+		}
+
 		public static IEnumerable<TokenPair> Tokenize(string templateString)
 		{
 			templateString = templateString ?? "";
@@ -63,7 +88,7 @@ namespace Mustachio
 			var idx = 0;
 
 			var parseErrors = new List<IndexedParseException>();
-			int[] lines = null;
+			var lines = new List<int>();
 
 			foreach (Match m in matches)
 			{
@@ -80,11 +105,25 @@ namespace Mustachio
 
 					if (token.StartsWith(" ") && token.Trim() != "")
 					{
-						yield return new TokenPair(TokenType.CollectionOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors).Trim());
+						token = token.Trim();
+						if (_formatInExpressionFinder.IsMatch(token))
+						{
+							TokenPair lastToken = null;
+							foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines, parseErrors))
+							{
+								yield return tokenizeFormattable;
+							}
+
+							yield return new TokenPair(TokenType.CollectionOpen, ".");
+						}
+						else
+						{
+							yield return new TokenPair(TokenType.CollectionOpen, Validated(token, templateString, m.Index, lines, parseErrors).Trim());
+						}
 					}
 					else
 					{
-						var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
 						parseErrors.Add(new IndexedParseException(location, @"The 'each' block being opened requires a model path to be specified in the form '{{{{#each <name>}}}}'."));
 					}
 				}
@@ -92,7 +131,7 @@ namespace Mustachio
 				{
 					if (m.Value != "{{/each}}")
 					{
-						var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
 						parseErrors.Add(new IndexedParseException(location, @"The syntax to close the 'each' block should be: '{{{{/each}}}}'."));
 					}
 					else if (scopestack.Any() && scopestack.Peek().Item1.StartsWith("{{#each"))
@@ -102,7 +141,7 @@ namespace Mustachio
 					}
 					else
 					{
-						var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
 						parseErrors.Add(new IndexedParseException(location, @"An 'each' block is being closed, but no corresponding opening element ('{{{{#each <name>}}}}') was detected."));
 					}
 				}
@@ -114,14 +153,14 @@ namespace Mustachio
 
 					if (scopestack.Any() && scopestack.Peek().Item1 == token)
 					{
-						yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+						yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, lines, parseErrors));
 					}
 					else
 					{
 						scopestack.Push(Tuple.Create(token, m.Index));
 					}
 
-					yield return new TokenPair(TokenType.ElementOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+					yield return new TokenPair(TokenType.ElementOpen, Validated(token, templateString, m.Index, lines, parseErrors));
 				}
 				else if (m.Value.StartsWith("{{^"))
 				{
@@ -130,13 +169,13 @@ namespace Mustachio
 
 					if (scopestack.Any() && scopestack.Peek().Item1 == token)
 					{
-						yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+						yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, lines, parseErrors));
 					}
 					else
 					{
 						scopestack.Push(Tuple.Create(token, m.Index));
 					}
-					yield return new TokenPair(TokenType.InvertedElementOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+					yield return new TokenPair(TokenType.InvertedElementOpen, Validated(token, templateString, m.Index, lines, parseErrors));
 				}
 				else if (m.Value.StartsWith("{{/"))
 				{
@@ -145,11 +184,11 @@ namespace Mustachio
 					if (scopestack.Any() && scopestack.Peek().Item1 == token)
 					{
 						scopestack.Pop();
-						yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+						yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, lines, parseErrors));
 					}
 					else
 					{
-						var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
 						parseErrors.Add(new IndexedParseException(location, "It appears that open and closing elements are mismatched."));
 					}
 				}
@@ -157,7 +196,7 @@ namespace Mustachio
 				{
 					//escaped single element
 					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('&').Trim();
-					yield return new TokenPair(TokenType.UnescapedSingleValue, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+					yield return new TokenPair(TokenType.UnescapedSingleValue, Validated(token, templateString, m.Index, lines, parseErrors));
 				}
 				else if (m.Value.StartsWith("{{!"))
 				{
@@ -173,32 +212,16 @@ namespace Mustachio
 					var token = m.Value.TrimStart('{').TrimEnd('}').Trim();
 					if (_formatInExpressionFinder.IsMatch(token))
 					{
-						var tokesHandeld = 0;
-						foreach (Match tokenFormats in _formatFinder.Matches(token))
+						foreach (var tokenizeFormattable in TokenizeFormattables(token,templateString,m,lines,parseErrors))
 						{
-							var found = tokenFormats.Groups[0].Value;
-							var scalarValue = tokenFormats.Groups[1].Value;
-							var formatterArgument = tokenFormats.Groups[2].Value;
-							tokesHandeld += found.Trim().Length;
-							if (string.IsNullOrWhiteSpace(formatterArgument))
-							{
-								yield return new TokenPair(TokenType.Format, Validated(scalarValue, templateString, m.Index, ref lines, ref parseErrors));
-							}
-							else
-							{
-								yield return new TokenPair(TokenType.Format, ValidateArgumentHead(scalarValue, found.TrimEnd('.'), templateString, m.Index, ref lines, ref parseErrors)) { FormatAs = formatterArgument };
-							}
-						}
-						if (tokesHandeld != token.Length)
-						{
-							yield return new TokenPair(TokenType.Format, Validated(token.Substring(tokesHandeld), templateString, m.Index, ref lines, ref parseErrors));
+							yield return tokenizeFormattable;
 						}
 
 						yield return new TokenPair(TokenType.PrintFormatted, null);
 					}
 					else
 					{
-						yield return new TokenPair(TokenType.EscapedSingleValue, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+						yield return new TokenPair(TokenType.EscapedSingleValue, Validated(token, templateString, m.Index, lines, parseErrors));
 					}
 				}
 
@@ -221,7 +244,7 @@ namespace Mustachio
 					{
 						value = value.Substring(5);
 					}
-					return new { scope = value, location = HumanizeCharacterLocation(templateString, k.Item2, ref lines) };
+					return new { scope = value, location = HumanizeCharacterLocation(templateString, k.Item2, lines) };
 				}).Reverse()
 				.ToArray();
 
@@ -249,29 +272,35 @@ namespace Mustachio
 		/// </summary>
 		//private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))|([()]{2,})|([)]\w+)|([(][\w]*$)|(^\w*[)])", RegexOptions.Singleline | RegexOptions.Compiled);
 		private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))", RegexOptions.Singleline | RegexOptions.Compiled);
-		private static readonly Regex _positiveArgumentSpec = new Regex(@"(\([^()]*\))", RegexOptions.Singleline | RegexOptions.Compiled);
+		private static readonly Regex _positiveArgumentSpec = new Regex(@"^([^()]*)$", RegexOptions.Singleline | RegexOptions.Compiled);
+		//private static readonly Regex _positiveArgumentSpec = new Regex(@"(\({1}[^()]*\){1})(?:\.|$){1}", RegexOptions.Singleline | RegexOptions.Compiled);
+		//private static readonly Regex _positiveArgumentSpec = new Regex(@"(\([^()]*\))", RegexOptions.Singleline | RegexOptions.Compiled);
 
-		private static string Validated(string token, string content, int index, ref int[] lines, ref List<IndexedParseException> exceptions)
+		private static string Validated(string token, string content, int index, List<int> lines, List<IndexedParseException> exceptions)
 		{
 			token = token.Trim();
 
 			if (_negativePathSpec.Match(token).Success)
 			{
-				var location = HumanizeCharacterLocation(content, index, ref lines);
+				var location = HumanizeCharacterLocation(content, index, lines);
 				exceptions.Add(new IndexedParseException(location, "The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
 			}
 			return token;
 		}
 
-		private static string ValidateArgumentHead(string token, string fullToken, string content, int index, ref int[] lines, ref List<IndexedParseException> exceptions)
+		private static string ValidateArgumentHead(string token, string argument, string fullToken, string content, int index, List<int> lines, List<IndexedParseException> exceptions)
 		{
 			token = token.Trim();
 
-			if (!_positiveArgumentSpec.Match(fullToken).Success)
+			Validated(token, content, index, lines, exceptions);
+
+			if (!_positiveArgumentSpec.Match(argument).Success)
 			{
-				var location = HumanizeCharacterLocation(content, index, ref lines);
+				var location = HumanizeCharacterLocation(content, index, lines);
 				exceptions.Add(new IndexedParseException(location, "The argument '{0}' is not valid. Please see documentation for examples of valid paths.", token));
 			}
+
+
 			return token;
 		}
 	}

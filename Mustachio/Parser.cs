@@ -156,7 +156,7 @@ namespace Mustachio
 				string value = null;
 				if (context.Value != null)
 				{
-					value = context.Value.ToString();
+					value = context.ToString();
 				}
 				HandleContent(value)(builder, context);
 			};
@@ -176,6 +176,7 @@ namespace Mustachio
 				{
 					return;
 				}
+
 				var c = context.GetContextForPath(currentToken.Value);
 				context.Value = c.Format(currentToken.FormatAs);
 			};

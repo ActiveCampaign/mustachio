@@ -195,6 +195,7 @@ namespace Mustachio.Tests
 		[InlineData("D")]
 		[InlineData("f")]
 		[InlineData("F")]
+		[InlineData("dd,,MM,,YYYY")]
 		public void ParserCanFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;

@@ -20,7 +20,7 @@ namespace Mustachio
 		private static readonly Regex _tokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
 			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
 
-		private static readonly Regex _formatFinder = new Regex(@"(?:(\w+|\s+|\d+)[^.(]*)+(?:(?:\(){1}(\w*)(?:\)){1})?(?:\.|$){1}");
+		private static readonly Regex _formatFinder = new Regex(@"(?:(\w+)[^.(]*)+(?:(?:\(){1}(.*)(?:\)){1})?(?:\.|$){1}");
 		private static readonly Regex _formatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
 
 		private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);
@@ -249,7 +249,7 @@ namespace Mustachio
 		/// </summary>
 		//private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))|([()]{2,})|([)]\w+)|([(][\w]*$)|(^\w*[)])", RegexOptions.Singleline | RegexOptions.Compiled);
 		private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))", RegexOptions.Singleline | RegexOptions.Compiled);
-		private static readonly Regex _positiveArgumentSpec = new Regex(@"(.+\(+[^()]\))", RegexOptions.Singleline | RegexOptions.Compiled);
+		private static readonly Regex _positiveArgumentSpec = new Regex(@"(\([^()]*\))", RegexOptions.Singleline | RegexOptions.Compiled);
 
 		private static string Validated(string token, string content, int index, ref int[] lines, ref List<IndexedParseException> exceptions)
 		{

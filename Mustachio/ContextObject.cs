@@ -51,6 +51,9 @@ namespace Mustachio
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; }
 
+		/// <summary>
+		/// Defines the Format argument in the current Context
+		/// </summary>
 		public string FormatAs { get; set; }
 
 		/// <summary>
@@ -129,6 +132,11 @@ namespace Mustachio
 			return retval;
 		}
 
+		/// <summary>
+		/// Will walk the path by using the path seperator "." and evaluate the object at the end
+		/// </summary>
+		/// <param name="path"></param>
+		/// <returns></returns>
 		public ContextObject GetContextForPath(string path)
 		{
 			var elements = new Queue<string>();
@@ -257,6 +265,10 @@ namespace Mustachio
 			return hasFormatter(value, arguments);
 		}
 
+		/// <summary>
+		/// Parses the current object by using the current Formatting argument
+		/// </summary>
+		/// <returns></returns>
 		public override string ToString()
 		{
 			var retval = Value;
@@ -267,6 +279,11 @@ namespace Mustachio
 			return retval.ToString();
 		}
 
+		/// <summary>
+		/// Parses the current object by using the given argument
+		/// </summary>
+		/// <param name="argument"></param>
+		/// <returns></returns>
 		public object Format(string argument)
 		{
 			object retval = Value;
@@ -277,6 +294,10 @@ namespace Mustachio
 			return retval;
 		}
 
+		/// <summary>
+		/// Is the current object formatted or "real"
+		/// </summary>
+		/// <returns></returns>
 		public bool IsFormattable()
 		{
 			return !string.IsNullOrWhiteSpace(FormatAs);

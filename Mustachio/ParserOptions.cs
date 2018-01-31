@@ -10,16 +10,30 @@ namespace Mustachio
 	/// </summary>
 	public class ParserOptions
 	{
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="template"></param>
 		public ParserOptions(string template)
 			: this(template, (Func<Stream>)null)
 		{
 		}
 
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="template"></param>
+		/// <param name="sourceStream">The factory that is used for each template generation</param>
 		public ParserOptions(string template, Func<Stream> sourceStream)
 			: this(template, sourceStream, null)
 		{
 		}
-
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="template"></param>
+		/// <param name="sourceStream"></param>
+		/// <param name="encoding">When not defined the default (UTF8) encoding will be used</param>
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding)
 		{
 			Template = template;
@@ -29,6 +43,15 @@ namespace Mustachio
 			Null = string.Empty;
 		}
 
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="template"></param>
+		/// <param name="sourceStream"></param>
+		/// <param name="encoding"></param>
+		/// <param name="maxSize">Defines on byte level how big the generated template could grow before cancelation happens</param>
+		/// <param name="disableContentEscaping"></param>
+		/// <param name="withModelInference"></param>
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding, long maxSize, bool disableContentEscaping = false, bool withModelInference = false)
 			: this(template, sourceStream, encoding)
 		{
@@ -37,6 +60,14 @@ namespace Mustachio
 			WithModelInference = withModelInference;
 		}
 
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="template"></param>
+		/// <param name="sourceStream"></param>
+		/// <param name="encoding"></param>
+		/// <param name="disableContentEscaping"></param>
+		/// <param name="withModelInference"></param>
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding, bool disableContentEscaping = false, bool withModelInference = false)
 			: this(template, sourceStream, encoding, 0, disableContentEscaping, withModelInference)
 		{
@@ -48,6 +79,11 @@ namespace Mustachio
 		/// </summary>
 		public IDictionary<Type, FormatTemplateElement> Formatters { get; private set; }
 
+		/// <summary>
+		/// Adds a formatter with typecheck
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="formatter"></param>
 		public void AddFormatter<T>(Func<T, string, object> formatter)
 		{
 			Formatters.Add(typeof(T), (sourceObject, argument) =>

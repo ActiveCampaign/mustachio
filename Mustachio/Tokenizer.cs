@@ -108,7 +108,6 @@ namespace Mustachio
 						token = token.Trim();
 						if (_formatInExpressionFinder.IsMatch(token))
 						{
-							TokenPair lastToken = null;
 							foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines, parseErrors))
 							{
 								yield return tokenizeFormattable;

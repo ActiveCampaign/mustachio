@@ -12,6 +12,12 @@ using System.Web;
 
 namespace Mustachio
 {
+	/// <summary>
+	/// The delegate used for Template generation
+	/// </summary>
+	/// <param name="data"></param>
+	/// <param name="token"></param>
+	/// <returns></returns>
 	public delegate Stream TemplateGenerationWithCancel(IDictionary<string, object> data, CancellationToken token);
 
 	/// <summary>

@@ -163,11 +163,7 @@ namespace Mustachio
 
 		private static bool StopOrAbortBuilding(ContextObject context)
 		{
-			if (context.AbortGeneration || context.CancellationToken.IsCancellationRequested)
-			{
-				return false;
-			}
-			return true;
+			return !context.AbortGeneration && !context.CancellationToken.IsCancellationRequested;
 		}
 
 		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken, ParserOptions options,

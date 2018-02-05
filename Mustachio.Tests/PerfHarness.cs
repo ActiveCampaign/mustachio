@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 using Xunit.Extensions;
 
 namespace Mustachio.Tests
@@ -12,7 +13,8 @@ namespace Mustachio.Tests
 
 	public class PerfHarness
 	{
-		[Theory]
+		[Theory(Skip = "Explicit Performance testing only")]
+		[Trait("Category", "Explicit")]
 		[InlineData("Model Depth", 5, 30000, 10, 5000)]
 		[InlineData("Model Depth", 10, 30000, 10, 5000)]
 		[InlineData("Model Depth", 100, 30000, 10, 5000)]

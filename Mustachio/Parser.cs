@@ -117,13 +117,7 @@ namespace Mustachio
 							}
 						};
 					case TokenType.Format:
-						buildArray.Add(HandleFormattingValue(currentToken, options, currentScope));
-						break;
-					case TokenType.PrintFormatted:
-						buildArray.Add(PrintFormattedValues(currentToken, options, currentScope));
-						break;
-					case TokenType.PrintSelf:
-						buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
+						buildArray.Add(ParseFormatting(currentToken, tokens, options, currentScope));
 						break;
 					case TokenType.EscapedSingleValue:
 					case TokenType.UnescapedSingleValue:
@@ -137,6 +131,45 @@ namespace Mustachio
 				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
 				{
 					a(builder, context);
+				}
+			};
+		}
+
+		private static Action<StreamWriter, ContextObject> ParseFormatting(TokenPair token, Queue<TokenPair> tokens, ParserOptions options, InferredTemplateModel currentScope = null)
+		{
+			var buildArray = new List<Action<StreamWriter, ContextObject>>();
+
+			buildArray.Add(HandleFormattingValue(token, options, currentScope));
+			var nonPrintToken = false;
+			while (tokens.Any() && !nonPrintToken)
+			{
+				var currentToken = tokens.Peek();
+				switch (currentToken.Type)
+				{
+					case TokenType.Format:
+						buildArray.Add(HandleFormattingValue(tokens.Dequeue(), options, currentScope));
+						break;
+					case TokenType.PrintFormatted:
+						buildArray.Add(PrintFormattedValues(tokens.Dequeue(), options, currentScope));
+						break;
+					case TokenType.CollectionOpen:
+						buildArray.Add(HandleCollectionOpen(tokens.Dequeue(), tokens, options, currentScope));
+						break;
+					default:
+						//The folloring cannot be formatted and the result of the formatting operation has used.
+						//continue with the original Context
+						nonPrintToken = true;
+						break;
+				}
+			}
+
+			return (builder, context) =>
+			{
+				//the formatting will may change the object. Clone the current Context to leave the root one untouched
+				var contextClone = context.Clone();
+				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+				{
+					a(builder, contextClone);
 				}
 			};
 		}
@@ -249,7 +282,7 @@ namespace Mustachio
 			}
 			if (overflow < content.Length)
 			{
-				builder.BaseStream.Write(binaryContent, 0, (int) (cl - overflow));
+				builder.BaseStream.Write(binaryContent, 0, (int)(cl - overflow));
 			}
 			else
 			{
@@ -309,7 +342,7 @@ namespace Mustachio
 				if (c.Value is IEnumerable && !(c.Value is string) && !(c.Value is IDictionary<string, object>))
 				{
 					var index = 0;
-					var enumumerator = ((IEnumerable) c.Value).GetEnumerator();
+					var enumumerator = ((IEnumerable)c.Value).GetEnumerator();
 					if (enumumerator.MoveNext())
 					{
 						var current = enumumerator.Current;

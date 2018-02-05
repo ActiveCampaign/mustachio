@@ -26,13 +26,13 @@ namespace Mustachio.Tests
 				tempdata.Add(" ");
 			}
 
-			var template = "{{#each Data}}{{?}}{{/each}}";
+			var template = "{{#each Data}}{{.}}{{/each}}";
 			var templateFunc = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding, maxSize));
 			var templateStream = templateFunc.ParsedTemplate(new Dictionary<string, object>()
 			{
 				{"Data", tempdata}
 			});
-			Assert.True(templateStream.Length == maxSize);
+			Assert.Equal(templateStream.Length, maxSize);
 		}
 
 		[Theory]
@@ -48,7 +48,7 @@ namespace Mustachio.Tests
 				tempdata.Add(" ");
 			}
 
-			var template = "{{#each Data}}{{?}}{{/each}}";
+			var template = "{{#each Data}}{{.}}{{/each}}";
 			var templateFunc = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding, maxSize));
 			var templateStream = templateFunc.ParsedTemplate(new Dictionary<string, object>()
 			{

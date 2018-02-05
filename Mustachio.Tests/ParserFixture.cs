@@ -199,28 +199,28 @@ namespace Mustachio.Tests
 		public void ParserCanFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;
-			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}}", null, DefaultEncoding));
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}},{{data}}", null, DefaultEncoding));
 			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
 							   .Stringify(true, DefaultEncoding);
-			Assert.Equal(result, data.ToString(dtFormat));
+			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
 		}
 
 		[Fact]
 		public void ParserCanFormatAndCombine()
 		{
 			var data = DateTime.UtcNow;
-			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}}", null, DefaultEncoding));
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}},{{data}}", null, DefaultEncoding));
 			//this should compile as its valid but not work as the Default
 			//settings for DateTime are ToString(Arg) so it should return a string and not an object
-			Assert.Equal(string.Empty, resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+			Assert.Equal(string.Empty + "," + data, resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
 												   .Stringify(true, DefaultEncoding));
 		}
 
 		[Fact]
 		public void ParserChangeDefaultFormatter()
 		{
-			var data = DateTime.UtcNow;
-			var options = new ParserOptions("{{data(d).AnyInt}}", null, DefaultEncoding);
+			var dateTime = DateTime.UtcNow;
+			var options = new ParserOptions("{{data(d).AnyInt}},{{data}}", null, DefaultEncoding);
 			options.Formatters.Add(typeof(DateTime), (dt, arg) => new
 			{
 				Dt = dt,
@@ -228,7 +228,12 @@ namespace Mustachio.Tests
 			});
 			var resuts = Parser.ParseWithOptions(options);
 			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
-			Assert.Equal("2", resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+			Assert.Equal("2," + dateTime, resuts.ParsedTemplate(new Dictionary<string, object>()
+			                                {
+				                                {
+					                                "data", dateTime
+				                                }
+			                                })
 												   .Stringify(true, DefaultEncoding));
 		}
 

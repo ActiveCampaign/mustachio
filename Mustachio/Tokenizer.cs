@@ -201,10 +201,6 @@ namespace Mustachio
 				{
 					//it's a comment drop this on the floor, no need to even yield it.
 				}
-				else if (m.Value.Equals("{{?}}"))
-				{
-					yield return new TokenPair(TokenType.PrintSelf, "?");
-				}
 				else
 				{
 					//unsingle value.
@@ -216,7 +212,7 @@ namespace Mustachio
 							yield return tokenizeFormattable;
 						}
 
-						yield return new TokenPair(TokenType.PrintFormatted, null);
+						yield return new TokenPair(TokenType.PrintFormatted, ".");
 					}
 					else
 					{

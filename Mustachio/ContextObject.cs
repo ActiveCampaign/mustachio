@@ -51,10 +51,6 @@ namespace Mustachio
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; }
 
-		/// <summary>
-		/// Defines the Format argument in the current Context
-		/// </summary>
-		public string FormatAs { get; set; }
 
 		/// <summary>
 		/// if overwritten by a class it returns a context object for any non standard key or operation.
@@ -92,15 +88,6 @@ namespace Mustachio
 						//we may just stop recursion and traverse down the path.
 						retval = GetContextForPath(elements);
 					}
-				}
-				else if (path.Equals("?"))
-				{
-					var innerContext = new ContextObject();
-					innerContext.Options = Options;
-					innerContext.Key = path;
-					innerContext.Parent = this;
-					innerContext.Value = CallMostMatchingFormatterForFormatter(Value.GetType(), FormatAs, Value);
-					return innerContext;
 				}
 				//TODO: handle array accessors and maybe "special" keys.
 				else
@@ -160,7 +147,7 @@ namespace Mustachio
 				Value as string != String.Empty &&
 				// We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
 				// OR if it IS an enumerable and .Any() returns true, then it exists as well
-				(!(Value is IEnumerable) || ((IEnumerable) Value).Cast<object>().Any()
+				(!(Value is IEnumerable) || ((IEnumerable)Value).Cast<object>().Any()
 				);
 		}
 
@@ -240,16 +227,6 @@ namespace Mustachio
 			return null;
 		}
 
-		private object CallMostMatchingFormatterForFormatter(Type type, string arguments, object value)
-		{
-			if (string.IsNullOrWhiteSpace(arguments))
-			{
-				return value;
-			}
-
-			return CallMostMatchingFormatter(type, arguments, value);
-		}
-
 		private object CallMostMatchingFormatter(Type type, string arguments)
 		{
 			return CallMostMatchingFormatter(type, arguments, Value);
@@ -272,10 +249,6 @@ namespace Mustachio
 		public override string ToString()
 		{
 			var retval = Value;
-			if (Value != null)
-			{
-				retval = CallMostMatchingFormatter(GetMostMatchingType(Value.GetType()), FormatAs);
-			}
 			return retval.ToString();
 		}
 
@@ -295,12 +268,27 @@ namespace Mustachio
 		}
 
 		/// <summary>
-		/// Is the current object formatted or "real"
+		/// Clones the ContextObject into a new Detached object
 		/// </summary>
 		/// <returns></returns>
-		public bool IsFormattable()
+		public ContextObject Clone()
 		{
-			return !string.IsNullOrWhiteSpace(FormatAs);
+			var contextClone = new ContextObject();
+			contextClone.CancellationToken = CancellationToken;
+			contextClone.Parent = Parent;
+			contextClone.Options = Options;
+			contextClone.AbortGeneration = AbortGeneration;
+			contextClone.Key = Key;
+
+			if (Value is ICloneable)
+			{
+				contextClone.Value = (Value as ICloneable).Clone();
+			}
+			else
+			{
+				contextClone.Value = Value;
+			}
+			return contextClone;
 		}
 	}
 }

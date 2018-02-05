@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Mustachio.Helper;
 using Xunit;
 using Xunit.Extensions;
 

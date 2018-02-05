@@ -164,9 +164,9 @@ namespace Mustachio
 		/// <summary>
 		/// The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)
 		/// should not be printed, or their printing should be specialized.
-		/// Add a Null as Type to define a Default Output
+		/// Add an typeof(object) entry as Type to define a Default Output
 		/// </summary>
-		public static Dictionary<Type, FormatTemplateElement> PrintableTypes = new Dictionary<Type, FormatTemplateElement>()
+		public static readonly IDictionary<Type, FormatTemplateElement> PrintableTypes = new Dictionary<Type, FormatTemplateElement>()
 		{
 			{typeof(IFormattable), (value, formatArgument) => ((IFormattable) value).ToString(formatArgument, null)},
 			{typeof(string), DefaultToStringWithFormatting},
@@ -183,48 +183,48 @@ namespace Mustachio
 			{typeof(DateTime), DefaultToStringWithFormatting},
 		};
 
+		private Type SearchInCollectionForFormatter(Type type, IDictionary<Type, FormatTemplateElement> source)
+		{
+			FormatTemplateElement formatter;
+			//look for exactly this type
+			if (source.TryGetValue(type, out formatter))
+			{
+				return type;
+			}
+			//this excact type was not found. Look for derivations
+			return source.FirstOrDefault(e => e.Key != null && e.Key.IsAssignableFrom(type)).Key;
+		}
+
 		private Type GetMostMatchingType(Type type)
 		{
-			if (Options.Formatters.FirstOrDefault(e => e.Key == type).Key != null)
+			var optionFormatterType = SearchInCollectionForFormatter(type, Options.Formatters);
+			if (optionFormatterType != null)
 			{
-				return Options.Formatters.FirstOrDefault(e => e.Key == type).Key;
+				return optionFormatterType;
 			}
-			else
-			{
-				if (Options.Formatters.FirstOrDefault(e => e.Key.IsAssignableFrom(type)).Key != null)
-				{
-					return Options.Formatters.FirstOrDefault(e => { return e.Key != null && e.Key.IsAssignableFrom(type); }).Key;
-				}
-				if (PrintableTypes.FirstOrDefault(e => e.Key == type).Key != null)
-				{
-					return PrintableTypes.FirstOrDefault(e => e.Key == type).Key;
-				}
-				else
-				{
-					return PrintableTypes.FirstOrDefault(e => { return e.Key != null && e.Key.IsAssignableFrom(type); }).Key;
-				}
-			}
+
+			return SearchInCollectionForFormatter(type, PrintableTypes);
 		}
 
 		private FormatTemplateElement GetMostMatchingFormatter(Type type)
 		{
+			FormatTemplateElement formatter;
 			if (type == null)
 			{
-				return null;
+				if (Options.Formatters.TryGetValue(typeof(object), out formatter))
+				{
+					return formatter;
+				}
+
+				return PrintableTypes.TryGetValue(typeof(object), out formatter) ? formatter : null;
 			}
 
-			FormatTemplateElement formatter;
 			if (Options.Formatters.TryGetValue(type, out formatter))
 			{
 				return formatter;
 			}
 
-			if (PrintableTypes.TryGetValue(type, out formatter))
-			{
-				return formatter;
-			}
-
-			return null;
+			return PrintableTypes.TryGetValue(type, out formatter) ? formatter : null;
 		}
 
 		private object CallMostMatchingFormatter(Type type, string arguments)

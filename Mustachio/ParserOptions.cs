@@ -15,7 +15,7 @@ namespace Mustachio
 		/// </summary>
 		/// <param name="template"></param>
 		public ParserOptions(string template)
-			: this(template, (Func<Stream>)null)
+			: this(template, null)
 		{
 		}
 
@@ -37,10 +37,13 @@ namespace Mustachio
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding)
 		{
 			Template = template;
-			SourceFactory = sourceStream ?? new Func<Stream>(() => new MemoryStream());
+			SourceFactory = sourceStream ?? (() => new MemoryStream());
 			Encoding = encoding ?? Encoding.UTF8;
 			Formatters = new Dictionary<Type, FormatTemplateElement>();
 			Null = string.Empty;
+			MaxSize = 0;
+			DisableContentEscaping = false;
+			WithModelInference = false;
 		}
 
 		/// <summary>

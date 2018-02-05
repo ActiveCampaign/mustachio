@@ -12,13 +12,7 @@ using System.Web;
 
 namespace Mustachio
 {
-	/// <summary>
-	/// The delegate used for Template generation
-	/// </summary>
-	/// <param name="data"></param>
-	/// <param name="token"></param>
-	/// <returns></returns>
-	public delegate Stream TemplateGenerationWithCancel(IDictionary<string, object> data, CancellationToken token);
+
 
 	/// <summary>
 	///     The main entry point for this library. Use the static "Parse" methods to create template functions.
@@ -26,7 +20,7 @@ namespace Mustachio
 	/// </summary>
 	public class Parser
 	{
-		private const int BufferSize = 2042;
+		private const int BufferSize = 2024;
 
 		/// <summary>
 		///     Parses the Template with the given options
@@ -71,14 +65,7 @@ namespace Mustachio
 				}
 				return sourceStream;
 			};
-
-			var result = new ExtendedParseInformation
-			{
-				InferredModel = inferredModel,
-				ParsedTemplateWithCancelation = template
-			};
-
-			return result;
+			return new ExtendedParseInformation(inferredModel, parsingOptions, template);
 		}
 
 		private static Action<StreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
@@ -339,36 +326,31 @@ namespace Mustachio
 					return;
 				}
 
-				if (c.Value is IEnumerable && !(c.Value is string) && !(c.Value is IDictionary<string, object>))
+				var value = c.Value as IEnumerable;
+				if (value != null && !(value is string) && !(value is IDictionary<string, object>))
 				{
+					//Use this "lookahead" enumeration to allow the $last keyword
 					var index = 0;
-					var enumumerator = ((IEnumerable)c.Value).GetEnumerator();
-					if (enumumerator.MoveNext())
+					var enumumerator = value.GetEnumerator();
+					if (!enumumerator.MoveNext())
 					{
-						var current = enumumerator.Current;
-						object next;
-						do
-						{
-							if (enumumerator.MoveNext())
-							{
-								next = enumumerator.Current;
-							}
-							else
-							{
-								next = null;
-							}
-							var innerContext = new ContextCollection(index, next == null)
-							{
-								Value = current,
-								Key = string.Format("[{0}]", index),
-								Options = options,
-								Parent = c
-							};
-							innerTemplate(builder, innerContext);
-							index++;
-							current = next;
-						} while (current != null);
+						return;
 					}
+					var current = enumumerator.Current;
+					do
+					{
+						var next = enumumerator.MoveNext() ? enumumerator.Current : null;
+						var innerContext = new ContextCollection(index, next == null)
+						{
+							Value = current,
+							Key = string.Format("[{0}]", index),
+							Options = options,
+							Parent = c
+						};
+						innerTemplate(builder, innerContext);
+						index++;
+						current = next;
+					} while (current != null);
 				}
 				else
 				{

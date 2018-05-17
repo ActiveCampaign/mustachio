@@ -7,8 +7,18 @@ using System.Threading.Tasks;
 
 namespace Mustachio.Helper
 {
+	/// <summary>
+	///		Helper class for Steam operations
+	/// </summary>
 	public static class StreamExtentions
 	{
+		/// <summary>
+		///		Reads all content from the Stream and returns it as a String
+		/// </summary>
+		/// <param name="source"></param>
+		/// <param name="disposeOriginal"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
 		public static string Stringify(this Stream source, bool disposeOriginal, Encoding encoding)
 		{
 			try
@@ -20,10 +30,9 @@ namespace Mustachio.Helper
 					return encoding.GetString(stream.ToArray());
 				}
 
-				using (var ms = new MemoryStream())
+				using (var ms = new StreamReader(source, encoding))
 				{
-					source.CopyToAsync(ms);
-					return ms.Stringify(disposeOriginal, encoding);
+					return ms.ReadToEnd();
 				}
 			}
 			finally

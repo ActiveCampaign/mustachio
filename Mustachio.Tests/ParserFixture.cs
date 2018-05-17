@@ -1,12 +1,9 @@
-﻿using Mustachio;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using Mustachio.Helper;
 using Xunit;
 using Xunit.Extensions;
@@ -60,13 +57,7 @@ namespace Mustachio.Tests
 
 	public class ParserFixture
 	{
-		private static Encoding _defaultEncoding = new UnicodeEncoding(true, false, false);
-
-		public static Encoding DefaultEncoding
-		{
-			get { return _defaultEncoding; }
-			set { _defaultEncoding = value; }
-		}
+		public static Encoding DefaultEncoding { get; set; } = new UnicodeEncoding(true, false, false);
 
 		[Fact]
 		public void ParserCanProcessCompoundConditionalGroup()
@@ -120,15 +111,15 @@ namespace Mustachio.Tests
 		}
 
 		[Fact]
-		public async Task TestCancelation()
+		public void TestCancelation()
 		{
 			var token = new CancellationTokenSource();
 			var model = new ParserCancellationional(token);
 			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data.ValueA}}{{data.ValueCancel}}{{data.ValueB}}", null, DefaultEncoding));
-			var template = extendedParseInformation.ParsedTemplateWithCancelation(new Dictionary<string, object>()
+			var template = extendedParseInformation.CreateAndStringify(new Dictionary<string, object>()
 			{
 				{"data", model}
-			}, token.Token).Stringify(true, DefaultEncoding);
+			}, token.Token);
 			Assert.Equal(model.ValueA + model.ValueCancel, template);
 		}
 
@@ -149,7 +140,7 @@ namespace Mustachio.Tests
 		}
 
 		[Fact]
-		public async Task TestCollectionContext()
+		public void TestCollectionContext()
 		{
 			var template = "{{#each data}}{{$index}},{{$first}},{{$middel}},{{$last}},{{$odd}},{{$even}}.{{/each}}";
 

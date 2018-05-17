@@ -11,6 +11,9 @@ using Xunit;
 
 namespace Mustachio.Tests
 {
+	/// <summary>
+	///		Used to create an Example for what the Formatter can be used for
+	/// </summary>
 	public class EnumerableFormatter
 	{
 		static EnumerableFormatter()

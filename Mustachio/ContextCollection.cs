@@ -28,6 +28,7 @@ namespace Mustachio
 		/// </summary>
 		public bool Last { get; private set; }
 
+		/// <inheritdoc />
 		protected override ContextObject HandlePathContext(Queue<string> elements, string path)
 		{
 			var innerContext = new ContextObject();

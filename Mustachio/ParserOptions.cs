@@ -138,17 +138,28 @@ namespace Mustachio
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
-		public void AddFormatter<T>(Func<T, string, object> formatter)
+		/// <param name="description"></param>
+		public void AddFormatter<T>(Func<T, string, object> formatter, string description = null)
 		{
-			Formatters.Add(typeof(T), (sourceObject, argument) =>
+			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
 				if (!(sourceObject is T))
 				{
 					return sourceObject;
 				}
 
-				return formatter((T) sourceObject, argument);
-			});
+				return formatter((T)sourceObject, argument);
+			}));
+		}
+
+		/// <summary>
+		///     Adds a formatter with typecheck
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="formatter"></param>
+		public void AddFormatter<T>(FormatTemplateElement formatter)
+		{
+			Formatters.Add(typeof(T), formatter);
 		}
 	}
 }

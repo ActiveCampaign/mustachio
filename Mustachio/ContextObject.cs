@@ -8,12 +8,46 @@ using System.Threading;
 namespace Mustachio
 {
 	/// <summary>
+	///		Encapsulates a Format function
+	/// </summary>
+	public class FormatTemplateElement
+	{
+		/// <summary>
+		///		Ctor
+		/// </summary>
+		/// <param name="desciption"></param>
+		public FormatTemplateElement(string desciption, FormatTemplateElementDelegate formatTemplate)
+		{
+			Desciption = desciption;
+			Format = formatTemplate;
+		}
+
+		/// <summary>
+		/// delegate for formatting template pars
+		/// </summary>
+		public FormatTemplateElementDelegate Format { get; private set; }
+		/// <summary>
+		///		Help Text for UI editors
+		/// </summary>
+		public string Desciption { get; private set; }
+
+		/// <summary>
+		/// Converts a FormatTemplateElementDelegate to a FormatTemplateElement
+		/// </summary>
+		/// <param name="x"></param>
+		public static implicit operator FormatTemplateElement(FormatTemplateElementDelegate x)
+		{
+			return new FormatTemplateElement(string.Empty, x);
+		}
+	}
+
+	/// <summary>
 	/// delegate for formatting template pars
 	/// </summary>
 	/// <param name="sourceObject">the object that this formatter should be applyed to</param>
 	/// <param name="argument">the string argument as given in the template</param>
 	/// <returns>a new object or the same object or a string</returns>
-	public delegate object FormatTemplateElement(object sourceObject, string argument);
+	public delegate object FormatTemplateElementDelegate(object sourceObject, string argument);
 
 	/// <summary>
 	/// The current context for any given expression
@@ -154,11 +188,11 @@ namespace Mustachio
 		/// <summary>
 		/// The default to string operator for any PrintableType
 		/// </summary>
-		public static FormatTemplateElement DefaultToStringWithFormatting = (value, formatArgument) =>
+		public static FormatTemplateElement DefaultToStringWithFormatting = new FormatTemplateElement("Default string formatter", (value, formatArgument) =>
 		{
 			var o = value as IFormattable;
 			return o != null ? o.ToString(formatArgument, null) : value.ToString();
-		};
+		});
 
 
 		/// <summary>
@@ -168,7 +202,7 @@ namespace Mustachio
 		/// </summary>
 		public static readonly IDictionary<Type, FormatTemplateElement> PrintableTypes = new Dictionary<Type, FormatTemplateElement>()
 		{
-			{typeof(IFormattable), (value, formatArgument) => ((IFormattable) value).ToString(formatArgument, null)},
+			{typeof(IFormattable), DefaultToStringWithFormatting},
 			{typeof(string), DefaultToStringWithFormatting},
 			{typeof(bool), DefaultToStringWithFormatting},
 			{typeof(char), DefaultToStringWithFormatting},
@@ -206,12 +240,18 @@ namespace Mustachio
 			return SearchInCollectionForFormatter(type, PrintableTypes);
 		}
 
-		private FormatTemplateElement GetMostMatchingFormatter(Type type)
+		///  <summary>
+		/// 		Gets the Formatter that matches the given type most from ether the Options.Formatter or the global or null
+		///  </summary>
+		///  <param name="type"></param>
+		/// <param name="additionalFormatters"></param>
+		/// <returns></returns>
+		public static FormatTemplateElement GetMostMatchingFormatter(Type type, IDictionary<Type, FormatTemplateElement> additionalFormatters)
 		{
 			FormatTemplateElement formatter;
 			if (type == null)
 			{
-				if (Options.Formatters.TryGetValue(typeof(object), out formatter))
+				if (additionalFormatters.TryGetValue(typeof(object), out formatter))
 				{
 					return formatter;
 				}
@@ -219,7 +259,7 @@ namespace Mustachio
 				return PrintableTypes.TryGetValue(typeof(object), out formatter) ? formatter : null;
 			}
 
-			if (Options.Formatters.TryGetValue(type, out formatter))
+			if (additionalFormatters.TryGetValue(type, out formatter))
 			{
 				return formatter;
 			}
@@ -234,12 +274,12 @@ namespace Mustachio
 
 		private object CallMostMatchingFormatter(Type type, string arguments, object value)
 		{
-			var hasFormatter = GetMostMatchingFormatter(type);
+			var hasFormatter = GetMostMatchingFormatter(type, Options.Formatters);
 			if (hasFormatter == null)
 			{
 				return value;
 			}
-			return hasFormatter(value, arguments);
+			return hasFormatter.Format(value, arguments);
 		}
 
 		/// <summary>

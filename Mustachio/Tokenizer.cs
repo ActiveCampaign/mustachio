@@ -20,7 +20,7 @@ namespace Mustachio
 		private static readonly Regex _tokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
 			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
 
-		private static readonly Regex _formatFinder = new Regex(@"(?:(\w+)[^.(]*)+(?:(?:\(){1}(.*)(?:\)){1})?(?:\.|$){1}");
+		private static readonly Regex _formatFinder = new Regex(@"(?:([\w.]+)*)+(?:(?:\(){1}(.*)(?:\)){1})?(?:\.|$){1}");
 		private static readonly Regex _formatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
 
 		private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);

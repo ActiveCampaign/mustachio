@@ -176,7 +176,7 @@ namespace Mustachio.Tests
 			};
 
 			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
-			var genTemplate = parsedTemplate.ParsedTemplate(new Dictionary<string, object>() {{"data", elementdata}})
+			var genTemplate = parsedTemplate.ParsedTemplate(new Dictionary<string, object>() { { "data", elementdata } })
 				.Stringify(true, DefaultEncoding);
 			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
 			Assert.Equal(realData, genTemplate);
@@ -192,6 +192,21 @@ namespace Mustachio.Tests
 		{
 			var data = DateTime.UtcNow;
 			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}},{{data}}", null, DefaultEncoding));
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
+		}
+
+		[Theory]
+		[InlineData("d")]
+		[InlineData("D")]
+		[InlineData("f")]
+		[InlineData("F")]
+		[InlineData("dd,,MM,,YYYY")]
+		public void ParserCanSelfFormat(string dtFormat)
+		{
+			var data = DateTime.UtcNow;
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(" + dtFormat + ")}}{{/data}},{{data}}", null, DefaultEncoding));
 			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
 							   .Stringify(true, DefaultEncoding);
 			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
@@ -213,7 +228,7 @@ namespace Mustachio.Tests
 		{
 			var dateTime = DateTime.UtcNow;
 			var options = new ParserOptions("{{data(d).AnyInt}},{{data}}", null, DefaultEncoding);
-			options.Formatters.Add(typeof(DateTime), (dt, arg) => new
+			options.AddFormatter<DateTime>((dt, arg) => new
 			{
 				Dt = dt,
 				AnyInt = 2
@@ -221,11 +236,11 @@ namespace Mustachio.Tests
 			var resuts = Parser.ParseWithOptions(options);
 			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
 			Assert.Equal("2," + dateTime, resuts.ParsedTemplate(new Dictionary<string, object>()
-			                                {
-				                                {
-					                                "data", dateTime
-				                                }
-			                                })
+											{
+												{
+													"data", dateTime
+												}
+											})
 												   .Stringify(true, DefaultEncoding));
 		}
 
@@ -672,7 +687,6 @@ namespace Mustachio.Tests
 		[InlineData("{{]}}")]
 		[InlineData("{{)}}")]
 		[InlineData("{{(}}")]
-		[InlineData("{{()}}")]
 		[InlineData("{{~}}")]
 		[InlineData("{{%}}")]
 

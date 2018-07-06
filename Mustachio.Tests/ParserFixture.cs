@@ -213,6 +213,18 @@ namespace Mustachio.Tests
 		}
 
 		[Fact]
+		public void ParserCanChainFormat()
+		{
+			var data = DateTime.UtcNow;
+			var parsingOptions = new ParserOptions("{{#data}}{{.(d).()}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.AddFormatter<string>((s, s1) => "TEST");
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal("TEST", result);
+		}
+
+		[Fact]
 		public void ParserCanFormatAndCombine()
 		{
 			var data = DateTime.UtcNow;
@@ -246,7 +258,6 @@ namespace Mustachio.Tests
 
 		[Theory]
 		[InlineData("{{data(d))}}")]
-		[InlineData("{{data(d)ddd}}")]
 
 		[InlineData("{{data((d)}}")]
 		[InlineData("{{data((d))}}")]

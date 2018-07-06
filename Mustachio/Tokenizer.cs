@@ -20,7 +20,7 @@ namespace Mustachio
 		private static readonly Regex _tokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
 			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
 
-		private static readonly Regex _formatFinder = new Regex(@"(?:([\w.]+)*)+(?:(?:\(){1}(.*)(?:\)){1})?(?:\.|$){1}");
+		private static readonly Regex _formatFinder = new Regex(@"(?:([\w.]+)*)+(?:(?:\(){1}([^)]*)(?:\)){1})?");
 		private static readonly Regex _formatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
 
 		private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);
@@ -63,6 +63,12 @@ namespace Mustachio
 				var found = tokenFormats.Groups[0].Value;
 				var scalarValue = tokenFormats.Groups[1].Value;
 				var formatterArgument = tokenFormats.Groups[2].Value;
+
+				if (string.IsNullOrEmpty(scalarValue))
+				{
+					continue;
+				}
+
 				tokesHandeld += found.Trim().Length;
 				if (string.IsNullOrWhiteSpace(formatterArgument))
 				{
@@ -70,7 +76,10 @@ namespace Mustachio
 				}
 				else
 				{
-					yield return new TokenPair(TokenType.Format, ValidateArgumentHead(scalarValue, formatterArgument, found.TrimEnd('.'), templateString, m.Index, lines, parseErrors)) { FormatAs = formatterArgument };
+					yield return new TokenPair(TokenType.Format, ValidateArgumentHead(scalarValue, formatterArgument, found.TrimEnd('.'), templateString, m.Index, lines, parseErrors))
+					{
+							FormatAs = formatterArgument
+					};
 				}
 			}
 			if (tokesHandeld != token.Length)

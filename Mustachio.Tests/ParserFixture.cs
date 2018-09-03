@@ -1,102 +1,273 @@
-﻿using Mustachio;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using System.Threading;
+using Mustachio.Helper;
 using Xunit;
 using Xunit.Extensions;
 
 namespace Mustachio.Tests
 {
-    /// <summary>
-    /// Allows for simpler comparison of template results that don't demand
-    /// </summary>
-    internal static class WhitespaceNormalizer
-    {
-        private static Regex WHITESPACE_NORMALIZER = new Regex("[\\s]+", RegexOptions.Compiled);
-        /// <summary>
-        /// Provides a mechanism to make comparing expected and actual results a little more sane to author.
-        /// You may include whitespace in resources to make them easier to read.
-        /// </summary>
-        /// <param name="subject"></param>
-        /// <returns></returns>
-        internal static string EliminateWhitespace(this string subject)
-        {
-            return WHITESPACE_NORMALIZER.Replace(subject, "");
-        }
-    }
+	public class ParserFixture
+	{
+		public static Encoding DefaultEncoding { get; set; } = new UnicodeEncoding(true, false, false);
 
-    public class ParserFixture
-    {
-        [Fact]
-        public void ParserCanProcessCompoundConditionalGroup()
-        {
-            Parser.Parse("{{#Collection}}Collection has elements{{^Collection}}Collection doesn't have elements{{/Collection}}");
-            Parser.Parse("{{^Collection}}Collection doesn't have elements{{#Collection}}Collection has elements{{/Collection}}");
-        }
+		[Fact]
+		public void ParserCanProcessCompoundConditionalGroup()
+		{
+			Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{^Collection}}Collection doesn't have elements{{/Collection}}"));
+			Parser.ParseWithOptions(new ParserOptions("{{^Collection}}Collection doesn't have elements{{#Collection}}Collection has elements{{/Collection}}"));
+		}
 
-        [Fact]
-        public void ParserCanProcessHandleMultilineTemplates()
-        {
-            Parser.Parse(@"{{^Collection}}Collection doesn't have
+		[Fact]
+		public void ParserCanProcessHandleMultilineTemplates()
+		{
+			Parser.ParseWithOptions(new ParserOptions(@"{{^Collection}}Collection doesn't have
                             elements{{#Collection}}Collection has
-                        elements{{/Collection}}");
-        }
+                        elements{{/Collection}}"));
+		}
 
-        [Fact]
-        public void ParsingThrowsAnExceptionWhenConditionalGroupsAreMismatched()
-        {
-            Assert.Throws(typeof(AggregateException), () => Parser.Parse("{{#Collection}}Collection has elements{{/AnotherCollection}}"));
-        }
+		[Fact]
+		public void ParsingThrowsAnExceptionWhenConditionalGroupsAreMismatched()
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{/AnotherCollection}}")));
+		}
 
-        [Fact]
-        public void ParserCanProcessSimpleConditionalGroup()
-        {
-            Parser.Parse("{{#Collection}}Collection has elements{{/Collection}}");
-        }
+		[Fact]
+		public void ParserCanProcessSimpleConditionalGroup()
+		{
+			Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{/Collection}}"));
+		}
 
-        [Fact]
-        public void ParserCanProcessSimpleNegatedCondionalGroup()
-        {
-            Parser.Parse("{{^Collection}}Collection has no elements{{/Collection}}");
-        }
+		[Fact]
+		public void ParserCanProcessSimpleNegatedCondionalGroup()
+		{
+			Parser.ParseWithOptions(new ParserOptions("{{^Collection}}Collection has no elements{{/Collection}}"));
+		}
 
-        [Fact]
-        public void ParserCanProcessSimpleValuePath()
-        {
-            Parser.Parse("Hello {{Name}}!");
-        }
+		[Fact]
+		public void ParserCanProcessSimpleValuePath()
+		{
+			Parser.ParseWithOptions(new ParserOptions("Hello {{Name}}!"));
+		}
 
-        [Fact]
-        public void ParserCanProcessComplexValuePath()
-        {
-            Parser.Parse("{{#content}}Hello {{../Person.Name}}!{{/content}}");
-        }
+		[Fact]
+		public void ParserCanProcessComplexValuePath()
+		{
+			Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{../Person.Name}}!{{/content}}"));
+		}
 
-        [Fact]
-        public void ParserCanProcessEachConstruct()
-        {
-            Parser.Parse("{{#each ACollection}}{{.}}{{/each}}");
-        }
+		[Fact]
+		public void ParserCanProcessEachConstruct()
+		{
+			Parser.ParseWithOptions(new ParserOptions("{{#each ACollection}}{{.}}{{/each}}"));
+		}
 
-        [Theory]
-        [InlineData("{{#ACollection}}{{.}}{{/each}}")]
-        [InlineData("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}")]
-        [InlineData("{{/each}}")]
-        public void ParserThrowsAnExceptionWhenEachIsMismatched(string invalidTemplate)
-        {
-            Assert.Throws(typeof(AggregateException), () => Parser.Parse(invalidTemplate));
-        }
+		[Fact]
+		public void TestCancelation()
+		{
+			var token = new CancellationTokenSource();
+			var model = new ParserCancellationional(token);
+			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data.ValueA}}{{data.ValueCancel}}{{data.ValueB}}", null, DefaultEncoding));
+			var template = extendedParseInformation.CreateAndStringify(new Dictionary<string, object>()
+			{
+				{"data", model}
+			}, token.Token);
+			Assert.Equal(model.ValueA + model.ValueCancel, template);
+		}
 
-        [Fact]
-        public void ParserCanInferCollection()
-        {
-            var results = Parser.ParseWithModelInference("{{#Person}}{{Name}}{{#each ../Person.FavoriteColors}}{{.}}{{/each}}{{/Person}}");
+		class CollectionContextInfo
+		{
+			public int IndexProp { get; set; }
+			public bool FirstProp { get; set; }
+			public bool MiddelProp { get; set; }
+			public bool LastProp { get; set; }
 
-            var expected = @"{
+			public bool OddProp { get; set; }
+			public bool EvenProp { get; set; }
+
+			public override string ToString()
+			{
+				return string.Format("{0},{1},{2},{3},{4},{5}.", IndexProp, FirstProp, MiddelProp, LastProp, OddProp, EvenProp);
+			}
+		}
+
+		[Fact]
+		public void TestCollectionContext()
+		{
+			var template = "{{#each data}}{{$index}},{{$first}},{{$middel}},{{$last}},{{$odd}},{{$even}}.{{/each}}";
+
+			var elementdata = new List<CollectionContextInfo>()
+			{
+				new CollectionContextInfo()
+				{
+					IndexProp = 0,
+					EvenProp = true,
+					OddProp = false,
+					LastProp = false,
+					FirstProp = true,
+					MiddelProp = false
+				},
+				new CollectionContextInfo()
+				{
+					IndexProp = 1,
+					EvenProp = false,
+					OddProp = true,
+					LastProp = false,
+					FirstProp = false,
+					MiddelProp = true
+				},
+				new CollectionContextInfo()
+				{
+					IndexProp = 2,
+					EvenProp = true,
+					OddProp = false,
+					LastProp = true,
+					FirstProp = false,
+					MiddelProp = false
+				},
+			};
+
+			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
+			var genTemplate = parsedTemplate.ParsedTemplate(new Dictionary<string, object>() { { "data", elementdata } })
+				.Stringify(true, DefaultEncoding);
+			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
+			Assert.Equal(realData, genTemplate);
+		}
+
+		[Fact]
+		public void ParserCanFormatArgumentWithExpression()
+		{
+			var dt = DateTime.Now;
+			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data($testFormat$)}}"));
+
+			var format = "yyyy.mm";
+			var andStringify = extendedParseInformation.CreateAndStringify(new Dictionary<string, object>()
+			{
+				{"data", dt},
+				{"testFormat", format}
+			});
+
+			Assert.Equal(dt.ToString(format), andStringify);
+		}
+
+		[Theory]
+		[InlineData("d")]
+		[InlineData("D")]
+		[InlineData("f")]
+		[InlineData("F")]
+		[InlineData("dd,,MM,,YYYY")]
+		public void ParserCanFormat(string dtFormat)
+		{
+			var data = DateTime.UtcNow;
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}},{{data}}", null, DefaultEncoding));
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
+		}
+
+		[Theory]
+		[InlineData("d")]
+		[InlineData("D")]
+		[InlineData("f")]
+		[InlineData("F")]
+		[InlineData("dd,,MM,,YYYY")]
+		public void ParserCanSelfFormat(string dtFormat)
+		{
+			var data = DateTime.UtcNow;
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(" + dtFormat + ")}}{{/data}},{{data}}", null, DefaultEncoding));
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
+		}
+
+		[Fact]
+		public void ParserCanChainFormat()
+		{
+			var data = DateTime.UtcNow;
+			var parsingOptions = new ParserOptions("{{#data}}{{.(d).()}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.AddFormatter<string>((s, s1) => "TEST");
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal("TEST", result);
+		}
+
+		[Fact]
+		public void ParserCanChainWithAndWithoutFormat()
+		{
+			var data = DateTime.UtcNow;
+			var parsingOptions = new ParserOptions("{{data().TimeOfDay.Ticks().()}}", null, DefaultEncoding);
+			parsingOptions.AddFormatter<string>((s, s1) => s);
+			parsingOptions.AddFormatter<DateTime>((s, s1) => s);
+			parsingOptions.AddFormatter<long>((s, s1) => new TimeSpan(s));
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal(new TimeSpan(data.TimeOfDay.Ticks).ToString(), result);
+		}
+
+		[Fact]
+		public void ParserCanFormatAndCombine()
+		{
+			var data = DateTime.UtcNow;
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}},{{data}}", null, DefaultEncoding));
+			//this should compile as its valid but not work as the Default
+			//settings for DateTime are ToString(Arg) so it should return a string and not an object
+			Assert.Equal(string.Empty + "," + data, resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+												   .Stringify(true, DefaultEncoding));
+		}
+
+		[Fact]
+		public void ParserChangeDefaultFormatter()
+		{
+			var dateTime = DateTime.UtcNow;
+			var options = new ParserOptions("{{data(d).AnyInt}},{{data}}", null, DefaultEncoding);
+			options.AddFormatter<DateTime>((dt, arg) => new
+			{
+				Dt = dt,
+				AnyInt = 2
+			});
+			var resuts = Parser.ParseWithOptions(options);
+			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
+			Assert.Equal("2," + dateTime, resuts.ParsedTemplate(new Dictionary<string, object>()
+											{
+												{
+													"data", dateTime
+												}
+											})
+												   .Stringify(true, DefaultEncoding));
+		}
+
+		[Theory]
+		[InlineData("{{data(d))}}")]
+
+		[InlineData("{{data((d)}}")]
+		[InlineData("{{data((d))}}")]
+		[InlineData("{{data)}}")]
+		[InlineData("{{data(}}")]
+
+		public void ParserThrowsAnExceptionWhenFormatIsMismatched(string invalidTemplate)
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(invalidTemplate)));
+		}
+
+		[Theory]
+		[InlineData("{{#ACollection}}{{.}}{{/each}}")]
+		[InlineData("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}")]
+		[InlineData("{{/each}}")]
+		public void ParserThrowsAnExceptionWhenEachIsMismatched(string invalidTemplate)
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(invalidTemplate)));
+		}
+
+		[Fact]
+		public void ParserCanInferCollection()
+		{
+			var results = Parser.ParseWithOptions(new ParserOptions("{{#Person}}{{Name}}{{#each ../Person.FavoriteColors}}{{.}}{{/each}}{{/Person}}", null, null, 0, false, true));
+
+			var expected = @"{
                 ""Person"" :{
                     ""Name"" : ""Name_Value"",
                     ""FavoriteColors"" : [
@@ -107,121 +278,121 @@ namespace Mustachio.Tests
                 }
             }".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-            Assert.Equal(expected, actual);
-        }
+			Assert.Equal(expected, actual);
+		}
 
-        [Fact]
-        public void ParserCanInferScalar()
-        {
-            var results = Parser.ParseWithModelInference("{{Name}}");
-            var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+		[Fact]
+		public void ParserCanInferScalar()
+		{
+			var results = Parser.ParseWithOptions(new ParserOptions("{{Name}}", null, null, 0, false, true));
+			var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
+			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-            Assert.Equal(expected, actual);
-        }
+			Assert.Equal(expected, actual);
+		}
 
-        [Fact]
-        public void ParserCanInferNestedProperties()
-        {
-            var results = Parser.ParseWithModelInference("{{#Person}}{{Name}}{{/Person}}");
+		[Fact]
+		public void ParserCanInferNestedProperties()
+		{
+			var results = Parser.ParseWithOptions(new ParserOptions("{{#Person}}{{Name}}{{/Person}}", null, null, 0, false, true));
 
-            var expected = @"{
+			var expected = @"{
                 ""Person"" :{
                     ""Name"" : ""Name_Value""
                 }
             }".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-            Assert.Equal(expected, actual);
-        }
+			Assert.Equal(expected, actual);
+		}
 
-        [Fact]
-        public void ParserProducesEmptyObjectWhenTemplateHasNoMustacheMarkup()
-        {
-            var results = Parser.ParseWithModelInference("This template has no mustache thingies.");
+		[Fact]
+		public void ParserProducesEmptyObjectWhenTemplateHasNoMustacheMarkup()
+		{
+			var results = Parser.ParseWithOptions(new ParserOptions("This template has no mustache thingies.", null, null, 0, false, true));
 
-            var expected = @"{}".EliminateWhitespace();
+			var expected = @"{}".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-            Assert.Equal(expected, actual);
-        }
-
-
-        [Fact]
-        public void ParserRendersCollectionObjectsWhenUsed()
-        {
-            var results = Parser.ParseWithModelInference("{{#each Employees}}{{name}}{{/each}}");
-
-            var expected = @"{""Employees"" : [{ ""name"" : ""name_Value""}]}".EliminateWhitespace();
-
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
-
-            Assert.Equal(expected, actual);
-        }
+			Assert.Equal(expected, actual);
+		}
 
 
-        [Fact]
-        public void ParserRendersCollectionSubObjectsWhenUsed()
-        {
-            var results = Parser.ParseWithModelInference("{{#each Employees}}{{person.name}}{{#each favoriteColors}}{{hue}}{{/each}}{{#each workplaces}}{{.}}{{/each}}{{/each}}");
+		[Fact]
+		public void ParserRendersCollectionObjectsWhenUsed()
+		{
+			var results = Parser.ParseWithOptions(new ParserOptions("{{#each Employees}}{{name}}{{/each}}", null, null, 0, false, true));
 
-            var expected = @"{
-                            ""Employees"" : [{ 
+			var expected = @"{""Employees"" : [{ ""name"" : ""name_Value""}]}".EliminateWhitespace();
+
+			var actual = results.InferredModel.ToString().EliminateWhitespace();
+
+			Assert.Equal(expected, actual);
+		}
+
+
+		[Fact]
+		public void ParserRendersCollectionSubObjectsWhenUsed()
+		{
+			var results = Parser.ParseWithOptions(new ParserOptions("{{#each Employees}}{{person.name}}{{#each favoriteColors}}{{hue}}{{/each}}{{#each workplaces}}{{.}}{{/each}}{{/each}}", null, null, 0, false, true));
+
+			var expected = @"{
+                            ""Employees"" : [{
                                 ""person"" : { ""name"" : ""name_Value""},
-                                ""favoriteColors"" : [{""hue"" : ""hue_Value""}],                                
-                                ""workplaces"" : [ ""workplaces_1"",""workplaces_2"",""workplaces_3"" ] 
+                                ""favoriteColors"" : [{""hue"" : ""hue_Value""}],
+                                ""workplaces"" : [ ""workplaces_1"",""workplaces_2"",""workplaces_3"" ]
                                 }]
                             }".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-            Assert.Equal(expected, actual);
-        }
+			Assert.Equal(expected, actual);
+		}
 
-        [Fact]
-        public void ParserThrowsParserExceptionForEmptyEach()
-        {
-            Assert.Throws(typeof(AggregateException), () => Parser.Parse("{{#each}}"));
-        }
+		[Fact]
+		public void ParserThrowsParserExceptionForEmptyEach()
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions("{{#each}}")));
+		}
 
-        [Fact]
-        public void ParserThrowsParserExceptionForEachWithoutPath()
-        {
-            Assert.Throws(typeof(AggregateException), () => Parser.Parse("{{#eachs}}{{name}}{{/each}}"));
-        }
+		[Fact]
+		public void ParserThrowsParserExceptionForEachWithoutPath()
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions("{{#eachs}}{{name}}{{/each}}")));
+		}
 
-        [Theory]
-        [InlineData("{{Mike", "{{{{name}}")]
-        [InlineData("{Mike", "{{{name}}")]
-        [InlineData("Mike}", "{{name}}}")]
-        [InlineData("Mike}}", "{{name}}}}")]
-        public void ParserHandlesPartialOpenAndPartialClose(string expected, string template)
-        {
-            var model = new Dictionary<string, object>();
-            model["name"] = "Mike";
+		[Theory]
+		[InlineData("{{Mike", "{{{{name}}")]
+		[InlineData("{Mike", "{{{name}}")]
+		[InlineData("Mike}", "{{name}}}")]
+		[InlineData("Mike}}", "{{name}}}}")]
+		public void ParserHandlesPartialOpenAndPartialClose(string expected, string template)
+		{
+			var model = new Dictionary<string, object>();
+			model["name"] = "Mike";
 
-            Assert.Equal(expected, Parser.Parse(template)(model));
-        }
+			Assert.Equal(expected, Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).ParsedTemplate(model).Stringify(true, DefaultEncoding));
+		}
 
 
-        [Theory]
-        [InlineData("{{#each element}}{{name}}")]
-        [InlineData("{{#element}}{{name}}")]
-        [InlineData("{{^element}}{{name}}")]
-        public void ParserThrowsParserExceptionForUnclosedGroups(string invalidTemplate)
-        {
-            Assert.Throws(typeof(AggregateException), () => Parser.Parse(invalidTemplate));
-        }
+		[Theory]
+		[InlineData("{{#each element}}{{name}}")]
+		[InlineData("{{#element}}{{name}}")]
+		[InlineData("{{^element}}{{name}}")]
+		public void ParserThrowsParserExceptionForUnclosedGroups(string invalidTemplate)
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(invalidTemplate)));
+		}
 
-        [Fact]
-        public void ParserCanParseEmailAcidTest()
-        {
-            #region Email ACID Test Body:
-            var emailACIDTest = @"
+		[Fact]
+		public void ParserCanParseEmailAcidTest()
+		{
+			#region Email ACID Test Body:
+			var emailACIDTest = @"
 <!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">
 <html xmlns=""http://www.w3.org/1999/xhtml"">
 <head>
@@ -229,10 +400,10 @@ namespace Mustachio.Tests
 <meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"" />
 <meta http-equiv=""Content-Language"" content=""en-us"" />
 <style type=""text/css"" media=""screen"">
-	
+
 	/* common
 	--------------------------------------------------*/
-	
+
 	body {
 		margin: 0px;
 		padding: 0px;
@@ -294,10 +465,10 @@ namespace Mustachio.Tests
 		padding: 0px;
 		list-style: url(""img/bullet.gif"");
 	}
-	
+
 	/* links
 	--------------------------------------------------*/
-	
+
 	#BodyImposter a {
 		text-decoration: underline;
 	}
@@ -319,10 +490,10 @@ namespace Mustachio.Tests
 		background: #ad5c33;
 		text-decoration: none;
 	}
-	
+
 	/* heads
 	--------------------------------------------------*/
-	
+
 	#BodyImposter h1,
 	#BodyImposter h2,
 	#BodyImposter h3 {
@@ -352,10 +523,10 @@ namespace Mustachio.Tests
 		color: #fff;
 		background: #892e00;
 	}
-	
+
 	/* boxes
 	--------------------------------------------------*/
-	
+
 	#Box {
 		width: 470px;
 		margin: 0px auto;
@@ -436,7 +607,7 @@ namespace Mustachio.Tests
 		display: block;
 		padding: 10px;
 	}
-	
+
 </style>
 
 </head>
@@ -493,84 +664,87 @@ namespace Mustachio.Tests
 <!-- <unsubscribe>Hidden for testing</unsubscribe> -->
 </body>
 </html>";
-            #endregion
+			#endregion
 
-            Parser.Parse(emailACIDTest);
-        }
-
-
-        [Theory]
-        [InlineData("{{.../asdf.content}}")]
-        [InlineData("{{/}}")]
-        [InlineData("{{./}}")]
-        [InlineData("{{.. }}")]
-        [InlineData("{{..}}")]
-        [InlineData("{{//}}")]
-        [InlineData("{{@}}")]
-        [InlineData("{{[}}")]
-        [InlineData("{{]}}")]
-        [InlineData("{{)}}")]
-        [InlineData("{{(}}")]
-        [InlineData("{{~}}")]
-        [InlineData("{{$}}")]
-        [InlineData("{{%}}")]
-        public void ParserShouldThrowForInvalidPaths(string template)
-        {
-            Assert.Throws(typeof(AggregateException), () => Parser.Parse(template));
-        }
-
-        [Theory]
-        [InlineData("{{first_name}}")]
-        [InlineData("{{company.name}}")]
-        [InlineData("{{company.address_line_1}}")]
-        [InlineData("{{name}}")]
-        public void ParserShouldNotThrowForValidPath(string template)
-        {
-            Parser.Parse(template);
-        }
+			Parser.ParseWithOptions(new ParserOptions(emailACIDTest));
+		}
 
 
-        [Theory]
-        [InlineData("1{{first name}}", 1)]
-        [InlineData("ss{{#each company.name}}\nasdf", 1)]
-        [InlineData("xzyhj{{#company.address_line_1}}\nasdf{{dsadskl-sasa@}}\n{{/each}}", 3)]
-        [InlineData("fff{{#each company.address_line_1}}\n{{dsadskl-sasa@}}\n{{/each}}", 1)]
-        [InlineData("a{{name}}dd\ndd{{/each}}dd", 1)]
-        public void ParserShouldThrowWithCharacterLocationInformation(string template, int expectedErrorCount)
-        {
-            var didThrow = false;
-            try
-            {
-                Parser.Parse(template);
-            }
-            catch (AggregateException ex)
-            {
-                didThrow = true;
-                Assert.Equal(expectedErrorCount, ex.InnerExceptions.Count);
-            }
-            Assert.True(didThrow);
-        }
+		[Theory]
+		[InlineData("{{.../asdf.content}}")]
+		[InlineData("{{/}}")]
+		[InlineData("{{./}}")]
+		[InlineData("{{.. }}")]
+		[InlineData("{{..}}")]
+		[InlineData("{{//}}")]
+		[InlineData("{{@}}")]
+		[InlineData("{{[}}")]
+		[InlineData("{{]}}")]
+		[InlineData("{{)}}")]
+		[InlineData("{{(}}")]
+		[InlineData("{{~}}")]
+		[InlineData("{{%}}")]
 
-        [Theory]
-        [InlineData("<wbr>", "{{content}}", "&lt;wbr&gt;")]
-        [InlineData("<wbr>", "{{{content}}}", "<wbr>")]
-        public void ValueEscapingIsActivatedBasedOnValueInterpolationMustacheSyntax(string content, string template, string expected)
-        {
-            var model = new Dictionary<string, object>(){
-                {"content" , content}
-            };
-            Assert.Equal(expected, Parser.Parse(template)(model));
-        }
+		public void ParserShouldThrowForInvalidPaths(string template)
+		{
+			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(template)));
+		}
 
-        [Theory]
-        [InlineData("<wbr>", "{{content}}", "<wbr>")]
-        [InlineData("<wbr>", "{{{content}}}", "<wbr>")]
-        public void ValueEscapingIsDisabledWhenRequested(string content, string template, string expected)
-        {
-            var model = new Dictionary<string, object>(){
-                {"content" , content}
-            };
-            Assert.Equal(expected, Parser.Parse(template, true)(model));
-        }
-    }
+		[Theory]
+		[InlineData("{{first_name}}")]
+		[InlineData("{{company.name}}")]
+		[InlineData("{{company.address_line_1}}")]
+		[InlineData("{{name}}")]
+		public void ParserShouldNotThrowForValidPath(string template)
+		{
+			Parser.ParseWithOptions(new ParserOptions(template));
+		}
+
+
+		[Theory]
+		[InlineData("1{{first name}}", 1)]
+		[InlineData("ss{{#each company.name}}\nasdf", 1)]
+		[InlineData("xzyhj{{#company.address_line_1}}\nasdf{{dsadskl-sasa@}}\n{{/each}}", 3)]
+		[InlineData("fff{{#each company.address_line_1}}\n{{dsadskl-sasa@}}\n{{/each}}", 1)]
+		[InlineData("a{{name}}dd\ndd{{/each}}dd", 1)]
+		public void ParserShouldThrowWithCharacterLocationInformation(string template, int expectedErrorCount)
+		{
+			var didThrow = false;
+			try
+			{
+				Parser.ParseWithOptions(new ParserOptions(template));
+			}
+			catch (AggregateException ex)
+			{
+				didThrow = true;
+				Assert.Equal(expectedErrorCount, ex.InnerExceptions.Count);
+			}
+			Assert.True(didThrow);
+		}
+
+		[Theory]
+		[InlineData("<wbr>", "{{content}}", "&lt;wbr&gt;")]
+		[InlineData("<wbr>", "{{{content}}}", "<wbr>")]
+		public void ValueEscapingIsActivatedBasedOnValueInterpolationMustacheSyntax(string content, string template, string expected)
+		{
+			var model = new Dictionary<string, object>(){
+				{"content" , content}
+			};
+			var value = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).ParsedTemplate(model)
+							  .Stringify(true, DefaultEncoding);
+
+			Assert.Equal(expected, value);
+		}
+
+		[Theory]
+		[InlineData("<wbr>", "{{content}}", "<wbr>")]
+		[InlineData("<wbr>", "{{{content}}}", "<wbr>")]
+		public void ValueEscapingIsDisabledWhenRequested(string content, string template, string expected)
+		{
+			var model = new Dictionary<string, object>(){
+				{"content" , content}
+			};
+			Assert.Equal(expected, Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding, 0, true)).ParsedTemplate(model).Stringify(true, DefaultEncoding));
+		}
+	}
 }

@@ -1,247 +1,396 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Web;
+
+#endregion
 
 namespace Mustachio
 {
-    /// <summary>
-    /// The main entry point for this library. Use the static "Parse" methods to create template functions.
-    /// Functions are safe for reuse, so you may parse and cache the resulting function.
-    /// </summary>
-    public class Parser
-    {
-        /// <summary>
-        /// Parse the template content, producing a function that can be used to apply variables to the template. 
-        /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
-        /// </summary>
-        /// <param name="template">The content of the template to be parsed.</param>
-        /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
-        /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
-        /// <returns></returns>
-        public static Func<IDictionary<String, object>, String> Parse(string template, bool disableContentEscaping = false)
-        {
-            var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(template));
-            var internalTemplate = Parse(tokens, new ParsingOptions { DisableContentSafety = disableContentEscaping });
-            return (model) =>
-            {
-                var retval = new StringBuilder();
-                var context = new ContextObject()
-                {
-                    Value = model,
-                    Key = ""
-                };
-                internalTemplate(retval, context);
-                return retval.ToString();
-            };
-        }
 
-        /// <summary>
-        /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
-        /// </summary>
-        /// <param name="templateSource">The template content to parse.</param>
-        /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
-        /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
-        /// <returns></returns>
-        public static ExtendedParseInformation ParseWithModelInference(string templateSource, bool disableContentEscaping = false)
-        {
-            var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(templateSource));
-            var options = new ParsingOptions { DisableContentSafety = disableContentEscaping };
-            var inferredModel = new InferredTemplateModel();
 
-            var internalTemplate = Parse(tokens, options, inferredModel);
-            Func<IDictionary<String, object>, String> template = (model) =>
-            {
-                var retval = new StringBuilder();
-                var context = new ContextObject()
-                {
-                    Value = model,
-                    Key = ""
-                };
-                internalTemplate(retval, context);
-                return retval.ToString();
-            };
+	/// <summary>
+	///     The main entry point for this library. Use the static "Parse" methods to create template functions.
+	///     Functions are safe for reuse, so you may parse and cache the resulting function.
+	/// </summary>
+	public class Parser
+	{
+		private const int BufferSize = 2024;
 
-            var result = new ExtendedParseInformation()
-            {
-                InferredModel = inferredModel,
-                ParsedTemplate = template
-            };
+		/// <summary>
+		///     Parses the Template with the given options
+		/// </summary>
+		/// <param name="parsingOptions">a set of options</param>
+		/// <returns></returns>
+		public static ExtendedParseInformation ParseWithOptions(ParserOptions parsingOptions)
+		{
+			if (parsingOptions == null)
+			{
+				throw new ArgumentNullException("parsingOptions");
+			}
 
-            return result;
-        }
+			if (parsingOptions.SourceFactory == null)
+			{
+				throw new ArgumentNullException("parsingOptions", "The given Stream is null");
+			}
 
-        private static Action<StringBuilder, ContextObject> Parse(Queue<TokenPair> tokens, ParsingOptions options, InferredTemplateModel currentScope = null)
-        {
-            var buildArray = new List<Action<StringBuilder, ContextObject>>();
-            
-            while (tokens.Any())
-            {
-                var currentToken = tokens.Dequeue();
-                switch (currentToken.Type)
-                {
-                    case TokenType.Comment:
-                        break;
-                    case TokenType.Content:
-                        buildArray.Add(HandleContent(currentToken.Value));
-                        break;
-                    case TokenType.CollectionOpen:
-                        buildArray.Add(HandleCollectionOpen(currentToken, tokens, options,  currentScope));
-                        break;
-                    case TokenType.ElementOpen:
-                        buildArray.Add(HandleElementOpen(currentToken, tokens, options, currentScope));
-                        break;
-                    case TokenType.InvertedElementOpen:
-                        buildArray.Add(HandleInvertedElementOpen(currentToken, tokens, options, currentScope));
-                        break;
-                    case TokenType.CollectionClose:
-                    case TokenType.ElementClose:
-                        // This should immediately return if we're in the element scope, 
-                        // and if we're not, this should have been detected by the tokenizer!
-                        return (builder, context) =>
-                        {
-                            foreach (var a in buildArray)
-                            {
-                                a(builder, context);
-                            }
-                        };
-                    case TokenType.EscapedSingleValue:
-                    case TokenType.UnescapedSingleValue:
-                        buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
-                        break;
-                }
-            }
+			var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(parsingOptions.Template));
+			var inferredModel = new InferredTemplateModel();
 
-            return (builder, context) =>
-            {
-                foreach (var a in buildArray)
-                {
-                    a(builder, context);
-                }
-            };
-        }
+			var internalTemplate = Parse(tokens, parsingOptions, parsingOptions.WithModelInference ? inferredModel : null);
+			TemplateGenerationWithCancel template = (model, token) =>
+			{
+				var sourceStream = parsingOptions.SourceFactory();
+				if (!sourceStream.CanWrite)
+				{
+					throw new InvalidOperationException("The stream is ReadOnly");
+				}
 
-        private static string HtmlEncodeString(string context)
-        {
-            return HttpUtility.HtmlEncode(context);
-        }
+				using (var streamWriter = new StreamWriter(sourceStream, parsingOptions.Encoding, BufferSize, true))
+				{
+					var context = new ContextObject
+					{
+						Value = model,
+						Key = "",
+						Options = parsingOptions,
+						CancellationToken = token
+					};
+					internalTemplate(streamWriter, context);
+					streamWriter.Flush();
+				}
+				return sourceStream;
+			};
+			return new ExtendedParseInformation(inferredModel, parsingOptions, template);
+		}
 
-        private static Action<StringBuilder, ContextObject> HandleSingleValue(TokenPair token, ParsingOptions options, InferredTemplateModel scope )
-        {
+		private static Action<StreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
+			InferredTemplateModel currentScope = null)
+		{
+			var buildArray = new List<Action<StreamWriter, ContextObject>>();
 
-            if (scope != null)
-            {
-                scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Scalar);
-            }
+			while (tokens.Any())
+			{
+				var currentToken = tokens.Dequeue();
+				switch (currentToken.Type)
+				{
+					case TokenType.Comment:
+						break;
+					case TokenType.Content:
+						buildArray.Add(HandleContent(currentToken.Value));
+						break;
+					case TokenType.CollectionOpen:
+						buildArray.Add(HandleCollectionOpen(currentToken, tokens, options, currentScope));
+						break;
+					case TokenType.ElementOpen:
+						buildArray.Add(HandleElementOpen(currentToken, tokens, options, currentScope));
+						break;
+					case TokenType.InvertedElementOpen:
+						buildArray.Add(HandleInvertedElementOpen(currentToken, tokens, options, currentScope));
+						break;
+					case TokenType.CollectionClose:
+					case TokenType.ElementClose:
+						// This should immediately return if we're in the element scope,
+						// and if we're not, this should have been detected by the tokenizer!
+						return (builder, context) =>
+						{
+							foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+							{
+								a(builder, context);
+							}
+						};
+					case TokenType.Format:
+						buildArray.Add(ParseFormatting(currentToken, tokens, options, currentScope));
+						break;
+					case TokenType.EscapedSingleValue:
+					case TokenType.UnescapedSingleValue:
+						buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
+						break;
+				}
+			}
 
-            return (builder, context) =>
-            {
-                if (context != null)
-                {
-                    //try to locate the value in the context, if it exists, append it.
-                    var c = context.GetContextForPath(token.Value);
-                    if (c.Value != null)
-                    {
-                        if (token.Type == TokenType.EscapedSingleValue && !options.DisableContentSafety)
-                        {
-                            builder.Append(HtmlEncodeString(c.ToString()));
-                        }
-                        else
-                        {
-                            builder.Append(c);
-                        }
-                    }
-                }
-            };
-        }
+			return (builder, context) =>
+			{
+				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+				{
+					a(builder, context);
+				}
+			};
+		}
 
-        private static Action<StringBuilder, ContextObject> HandleContent(string token)
-        {
-            return (builder, context) => builder.Append(token);
-        }
+		private static Action<StreamWriter, ContextObject> ParseFormatting(TokenPair token, Queue<TokenPair> tokens, ParserOptions options, InferredTemplateModel currentScope = null)
+		{
+			var buildArray = new List<Action<StreamWriter, ContextObject>>();
 
-        private static Action<StringBuilder, ContextObject> HandleInvertedElementOpen(TokenPair token, Queue<TokenPair> remainder,
-            ParsingOptions options, InferredTemplateModel scope)
-        {
-            if (scope != null)
-            {
-                scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
-            }
+			buildArray.Add(HandleFormattingValue(token, options, currentScope));
+			var nonPrintToken = false;
+			while (tokens.Any() && !nonPrintToken)
+			{
+				var currentToken = tokens.Peek();
+				switch (currentToken.Type)
+				{
+					case TokenType.Format:
+						buildArray.Add(HandleFormattingValue(tokens.Dequeue(), options, currentScope));
+						break;
+					case TokenType.PrintFormatted:
+						buildArray.Add(PrintFormattedValues(tokens.Dequeue(), options, currentScope));
+						break;
+					case TokenType.CollectionOpen:
+						buildArray.Add(HandleCollectionOpen(tokens.Dequeue(), tokens, options, currentScope));
+						break;
+					default:
+						//The folloring cannot be formatted and the result of the formatting operation has used.
+						//continue with the original Context
+						nonPrintToken = true;
+						break;
+				}
+			}
 
-            var innerTemplate = Parse(remainder, options, scope);
+			return (builder, context) =>
+			{
+				//the formatting will may change the object. Clone the current Context to leave the root one untouched
+				var contextClone = context.Clone();
+				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+				{
+					a(builder, contextClone);
+				}
+			};
+		}
 
-            return (builder, context) =>
-            {
-                var c = context.GetContextForPath(token.Value);
-                //"falsey" values by Javascript standards...
-                if (!c.Exists())
-                {
-                    innerTemplate(builder, c);
-                }
-            };
-        }
+		private static bool StopOrAbortBuilding(ContextObject context)
+		{
+			return !context.AbortGeneration && !context.CancellationToken.IsCancellationRequested;
+		}
 
-        private static Action<StringBuilder, ContextObject> HandleCollectionOpen(TokenPair token, Queue<TokenPair> remainder, ParsingOptions options, InferredTemplateModel scope)
-        {
-            if (scope != null)
-            {
-                scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Collection);
-            }
+		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken, ParserOptions options,
+			InferredTemplateModel currentScope)
+		{
+			return (builder, context) =>
+			{
+				if (context == null)
+				{
+					return;
+				}
+				string value = null;
+				if (context.Value != null)
+				{
+					value = context.ToString();
+				}
+				HandleContent(value)(builder, context);
+			};
+		}
 
-            var innerTemplate = Parse(remainder, options, scope);
+		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken,
+			ParserOptions options, InferredTemplateModel scope)
+		{
+			return (builder, context) =>
+			{
+				if (scope != null)
+				{
+					scope = scope.GetInferredModelForPath(currentToken.Value, InferredTemplateModel.UsedAs.Scalar);
+				}
 
-            return (builder, context) =>
-            {
-                //if we're in the same scope, just negating, then we want to use the same object
-                var c = context.GetContextForPath(token.Value);
+				if (context == null)
+				{
+					return;
+				}
 
-                //"falsey" values by Javascript standards...
-                if (!c.Exists()) return;
+				var c = context.GetContextForPath(currentToken.Value);
+				if (!string.IsNullOrWhiteSpace(currentToken.FormatAs))
+				{
+					if (currentToken.FormatAs.StartsWith("$") &&
+					    currentToken.FormatAs.EndsWith("$"))
+					{
+						var formatContext = context.GetContextForPath(currentToken.FormatAs.Trim('$'));
+						context.Value = c.Format(formatContext.Value);
+					}
+					else
+					{
+						context.Value = c.Format(currentToken.FormatAs);
+					}
+				}
+				else
+				{
+					context.Value = c.Format(currentToken.FormatAs);
+				}
+			};
+		}
 
-                if (c.Value is IEnumerable && !(c.Value is String) && !(c.Value is IDictionary<string, object>))
-                {
-                    var index = 0;
-                    foreach (object i in c.Value as IEnumerable)
-                    {
-                        var innerContext = new ContextObject()
-                        {
-                            Value = i,
-                            Key = String.Format("[{0}]", index),
-                            Parent = c
-                        };
-                        innerTemplate(builder, innerContext);
-                        index++;
-                    }
-                }
-                else
-                {
-                    throw new IndexedParseException("'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
-                }
-            };
-        }
+		private static string HtmlEncodeString(string context)
+		{
+			return HttpUtility.HtmlEncode(context);
+		}
 
-        private static Action<StringBuilder, ContextObject> HandleElementOpen(TokenPair token, Queue<TokenPair> remainder, ParsingOptions options, InferredTemplateModel scope)
-        {
-            if (scope != null)
-            {
-                scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
-            }
+		private static Action<StreamWriter, ContextObject> HandleSingleValue(TokenPair token, ParserOptions options,
+			InferredTemplateModel scope)
+		{
+			if (scope != null)
+			{
+				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Scalar);
+			}
 
-            var innerTemplate = Parse(remainder, options, scope);
+			return (builder, context) =>
+			{
+				if (context != null)
+				{
+					//try to locate the value in the context, if it exists, append it.
+					var c = context.GetContextForPath(token.Value);
+					if (c.Value != null)
+					{
+						if (token.Type == TokenType.EscapedSingleValue && !options.DisableContentEscaping)
+						{
+							HandleContent(HtmlEncodeString(c.ToString()))(builder, c);
+						}
+						else
+						{
+							HandleContent(c.ToString())(builder, c);
+						}
+					}
+				}
+			};
+		}
 
-            return (builder, context) =>
-            {
-                var c = context.GetContextForPath(token.Value);
-                //"falsey" values by Javascript standards...
-                if (c.Exists())
-                {
-                    innerTemplate(builder, c);
-                }
-            };
-        }
-    }
+		internal static void WriteContent(StreamWriter builder, string content, ContextObject context)
+		{
+			content = content ?? context.Options.Null;
 
+			var sourceCount = builder.BaseStream.Length;
+			var binaryContent = context.Options.Encoding.GetBytes(content);
+
+			var cl = binaryContent.Length;
+			if (context.Options.MaxSize == 0)
+			{
+				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+				return;
+			}
+
+			if (sourceCount >= context.Options.MaxSize - 1)
+			{
+				context.AbortGeneration = true;
+				return;
+			}
+			var overflow = sourceCount + cl - context.Options.MaxSize;
+			if (overflow < 0)
+			{
+				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+				return;
+			}
+			if (overflow < content.Length)
+			{
+				builder.BaseStream.Write(binaryContent, 0, (int)(cl - overflow));
+			}
+			else
+			{
+				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+			}
+		}
+
+		private static Action<StreamWriter, ContextObject> HandleContent(string token)
+		{
+			return (builder, context) => { WriteContent(builder, token, context); };
+		}
+
+		private static Action<StreamWriter, ContextObject> HandleInvertedElementOpen(TokenPair token,
+			Queue<TokenPair> remainder,
+			ParserOptions options, InferredTemplateModel scope)
+		{
+			if (scope != null)
+			{
+				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
+			}
+
+			var innerTemplate = Parse(remainder, options, scope);
+
+			return (builder, context) =>
+			{
+				var c = context.GetContextForPath(token.Value);
+				//"falsey" values by Javascript standards...
+				if (!c.Exists())
+				{
+					innerTemplate(builder, c);
+				}
+			};
+		}
+
+
+		private static Action<StreamWriter, ContextObject> HandleCollectionOpen(TokenPair token, Queue<TokenPair> remainder,
+			ParserOptions options, InferredTemplateModel scope)
+		{
+			if (scope != null)
+			{
+				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Collection);
+			}
+
+			var innerTemplate = Parse(remainder, options, scope);
+
+			return (builder, context) =>
+			{
+				//if we're in the same scope, just negating, then we want to use the same object
+				var c = context.GetContextForPath(token.Value);
+
+				//"falsey" values by Javascript standards...
+				if (!c.Exists())
+				{
+					return;
+				}
+
+				var value = c.Value as IEnumerable;
+				if (value != null && !(value is string) && !(value is IDictionary<string, object>))
+				{
+					//Use this "lookahead" enumeration to allow the $last keyword
+					var index = 0;
+					var enumumerator = value.GetEnumerator();
+					if (!enumumerator.MoveNext())
+					{
+						return;
+					}
+					var current = enumumerator.Current;
+					do
+					{
+						var next = enumumerator.MoveNext() ? enumumerator.Current : null;
+						var innerContext = new ContextCollection(index, next == null)
+						{
+							Value = current,
+							Key = string.Format("[{0}]", index),
+							Options = options,
+							Parent = c
+						};
+						innerTemplate(builder, innerContext);
+						index++;
+						current = next;
+					} while (current != null);
+				}
+				else
+				{
+					throw new IndexedParseException(
+					"'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
+				}
+			};
+		}
+
+		private static Action<StreamWriter, ContextObject> HandleElementOpen(TokenPair token, Queue<TokenPair> remainder,
+			ParserOptions options, InferredTemplateModel scope)
+		{
+			if (scope != null)
+			{
+				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
+			}
+
+			var innerTemplate = Parse(remainder, options, scope);
+
+			return (builder, context) =>
+			{
+				var c = context.GetContextForPath(token.Value);
+				//"falsey" values by Javascript standards...
+				if (c.Exists())
+				{
+					innerTemplate(builder, c);
+				}
+			};
+		}
+	}
 }
-

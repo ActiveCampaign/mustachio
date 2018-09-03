@@ -3,9 +3,9 @@
 namespace Mustachio
 {
     /// <summary>
-    /// Indicates a parse error including line and character info. 
+    /// Indicates a parse error including line and character info.
     /// </summary>
-    public class IndexedParseException : ParseException
+    public class IndexedParseException : MustachioException
     {
         internal IndexedParseException(Mustachio.Tokenizer.CharacterLocation location, string message, params object[] replacements)
             : this(message, replacements)
@@ -14,13 +14,23 @@ namespace Mustachio
             this.CharacterOnLine = location.Character;
         }
 
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="replacements"></param>
         public IndexedParseException(string message, params object[] replacements)
             : base(String.Format(message, replacements))
         {
 
         }
-
+		/// <summary>
+		/// The line of the expression in the expression
+		/// </summary>
         public int LineNumber { get; set; }
+		/// <summary>
+		/// The character from left in the line of the expression
+		/// </summary>
         public int CharacterOnLine { get; set; }
     }
 }

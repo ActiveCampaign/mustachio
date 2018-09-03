@@ -34,11 +34,11 @@ namespace Mustachio
 		}
 
 		/// <summary>
-		///     ctor
+		/// Initializes a new instance of the <see cref="ParserOptions"/> class.
 		/// </summary>
-		/// <param name="template"></param>
-		/// <param name="sourceStream"></param>
-		/// <param name="encoding">When not defined the default (UTF8) encoding will be used</param>
+		/// <param name="template">The template.</param>
+		/// <param name="sourceStream">The source stream.</param>
+		/// <param name="encoding">The encoding.</param>
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding)
 		{
 			Template = template;
@@ -52,14 +52,14 @@ namespace Mustachio
 		}
 
 		/// <summary>
-		///     ctor
+		/// Initializes a new instance of the <see cref="ParserOptions"/> class.
 		/// </summary>
-		/// <param name="template"></param>
-		/// <param name="sourceStream"></param>
-		/// <param name="encoding"></param>
-		/// <param name="maxSize">Defines on byte level how big the generated template could grow before cancelation happens</param>
-		/// <param name="disableContentEscaping"></param>
-		/// <param name="withModelInference"></param>
+		/// <param name="template">The template.</param>
+		/// <param name="sourceStream">The source stream.</param>
+		/// <param name="encoding">The encoding.</param>
+		/// <param name="maxSize">The maximum size.</param>
+		/// <param name="disableContentEscaping">if set to <c>true</c> [disable content escaping].</param>
+		/// <param name="withModelInference">if set to <c>true</c> [with model inference].</param>
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding, long maxSize,
 				bool disableContentEscaping = false, bool withModelInference = false)
 				: this(template, sourceStream, encoding)
@@ -70,13 +70,13 @@ namespace Mustachio
 		}
 
 		/// <summary>
-		///     ctor
+		/// Initializes a new instance of the <see cref="ParserOptions"/> class.
 		/// </summary>
-		/// <param name="template"></param>
-		/// <param name="sourceStream"></param>
-		/// <param name="encoding"></param>
-		/// <param name="disableContentEscaping"></param>
-		/// <param name="withModelInference"></param>
+		/// <param name="template">The template.</param>
+		/// <param name="sourceStream">The source stream.</param>
+		/// <param name="encoding">The encoding.</param>
+		/// <param name="disableContentEscaping">if set to <c>true</c> [disable content escaping].</param>
+		/// <param name="withModelInference">if set to <c>true</c> [with model inference].</param>
 		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding,
 				bool disableContentEscaping = false, bool withModelInference = false)
 				: this(template, sourceStream, encoding, 0, disableContentEscaping, withModelInference)
@@ -95,7 +95,7 @@ namespace Mustachio
 
 		/// <summary>
 		///     In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails).
-		///     By default, we use content escaping, but this parameter allows it to be disabled.
+		///     By default, we use no content escaping, but this parameter allows it to be enabled.
 		/// </summary>
 		public bool DisableContentEscaping { get; private set; }
 
@@ -118,7 +118,7 @@ namespace Mustachio
 		//public Stream SourceStream { get; private set; }
 
 		/// <summary>
-		///     SourceFactory can be used to create a new stream for each template
+		///     SourceFactory can be used to create a new stream for each template. Default is <code>() => new MemoryStream()</code>
 		/// </summary>
 		public Func<Stream> SourceFactory { get; private set; }
 
@@ -139,7 +139,7 @@ namespace Mustachio
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
-		public void AddFormatter<T>(Func<T, string, object> formatter, string description = null)
+		public void AddFormatter<T>(Func<T, object, object> formatter, string description = null)
 		{
 			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
@@ -149,7 +149,48 @@ namespace Mustachio
 				}
 
 				return formatter((T)sourceObject, argument);
-			}));
+			}, typeof(T), null, null));
+		}
+
+		/// <summary>
+		///     Adds a formatter with typecheck
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TArg"></typeparam>
+		/// <param name="formatter"></param>
+		/// <param name="description"></param>
+		public void AddFormatter<T, TArg>(Func<T, TArg, object> formatter, string description = null)
+		{
+			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
+			{
+				if (!(sourceObject is T) || !(argument is TArg))
+				{
+					return sourceObject;
+				}
+
+				return formatter((T)sourceObject, (TArg)argument);
+			}, typeof(T), null, typeof(TArg)));
+		}
+
+		/// <summary>
+		///     Adds a formatter with typecheck
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TArg"></typeparam>
+		/// <typeparam name="TOut"></typeparam>
+		/// <param name="formatter"></param>
+		/// <param name="description"></param>
+		public void AddFormatter<T, TArg, TOut>(Func<T, TArg, TOut> formatter, string description = null)
+		{
+			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
+			{
+				if (!(sourceObject is T) || !(argument is TArg))
+				{
+					return sourceObject;
+				}
+
+				return formatter((T)sourceObject, (TArg)argument);
+			}, typeof(T), typeof(TOut), typeof(TArg)));
 		}
 
 		/// <summary>

@@ -8,48 +8,6 @@ using System.Threading;
 namespace Mustachio
 {
 	/// <summary>
-	///		Encapsulates a Format function
-	/// </summary>
-	public class FormatTemplateElement
-	{
-		/// <summary>
-		///		Ctor
-		/// </summary>
-		/// <param name="desciption"></param>
-		public FormatTemplateElement(string desciption, FormatTemplateElementDelegate formatTemplate)
-		{
-			Desciption = desciption;
-			Format = formatTemplate;
-		}
-
-		/// <summary>
-		/// delegate for formatting template pars
-		/// </summary>
-		public FormatTemplateElementDelegate Format { get; private set; }
-		/// <summary>
-		///		Help Text for UI editors
-		/// </summary>
-		public string Desciption { get; private set; }
-
-		/// <summary>
-		/// Converts a FormatTemplateElementDelegate to a FormatTemplateElement
-		/// </summary>
-		/// <param name="x"></param>
-		public static implicit operator FormatTemplateElement(FormatTemplateElementDelegate x)
-		{
-			return new FormatTemplateElement(string.Empty, x);
-		}
-	}
-
-	/// <summary>
-	/// delegate for formatting template pars
-	/// </summary>
-	/// <param name="sourceObject">the object that this formatter should be applyed to</param>
-	/// <param name="argument">the string argument as given in the template</param>
-	/// <returns>a new object or the same object or a string</returns>
-	public delegate object FormatTemplateElementDelegate(object sourceObject, string argument);
-
-	/// <summary>
 	/// The current context for any given expression
 	/// </summary>
 	public class ContextObject
@@ -109,7 +67,22 @@ namespace Mustachio
 				{
 					return preHandeld;
 				}
-
+				//if (path.StartsWith("..."))
+				//{
+				//	var parent = Parent;
+				//	var lastParent = parent;
+				//	while (parent != null)
+				//	{
+				//		parent = parent.Parent;
+				//		if (parent != null)
+				//		{
+				//			lastParent = parent;
+				//		}
+				//	}
+					
+				//	retval = lastParent.GetContextForPath(elements);
+				//}
+				//else 
 				if (path.StartsWith(".."))
 				{
 					if (Parent != null)
@@ -191,7 +164,14 @@ namespace Mustachio
 		public static FormatTemplateElement DefaultToStringWithFormatting = new FormatTemplateElement("Default string formatter", (value, formatArgument) =>
 		{
 			var o = value as IFormattable;
-			return o != null ? o.ToString(formatArgument, null) : value.ToString();
+			if (o != null && formatArgument != null)
+			{
+				return o.ToString(formatArgument.ToString(), null);
+			}
+			else
+			{
+				return value.ToString();
+			}
 		});
 
 
@@ -267,12 +247,12 @@ namespace Mustachio
 			return PrintableTypes.TryGetValue(type, out formatter) ? formatter : null;
 		}
 
-		private object CallMostMatchingFormatter(Type type, string arguments)
+		private object CallMostMatchingFormatter(Type type, object arguments)
 		{
 			return CallMostMatchingFormatter(type, arguments, Value);
 		}
 
-		private object CallMostMatchingFormatter(Type type, string arguments, object value)
+		private object CallMostMatchingFormatter(Type type, object arguments, object value)
 		{
 			var hasFormatter = GetMostMatchingFormatter(type, Options.Formatters);
 			if (hasFormatter == null)
@@ -297,7 +277,7 @@ namespace Mustachio
 		/// </summary>
 		/// <param name="argument"></param>
 		/// <returns></returns>
-		public object Format(string argument)
+		public object Format(object argument)
 		{
 			object retval = Value;
 			if (Value != null)

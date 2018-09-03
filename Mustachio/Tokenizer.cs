@@ -304,7 +304,6 @@ namespace Mustachio
 				exceptions.Add(new IndexedParseException(location, "The argument '{0}' is not valid. Please see documentation for examples of valid paths.", token));
 			}
 
-
 			return token;
 		}
 	}

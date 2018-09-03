@@ -22,7 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>5</LangVersion>
+    <LangVersion>6</LangVersion>
     <DocumentationFile>bin\Debug\Mustachio.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -45,6 +45,8 @@
     <Compile Include="ContextCollection.cs" />
     <Compile Include="ContextObject.cs" />
     <Compile Include="ExtendedParseInformation.cs" />
+    <Compile Include="FormatTemplateElement.cs" />
+    <Compile Include="FormatTemplateElementDelegate.cs" />
     <Compile Include="Helper\StreamExtentions.cs" />
     <Compile Include="InferredTemplateModel.cs" />
     <Compile Include="ParserOptions.cs" />
@@ -52,8 +54,11 @@
     <Compile Include="Parser.cs" />
     <Compile Include="IndexedParseException.cs" />
     <Compile Include="MustachioException.cs" />
+    <Compile Include="TemplateGeneration.cs" />
+    <Compile Include="TemplateGenerationWithCancel.cs" />
     <Compile Include="Tokenizer.cs" />
     <Compile Include="TokenPair.cs" />
+    <Compile Include="TokenType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

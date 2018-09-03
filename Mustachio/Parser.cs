@@ -200,7 +200,23 @@ namespace Mustachio
 				}
 
 				var c = context.GetContextForPath(currentToken.Value);
-				context.Value = c.Format(currentToken.FormatAs);
+				if (!string.IsNullOrWhiteSpace(currentToken.FormatAs))
+				{
+					if (currentToken.FormatAs.StartsWith("$") &&
+					    currentToken.FormatAs.EndsWith("$"))
+					{
+						var formatContext = context.GetContextForPath(currentToken.FormatAs.Trim('$'));
+						context.Value = c.Format(formatContext.Value);
+					}
+					else
+					{
+						context.Value = c.Format(currentToken.FormatAs);
+					}
+				}
+				else
+				{
+					context.Value = c.Format(currentToken.FormatAs);
+				}
 			};
 		}
 

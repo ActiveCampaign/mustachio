@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Mustachio.Helper;
 using Xunit;
@@ -10,51 +9,6 @@ using Xunit.Extensions;
 
 namespace Mustachio.Tests
 {
-	/// <summary>
-	/// Allows for simpler comparison of template results that don't demand
-	/// </summary>
-	internal static class WhitespaceNormalizer
-	{
-		private static Regex WHITESPACE_NORMALIZER = new Regex("[\\s]+", RegexOptions.Compiled);
-		/// <summary>
-		/// Provides a mechanism to make comparing expected and actual results a little more sane to author.
-		/// You may include whitespace in resources to make them easier to read.
-		/// </summary>
-		/// <param name="subject"></param>
-		/// <returns></returns>
-		internal static string EliminateWhitespace(this string subject)
-		{
-			return WHITESPACE_NORMALIZER.Replace(subject, "");
-		}
-	}
-
-	public class ParserCancellationional
-	{
-		private readonly CancellationTokenSource _tokenSource;
-		private string _valueCancel;
-
-		public ParserCancellationional(CancellationTokenSource tokenSource)
-		{
-			_tokenSource = tokenSource;
-			ValueA = "ValueA";
-			ValueB = "ValueB";
-			ValueCancel = "ValueCancel";
-		}
-
-		public string ValueA { get; set; }
-		public string ValueB { get; set; }
-
-		public string ValueCancel
-		{
-			get
-			{
-				_tokenSource.Cancel();
-				return _valueCancel;
-			}
-			set { _valueCancel = value; }
-		}
-	}
-
 	public class ParserFixture
 	{
 		public static Encoding DefaultEncoding { get; set; } = new UnicodeEncoding(true, false, false);
@@ -182,6 +136,22 @@ namespace Mustachio.Tests
 			Assert.Equal(realData, genTemplate);
 		}
 
+		[Fact]
+		public void ParserCanFormatArgumentWithExpression()
+		{
+			var dt = DateTime.Now;
+			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data($testFormat$)}}"));
+
+			var format = "yyyy.mm";
+			var andStringify = extendedParseInformation.CreateAndStringify(new Dictionary<string, object>()
+			{
+				{"data", dt},
+				{"testFormat", format}
+			});
+
+			Assert.Equal(dt.ToString(format), andStringify);
+		}
+
 		[Theory]
 		[InlineData("d")]
 		[InlineData("D")]
@@ -222,6 +192,20 @@ namespace Mustachio.Tests
 			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
 							   .Stringify(true, DefaultEncoding);
 			Assert.Equal("TEST", result);
+		}
+
+		[Fact]
+		public void ParserCanChainWithAndWithoutFormat()
+		{
+			var data = DateTime.UtcNow;
+			var parsingOptions = new ParserOptions("{{data().TimeOfDay.Ticks().()}}", null, DefaultEncoding);
+			parsingOptions.AddFormatter<string>((s, s1) => s);
+			parsingOptions.AddFormatter<DateTime>((s, s1) => s);
+			parsingOptions.AddFormatter<long>((s, s1) => new TimeSpan(s));
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.ParsedTemplate(new Dictionary<string, object>() { { "data", data } })
+							   .Stringify(true, DefaultEncoding);
+			Assert.Equal(new TimeSpan(data.TimeOfDay.Ticks).ToString(), result);
 		}
 
 		[Fact]

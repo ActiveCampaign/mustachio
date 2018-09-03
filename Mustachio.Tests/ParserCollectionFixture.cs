@@ -67,7 +67,7 @@ namespace Mustachio.Tests
 	{
 		private void AddCollectionTypeFormatter(ParserOptions options)
 		{
-			options.AddFormatter<IEnumerable>((value, arg) =>
+			options.AddFormatter<IEnumerable, string>((value, arg) =>
 			{
 				return arg.Split('|').Aggregate(value, (current, format) => (IEnumerable)new EnumerableFormatter().FormatArgument(current, format.Trim()));
 			});

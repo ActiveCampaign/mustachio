@@ -65,21 +65,48 @@ Including partials would complicate the general process of creating the template
 
 ###### Infos about new features
  
-Its possible to add plain objects to the Dictionary.
-They will be called by reflection. 
-Also you can now spezify the excact Size of the template to limit it (this could be come handy if you are in a hostet env). Also there is a new Operator {{?}}. Use it the access the current value direct. This will invoke ToString on the object in the current scope. Its good for cases where you are looping through a collection of primitives like:
- 
-{{#each Data.ArrayOfInts}}
-Current int: {{?}}
-{{/each}}
+Its possible to use plain C# objects they will be called by reflection. 
+Also you can now spezify the excact Size of the template to limit it (this could be come handy if you are in a hostet env) use the `ParserOptions.MaxSize` option to define a max size. It will be enforced on exact that amount of bytes in the stream.
+
+##### Streams
+One mayor component is the usage of Streams in morestachio. You can declare a Factory for the streams generated in the `ParserOptions.SourceFactory`. This is very important if you are rendering templates that will be very huge and you want to stream them directly to the harddrive or elsewhere. This has also a very positive effect on the performance as we will not use string concatination for compiling the template. If you do not set the `ParserOptions.SourceFactory` and the `ParserOptions.Encoding`, a memory stream will be created and the `Encoding.Default` will be used.
  
 ###### Formatter
-Use the ContextObject.PrintableTypes collection to create own formatter for your types or add one to the new ParserOptions object for just one call. To invoke them in your template use the new Function syntax:
-{{Just.One.Formattable(AnyStringFormat).Thing}}
+Use the `ContextObject.PrintableTypes` collection to create own formatter for all your types or add one to the new `ParserOptions.Formatters` object for just one call. To invoke them in your template use the new Function syntax:
+```csharp
+{{Just.One.Formattable(AnyString).Thing}}
+```
 
 The formatter CAN return a new object on wich you can call new Propertys or it can return a string.
 There are formatter prepaired for all Primitve types. That means per default you can call on an object hat contains a DateTime:
-
+```csharp
 {{MyObject.DateTime(D)}}
+```
+that will call the `IFormattable` interface on the DateTime. 
+
+**Formatter References** can be used to reference another property/key in the template and then use it in a Formatter.
+```csharp
+{{MyObject.Value($Key$)}}
+```
+This will call a formatter that is resposible for the type that `Value` has and will give it whats in `Key`. Example:
+```csharp
+//create the template
+var template = "{{Value($Key$)}}";
+//create the model
+var model = new Dictionary<string, object>();
+model["Value"] = DateTime.Now; 
+model["Key"] = "D";
+//now add a formatter for our DateTime and add it to the ParserOptions
+
+var parserOptions = new ParserOptions(template);
+//                         Value   | Argument| Return
+parserOptions.AddFormatter<DateTime, string,   string>((value, argument) => {
+  //value will be the DateTime object and argument will be the value from Key
+  return value.ToString(argument);
+});
+
+Parser.Parse(parserOptions).Stringify() // Friday, September 21, 2018 ish
+
+```
 
 

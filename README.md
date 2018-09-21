@@ -1,26 +1,31 @@
-<img src="http://assets.wildbit.com/postmark/misc/Morestachio-logo@2x.png" alt="Morestachio Logo" title="Pistachio + Mustache =&gt; Morestachio" width="148" height="149">
-
 # Morestachio
-A Lightweight, powerful, flavorful, templating engine for C# and other .net-based languages.
+A Lightweight, powerful, flavorful, templating engine for C# and other .net-based languages. Its a fork of Mustachio.
 
 #### What's this for?
 
-*Morestachio* allows you to create simple text-based templates that are fast and safe to render. It's the heart of [Postmark Templates](http://blog.postmarkapp.com/post/125849089273/special-delivery-postmark-templates), and we're ecstatic to provide it as Open Source to the .net community.
+*Morestachio* allows you to create simple text-based templates that are fast and safe to render. It is optimized for WebServers and high on customersation with its Formatter syntax.
 
 #### How to use Morestachio:
 
 ```csharp
 // Parse the template:
 var sourceTemplate = "Dear {{name}}, this is definitely a personalized note to you. Very truly yours, {{sender}}"
-var template = Morestachio.Parser.Parse(sourceTemplate);
+var template = Morestachio.Parser.Parse(new Morstachio.ParserOptions(sourceTemplate));
 
 // Create the values for the template model:
 dynamic model = new ExpandoObject();
 model.name = "John";
 model.sender = "Sally";
+// or with dictionarys
+IDictionary model = new Dictionary<string, object>();
+model["name"] = "John";
+model["sender"] = "Sally";
+//or with any other object
+var model = new {name= "John", sender= "Sally"}
 
 // Combine the model with the template to get content:
-var content = template(model);
+Stream content = template.ParseTemplate(model);
+content.Stringify(); // Dear John, this is definitely a personalized note to you. Very truly yours, Sally
 ```
 
 #### Installing Morestachio:
@@ -55,12 +60,12 @@ We think the model inference feature is compelling, because it allows for error 
 
 **Template partials** are a great feature for large scale template development. However, they introduce the risk of _infinite recursion_ if used improperly (especially since Morestachio allows for one to navigate 'up' a model with `../`).
 
-In our use case (email templating), including partials would complicate the general process of creating the templates, and allow unknown users to create potentially unbound processing requirements on our servers. It is possible to detect these cycles while parsing templates, so, if this is important to our customers, or the broader OSS community, partial template support may be added to Morestachio in the future.
+Including partials would complicate the general process of creating the templates, and allow unknown users to create potentially unbound processing requirements on our servers. It is possible to detect these cycles while parsing templates, so, if this is important to the broader OSS community, partial template support may be added to Morestachio in the future.
 
 
 ###### Infos about new features
  
-Its now possible to add plain objects to the Dictionary.
+Its possible to add plain objects to the Dictionary.
 They will be called by reflection. 
 Also you can now spezify the excact Size of the template to limit it (this could be come handy if you are in a hostet env). Also there is a new Operator {{?}}. Use it the access the current value direct. This will invoke ToString on the object in the current scope. Its good for cases where you are looping through a collection of primitives like:
  

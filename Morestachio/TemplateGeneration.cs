@@ -7,5 +7,5 @@ namespace Morestachio
 	/// </summary>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	public delegate Stream TemplateGeneration(IDictionary<string, object> data);
+	public delegate Stream TemplateGeneration(object data);
 }

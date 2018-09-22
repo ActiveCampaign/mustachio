@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Web;
 
 #endregion
@@ -41,7 +42,8 @@ namespace Morestachio
 
 			var internalTemplate = Parse(tokens, parsingOptions,
 				parsingOptions.WithModelInference ? inferredModel : null);
-			TemplateGenerationWithCancel template = (model, token) =>
+
+			Stream Template(object model, CancellationToken token)
 			{
 				var sourceStream = parsingOptions.SourceFactory();
 				if (!sourceStream.CanWrite)
@@ -63,8 +65,9 @@ namespace Morestachio
 				}
 
 				return sourceStream;
-			};
-			return new ExtendedParseInformation(inferredModel, parsingOptions, template);
+			}
+
+			return new ExtendedParseInformation(inferredModel, parsingOptions, Template);
 		}
 
 		private static Action<StreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,

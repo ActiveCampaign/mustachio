@@ -80,7 +80,7 @@ namespace Morestachio.Tests
 				ParserFixture.DefaultEncoding);
 			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
 			AddCollectionTypeFormatter(options);
-			var report = Parser.ParseWithOptions(options).ParsedTemplate(new Dictionary<string, object>
+			var report = Parser.ParseWithOptions(options).Create(new Dictionary<string, object>
 			{
 				{
 					"data", collection
@@ -98,7 +98,7 @@ namespace Morestachio.Tests
 				ParserFixture.DefaultEncoding);
 			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
 			AddCollectionTypeFormatter(options);
-			var report = Parser.ParseWithOptions(options).ParsedTemplate(new Dictionary<string, object>
+			var report = Parser.ParseWithOptions(options).Create(new Dictionary<string, object>
 			{
 				{
 					"data", collection

@@ -20,10 +20,7 @@ namespace Morestachio
 			ConditionalValue,
 			Collection
 		}
-
-		private static readonly Regex _pathFinder = new Regex("(\\.\\.[\\\\/]{1})|([^.]+)",
-			RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
+		
 		public InferredTemplateModel()
 		{
 			Children = new Dictionary<string, InferredTemplateModel>();
@@ -88,7 +85,7 @@ namespace Morestachio
 		private InferredTemplateModel GetContextForPath(string path)
 		{
 			var elements = new Queue<string>();
-			foreach (Match m in _pathFinder.Matches(path))
+			foreach (Match m in ContextObject.PathFinder.Matches(path))
 			{
 				elements.Enqueue(m.Value);
 			}

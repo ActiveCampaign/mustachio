@@ -42,7 +42,7 @@ namespace Morestachio.Tests
 			var resuts =
 				Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}},{{data}}", null,
 					DefaultEncoding));
-			var result = resuts.ParsedTemplate(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
 				.Stringify(true, DefaultEncoding);
 			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
 		}
@@ -58,7 +58,7 @@ namespace Morestachio.Tests
 			var data = DateTime.UtcNow;
 			var resuts = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(" + dtFormat + ")}}{{/data}},{{data}}",
 				null, DefaultEncoding));
-			var result = resuts.ParsedTemplate(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
 				.Stringify(true, DefaultEncoding);
 			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
 		}
@@ -96,7 +96,7 @@ namespace Morestachio.Tests
 			model["name"] = "Mike";
 
 			Assert.Equal(expected,
-				Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).ParsedTemplate(model)
+				Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).Create(model)
 					.Stringify(true, DefaultEncoding));
 		}
 
@@ -113,11 +113,12 @@ namespace Morestachio.Tests
 
 
 		[Theory]
-		[InlineData("{{.../asdf.content}}")]
+		[InlineData("{{..../asdf.content}}")]
 		[InlineData("{{/}}")]
 		[InlineData("{{./}}")]
 		[InlineData("{{.. }}")]
 		[InlineData("{{..}}")]
+		[InlineData("{{...}}")]
 		[InlineData("{{//}}")]
 		[InlineData("{{@}}")]
 		[InlineData("{{[}}")]
@@ -175,7 +176,7 @@ namespace Morestachio.Tests
 				{"content", content}
 			};
 			var value = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding))
-				.ParsedTemplate(model)
+				.Create(model)
 				.Stringify(true, DefaultEncoding);
 
 			Assert.Equal(expected, value);
@@ -192,7 +193,7 @@ namespace Morestachio.Tests
 			};
 			Assert.Equal(expected,
 				Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding, 0, true))
-					.ParsedTemplate(model).Stringify(true, DefaultEncoding));
+					.Create(model).Stringify(true, DefaultEncoding));
 		}
 
 		[Fact]
@@ -202,7 +203,7 @@ namespace Morestachio.Tests
 			var parsingOptions = new ParserOptions("{{#data}}{{.(d).()}}{{/data}}", null, DefaultEncoding);
 			parsingOptions.AddFormatter<string>((s, s1) => "TEST");
 			var resuts = Parser.ParseWithOptions(parsingOptions);
-			var result = resuts.ParsedTemplate(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
 				.Stringify(true, DefaultEncoding);
 			Assert.Equal("TEST", result);
 		}
@@ -216,7 +217,7 @@ namespace Morestachio.Tests
 			parsingOptions.AddFormatter<DateTime>((s, s1) => s);
 			parsingOptions.AddFormatter<long>((s, s1) => new TimeSpan(s));
 			var resuts = Parser.ParseWithOptions(parsingOptions);
-			var result = resuts.ParsedTemplate(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
 				.Stringify(true, DefaultEncoding);
 			Assert.Equal(new TimeSpan(data.TimeOfDay.Ticks).ToString(), result);
 		}
@@ -229,7 +230,7 @@ namespace Morestachio.Tests
 			//this should compile as its valid but not work as the Default
 			//settings for DateTime are ToString(Arg) so it should return a string and not an object
 			Assert.Equal(string.Empty + "," + data, resuts
-				.ParsedTemplate(new Dictionary<string, object> {{"data", data}})
+				.Create(new Dictionary<string, object> {{"data", data}})
 				.Stringify(true, DefaultEncoding));
 		}
 
@@ -589,6 +590,12 @@ namespace Morestachio.Tests
 			Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{../Person.Name}}!{{/content}}"));
 		}
 
+		//[Fact]
+		//public void ParserCanProcessRootValuePath()
+		//{
+		//	Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{.../Person.Name}}!{{/content}}"));
+		//}
+
 		[Fact]
 		public void ParserCanProcessCompoundConditionalGroup()
 		{
@@ -642,7 +649,7 @@ namespace Morestachio.Tests
 			});
 			var resuts = Parser.ParseWithOptions(options);
 			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
-			Assert.Equal("2," + dateTime, resuts.ParsedTemplate(new Dictionary<string, object>
+			Assert.Equal("2," + dateTime, resuts.Create(new Dictionary<string, object>
 				{
 					{
 						"data", dateTime
@@ -771,7 +778,7 @@ namespace Morestachio.Tests
 			};
 
 			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
-			var genTemplate = parsedTemplate.ParsedTemplate(new Dictionary<string, object> {{"data", elementdata}})
+			var genTemplate = parsedTemplate.Create(new Dictionary<string, object> {{"data", elementdata}})
 				.Stringify(true, DefaultEncoding);
 			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
 			Assert.Equal(realData, genTemplate);

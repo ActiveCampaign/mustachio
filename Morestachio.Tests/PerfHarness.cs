@@ -10,7 +10,13 @@ namespace Morestachio.Tests
 {
 	public class PerfHarness
 	{
-		[Theory(Skip = "Explicit Performance testing only")]
+		public void PerfStart()
+		{
+
+		}
+
+		[Theory()]
+		//[Theory(Skip = "Explicit Performance testing only")]
 		[Trait("Category", "Explicit")]
 		[InlineData("Model Depth", 5, 30000, 10, 5000)]
 		[InlineData("Model Depth", 10, 30000, 10, 5000)]
@@ -33,7 +39,7 @@ namespace Morestachio.Tests
 				baseTemplate += model.Item2 + "\r\n";
 			}
 
-			TemplateGeneration template = null;
+			ExtendedParseInformation template = null;
 
 			//make sure this class is JIT'd before we start timing.
 			Parser.ParseWithOptions(new ParserOptions("asdf"));
@@ -43,8 +49,7 @@ namespace Morestachio.Tests
 			Stopwatch renderTime;
 			for (var i = 0; i < runs; i++)
 			{
-				template = Parser.ParseWithOptions(new ParserOptions(baseTemplate, () => new MemoryStream()))
-					.ParsedTemplate;
+				template = Parser.ParseWithOptions(new ParserOptions(baseTemplate, () => new MemoryStream()));
 			}
 
 			parseTime.Stop();
@@ -52,7 +57,7 @@ namespace Morestachio.Tests
 			renderTime = Stopwatch.StartNew();
 			for (var i = 0; i < runs; i++)
 			{
-				using (var f = template(model.Item1))
+				using (var f = template.Create(model.Item1))
 				{
 				}
 			}

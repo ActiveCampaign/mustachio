@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace Morestachio
 {
@@ -37,26 +38,31 @@ namespace Morestachio
 		/// <summary>
 		///     delegate for formatting template pars
 		/// </summary>
+		[NotNull]
 		public FormatTemplateElementDelegate Format { get; }
 
 		/// <summary>
 		///     Help Text for UI editors
 		/// </summary>
+		[CanBeNull]
 		public string Desciption { get; }
 
 		/// <summary>
 		///     The type of the Argument that the formatter expects. Can be null.
 		/// </summary>
+		[CanBeNull]
 		public Type ArgumentType { get; }
 
 		/// <summary>
 		///     The type of input the Formatter is able to accept. Can be null.
 		/// </summary>
+		[CanBeNull]
 		public Type InputType { get; }
 
 		/// <summary>
 		///     The type that the formatter will return. Can be null.
 		/// </summary>
+		[CanBeNull]
 		public Type OutputType { get; }
 
 		/// <summary>

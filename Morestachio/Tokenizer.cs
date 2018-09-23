@@ -11,23 +11,22 @@ namespace Morestachio
 	/// <exception cref="IndexedParseException"></exception>
 	internal class Tokenizer
 	{
-		private static readonly Regex _tokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
+		private static readonly Regex TokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
 			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
 
-		private static readonly Regex _formatFinder = new Regex(@"(?:([\w.]+)*)+(?:(?:\(){1}([^)]*)(?:\)){1})?");
-		private static readonly Regex _formatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
+		private static readonly Regex FormatFinder = new Regex(@"(?:([\w.]+)*)+(?:(?:\(){1}([^)]*)(?:\)){1})?");
+		private static readonly Regex FormatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
 
-		private static readonly Regex _newlineFinder = new Regex("\n", RegexOptions.Compiled);
+		private static readonly Regex NewlineFinder = new Regex("\n", RegexOptions.Compiled);
 
 		/// <summary>
 		///     Specifies combnations of paths that don't work.
 		/// </summary>
-		//private static readonly Regex _negativePathSpec = new Regex(@"([.]{3,})|([^\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))|([()]{2,})|([)]\w+)|([(][\w]*$)|(^\w*[)])", RegexOptions.Singleline | RegexOptions.Compiled);
-		private static readonly Regex _negativePathSpec =
-			new Regex(@"([.]{3,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))",
+		private static readonly Regex NegativePathSpec =
+			new Regex(@"([.]{4,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))",
 				RegexOptions.Singleline | RegexOptions.Compiled);
 
-		private static readonly Regex _positiveArgumentSpec =
+		private static readonly Regex PositiveArgumentSpec =
 			new Regex(@"^([^()]*)$", RegexOptions.Singleline | RegexOptions.Compiled);
 
 		private static CharacterLocation HumanizeCharacterLocation(string content, int characterIndex, List<int> lines)
@@ -35,7 +34,7 @@ namespace Morestachio
 			if (lines == null)
 			{
 				lines = new List<int>();
-				lines.AddRange(_newlineFinder.Matches(content).OfType<Match>().Select(k => k.Index));
+				lines.AddRange(NewlineFinder.Matches(content).OfType<Match>().Select(k => k.Index));
 			}
 
 			var line = Array.BinarySearch(lines.ToArray(), characterIndex);
@@ -61,11 +60,11 @@ namespace Morestachio
 			return retval;
 		}
 
-		private static IEnumerable<TokenPair> TokenizeFormattables(string token, string templateString, Match m,
+		private static IEnumerable<TokenPair> TokenizeFormattables(string token, string templateString, Capture m,
 			List<int> lines, List<IndexedParseException> parseErrors)
 		{
 			var tokesHandeld = 0;
-			foreach (Match tokenFormats in _formatFinder.Matches(token))
+			foreach (Match tokenFormats in FormatFinder.Matches(token))
 			{
 				var found = tokenFormats.Groups[0].Value;
 				var scalarValue = tokenFormats.Groups[1].Value;
@@ -85,7 +84,7 @@ namespace Morestachio
 				else
 				{
 					yield return new TokenPair(TokenType.Format,
-						ValidateArgumentHead(scalarValue, formatterArgument, found.TrimEnd('.'), templateString,
+						ValidateArgumentHead(scalarValue, formatterArgument, templateString,
 							m.Index, lines, parseErrors))
 					{
 						FormatAs = formatterArgument
@@ -103,7 +102,7 @@ namespace Morestachio
 		public static IEnumerable<TokenPair> Tokenize(string templateString)
 		{
 			templateString = templateString ?? "";
-			var matches = _tokenFinder.Matches(templateString);
+			var matches = TokenFinder.Matches(templateString);
 			var scopestack = new Stack<Tuple<string, int>>();
 
 			var idx = 0;
@@ -128,7 +127,7 @@ namespace Morestachio
 					if (token.StartsWith(" ") && token.Trim() != "")
 					{
 						token = token.Trim();
-						if (_formatInExpressionFinder.IsMatch(token))
+						if (FormatInExpressionFinder.IsMatch(token))
 						{
 							foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines,
 								parseErrors))
@@ -240,7 +239,7 @@ namespace Morestachio
 				{
 					//unsingle value.
 					var token = m.Value.TrimStart('{').TrimEnd('}').Trim();
-					if (_formatInExpressionFinder.IsMatch(token))
+					if (FormatInExpressionFinder.IsMatch(token))
 					{
 						foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines,
 							parseErrors))
@@ -286,50 +285,46 @@ namespace Morestachio
 					}).Reverse()
 					.ToArray();
 
-				foreach (var unclosedScope in scopes)
-				{
-					//var line = FindLineForLocation(templateString, m.Index, ref lines);
-					parseErrors.Add(new IndexedParseException(unclosedScope.location,
-						"A scope block to the following path was opened but not closed: '{0}', please close it using the appropriate syntax.",
-						unclosedScope.scope));
-				}
+				parseErrors.AddRange(scopes.Select(unclosedScope => new IndexedParseException(unclosedScope.location, "A scope block to the following path was opened but not closed: '{0}', please close it using the appropriate syntax.", unclosedScope.scope)));
 			}
 
 			#endregion
 
 			//We want to throw an aggregate template exception, but in due time.
-			if (parseErrors.Any())
+			if (!parseErrors.Any())
 			{
-				var innerExceptions = parseErrors.OrderBy(k => k.LineNumber).ThenBy(k => k.CharacterOnLine).ToArray();
-				throw new AggregateException(innerExceptions);
+				yield break;
 			}
+
+			var innerExceptions = parseErrors.OrderBy(k => k.LineNumber).ThenBy(k => k.CharacterOnLine).ToArray();
+			throw new AggregateException(innerExceptions);
 		}
-		//private static readonly Regex _positiveArgumentSpec = new Regex(@"(\({1}[^()]*\){1})(?:\.|$){1}", RegexOptions.Singleline | RegexOptions.Compiled);
-		//private static readonly Regex _positiveArgumentSpec = new Regex(@"(\([^()]*\))", RegexOptions.Singleline | RegexOptions.Compiled);
 
 		private static string Validated(string token, string content, int index, List<int> lines,
 			List<IndexedParseException> exceptions)
 		{
 			token = token.Trim();
 
-			if (_negativePathSpec.Match(token).Success)
+			if (!NegativePathSpec.Match(token).Success)
 			{
-				var location = HumanizeCharacterLocation(content, index, lines);
-				exceptions.Add(new IndexedParseException(location,
-					"The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
+				return token;
 			}
+
+			var location = HumanizeCharacterLocation(content, index, lines);
+			exceptions.Add(new IndexedParseException(location,
+				"The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
 
 			return token;
 		}
 
-		private static string ValidateArgumentHead(string token, string argument, string fullToken, string content,
+		private static string ValidateArgumentHead(string token, string argument, string content,
 			int index, List<int> lines, List<IndexedParseException> exceptions)
 		{
 			token = token.Trim();
 
 			Validated(token, content, index, lines, exceptions);
 
-			if (!_positiveArgumentSpec.Match(argument).Success)
+			if (!PositiveArgumentSpec.Match(argument).Success)
 			{
 				var location = HumanizeCharacterLocation(content, index, lines);
 				exceptions.Add(new IndexedParseException(location,

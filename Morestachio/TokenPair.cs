@@ -1,8 +1,11 @@
-﻿namespace Morestachio
+﻿using System;
+
+namespace Morestachio
 {
 	/// <summary>
 	///     The token that has been lexed out of template content.
 	/// </summary>
+	[Serializable]
 	internal class TokenPair
 	{
 		public TokenPair(TokenType type, string value)

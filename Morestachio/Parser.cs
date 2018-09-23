@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using JetBrains.Annotations;
 
 #endregion
 
@@ -25,52 +26,71 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="parsingOptions">a set of options</param>
 		/// <returns></returns>
-		public static ExtendedParseInformation ParseWithOptions(ParserOptions parsingOptions)
+		[ContractAnnotation("parsingOptions:null => halt")]
+		[NotNull]
+		[MustUseReturnValue("Use return value to create templates. Reuse return value if possible.")]
+		[Pure]
+		public static ExtendedParseInformation ParseWithOptions([NotNull]ParserOptions parsingOptions)
 		{
 			if (parsingOptions == null)
 			{
-				throw new ArgumentNullException("parsingOptions");
+				throw new ArgumentNullException(nameof(parsingOptions));
 			}
 
 			if (parsingOptions.SourceFactory == null)
 			{
-				throw new ArgumentNullException("parsingOptions", "The given Stream is null");
+				throw new ArgumentNullException(nameof(parsingOptions), "The given Stream is null");
 			}
 
 			var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(parsingOptions.Template));
 			var inferredModel = new InferredTemplateModel();
 
-			var internalTemplate = Parse(tokens, parsingOptions,
-				parsingOptions.WithModelInference ? inferredModel : null);
+			var extendedParseInformation = new ExtendedParseInformation(inferredModel, parsingOptions, tokens);
 
-			Stream Template(object model, CancellationToken token)
+			if (parsingOptions.WithModelInference)
 			{
-				var sourceStream = parsingOptions.SourceFactory();
-				if (!sourceStream.CanWrite)
-				{
-					throw new InvalidOperationException("The stream is ReadOnly");
-				}
-
-				using (var streamWriter = new StreamWriter(sourceStream, parsingOptions.Encoding, BufferSize, true))
-				{
-					var context = new ContextObject
-					{
-						Value = model,
-						Key = "",
-						Options = parsingOptions,
-						CancellationToken = token
-					};
-					internalTemplate(streamWriter, context);
-					streamWriter.Flush();
-				}
-
-				return sourceStream;
+				//we preparse the template once to get the model
+				var s = extendedParseInformation.InternalTemplate.Value;
 			}
 
-			return new ExtendedParseInformation(inferredModel, parsingOptions, Template);
+			return extendedParseInformation;
 		}
 
-		private static Action<StreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
+		/// <summary>
+		///		Uses the <seealso cref="ExtendedParseInformation"/> object to parse the data to a template.
+		/// </summary>
+		/// <param name="parseOutput">The parse output.</param>
+		/// <param name="data">The data.</param>
+		/// <param name="token">The token.</param>
+		/// <returns></returns>
+		/// <exception cref="InvalidOperationException">The stream is ReadOnly</exception>
+		[MustUseReturnValue("The Stream contains the template. Use Stringify(Encoding) to get the string of it")]
+		[NotNull]
+		public static Stream CreateTemplateStream([NotNull]ExtendedParseInformation parseOutput, [NotNull]object data, CancellationToken token)
+		{
+			var sourceStream = parseOutput.ParserOptions.SourceFactory();
+			if (!sourceStream.CanWrite)
+			{
+				throw new InvalidOperationException("The stream is ReadOnly");
+			}
+
+			using (var streamWriter = new StreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
+			{
+				var context = new ContextObject
+				{
+					Value = data,
+					Key = "",
+					Options = parseOutput.ParserOptions,
+					CancellationToken = token
+				};
+				parseOutput.InternalTemplate.Value(streamWriter, context);
+				streamWriter.Flush();
+			}
+
+			return sourceStream;
+		}
+
+		internal static Action<StreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
 			InferredTemplateModel currentScope = null)
 		{
 			var buildArray = new List<Action<StreamWriter, ContextObject>>();

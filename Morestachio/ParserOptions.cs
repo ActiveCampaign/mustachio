@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using JetBrains.Annotations;
 
 #endregion
 
@@ -12,13 +13,15 @@ namespace Morestachio
 	/// <summary>
 	///     Options for Parsing run
 	/// </summary>
+	[PublicAPI]
+	[Serializable]
 	public class ParserOptions
 	{
 		/// <summary>
 		///     ctor
 		/// </summary>
 		/// <param name="template"></param>
-		public ParserOptions(string template)
+		public ParserOptions([NotNull]string template)
 			: this(template, null)
 		{
 		}
@@ -28,7 +31,7 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="template"></param>
 		/// <param name="sourceStream">The factory that is used for each template generation</param>
-		public ParserOptions(string template, Func<Stream> sourceStream)
+		public ParserOptions([NotNull]string template, Func<Stream> sourceStream)
 			: this(template, sourceStream, null)
 		{
 		}
@@ -39,7 +42,7 @@ namespace Morestachio
 		/// <param name="template">The template.</param>
 		/// <param name="sourceStream">The source stream.</param>
 		/// <param name="encoding">The encoding.</param>
-		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding)
+		public ParserOptions([NotNull]string template, Func<Stream> sourceStream, Encoding encoding)
 		{
 			Template = template;
 			SourceFactory = sourceStream ?? (() => new MemoryStream());
@@ -60,7 +63,7 @@ namespace Morestachio
 		/// <param name="maxSize">The maximum size.</param>
 		/// <param name="disableContentEscaping">if set to <c>true</c> [disable content escaping].</param>
 		/// <param name="withModelInference">if set to <c>true</c> [with model inference].</param>
-		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding, long maxSize,
+		public ParserOptions([NotNull]string template, Func<Stream> sourceStream, Encoding encoding, long maxSize,
 			bool disableContentEscaping = false, bool withModelInference = false)
 			: this(template, sourceStream, encoding)
 		{
@@ -77,7 +80,7 @@ namespace Morestachio
 		/// <param name="encoding">The encoding.</param>
 		/// <param name="disableContentEscaping">if set to <c>true</c> [disable content escaping].</param>
 		/// <param name="withModelInference">if set to <c>true</c> [with model inference].</param>
-		public ParserOptions(string template, Func<Stream> sourceStream, Encoding encoding,
+		public ParserOptions([NotNull]string template, Func<Stream> sourceStream, Encoding encoding,
 			bool disableContentEscaping = false, bool withModelInference = false)
 			: this(template, sourceStream, encoding, 0, disableContentEscaping, withModelInference)
 		{
@@ -86,11 +89,13 @@ namespace Morestachio
 		/// <summary>
 		///     Adds an Formatter overwrite or new Formatter for an Type
 		/// </summary>
+		[NotNull]
 		public IDictionary<Type, FormatTemplateElement> Formatters { get; }
 
 		/// <summary>
 		///     The template content to parse.
 		/// </summary>
+		[NotNull]
 		public string Template { get; }
 
 		/// <summary>
@@ -121,17 +126,20 @@ namespace Morestachio
 		///     SourceFactory can be used to create a new stream for each template. Default is
 		///     <code>() => new MemoryStream()</code>
 		/// </summary>
+		[NotNull]
 		public Func<Stream> SourceFactory { get; }
 
 		/// <summary>
 		///     In what encoding should the text be written
 		///     Default is <code>Encoding.Default</code>
 		/// </summary>
+		[NotNull]
 		public Encoding Encoding { get; }
 
 		/// <summary>
 		///     Defines how NULL values are exposed to the Template default is <code>String.Empty</code>
 		/// </summary>
+		[NotNull]
 		public string Null { get; set; }
 
 		/// <summary>
@@ -140,7 +148,7 @@ namespace Morestachio
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
-		public void AddFormatter<T>(Func<T, object, object> formatter, string description = null)
+		public void AddFormatter<T>([NotNull]Func<T, object, object> formatter, string description = null)
 		{
 			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
@@ -160,7 +168,7 @@ namespace Morestachio
 		/// <typeparam name="TArg"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
-		public void AddFormatter<T, TArg>(Func<T, TArg, object> formatter, string description = null)
+		public void AddFormatter<T, TArg>([NotNull]Func<T, TArg, object> formatter, string description = null)
 		{
 			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
@@ -181,7 +189,7 @@ namespace Morestachio
 		/// <typeparam name="TOut"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
-		public void AddFormatter<T, TArg, TOut>(Func<T, TArg, TOut> formatter, string description = null)
+		public void AddFormatter<T, TArg, TOut>([NotNull]Func<T, TArg, TOut> formatter, string description = null)
 		{
 			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
@@ -199,7 +207,7 @@ namespace Morestachio
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
-		public void AddFormatter<T>(FormatTemplateElement formatter)
+		public void AddFormatter<T>([NotNull]FormatTemplateElement formatter)
 		{
 			Formatters.Add(typeof(T), formatter);
 		}

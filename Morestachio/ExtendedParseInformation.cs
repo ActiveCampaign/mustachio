@@ -1,5 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Security.Principal;
 using System.Threading;
+using JetBrains.Annotations;
 using Morestachio.Helper;
 
 namespace Morestachio
@@ -10,39 +14,46 @@ namespace Morestachio
 	public class ExtendedParseInformation
 	{
 		/// <summary>
+		/// Serilize Constructor. Should not be used by user code.
+		/// </summary>
+		[Obsolete("This is an Serilization only constructor and should not be used in user code!", true)]
+		public ExtendedParseInformation()
+		{
+			InternalTemplate = new Lazy<Action<StreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
+		}
+
+		/// <summary>
 		///     ctor
 		/// </summary>
 		/// <param name="inferredModel"></param>
 		/// <param name="parserOptions"></param>
-		public ExtendedParseInformation(InferredTemplateModel inferredModel, ParserOptions parserOptions,
-			TemplateGenerationWithCancel parsedTemplateWithCancelation)
+		/// <param name="tokens"></param>
+		internal ExtendedParseInformation(InferredTemplateModel inferredModel, ParserOptions parserOptions, Queue<TokenPair> tokens)
 		{
 			InferredModel = inferredModel;
 			ParserOptions = parserOptions;
-			ParsedTemplateWithCancelation = parsedTemplateWithCancelation;
+			TemplateTokens = tokens;
+			InternalTemplate = new Lazy<Action<StreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
 		}
 
-		/// <summary>
-		///     returns a delegate that can be used for generation of the template without Cancellation
-		/// </summary>
-		public TemplateGeneration ParsedTemplate
-		{
-			get { return data => ParsedTemplateWithCancelation(data, CancellationToken.None); }
-		}
+		internal Lazy<Action<StreamWriter, ContextObject>> InternalTemplate;
 
 		/// <summary>
-		///     returns a delegate that can be used for generation of the template with Cancellation
+		///		The generated tokes from the tokeniser
 		/// </summary>
-		public TemplateGenerationWithCancel ParsedTemplateWithCancelation { get; }
+		internal Queue<TokenPair> TemplateTokens { get; }
 
 		/// <summary>
 		///     The parser Options object that was used to create the Template Delegate
 		/// </summary>
+
+		[NotNull] 
 		public ParserOptions ParserOptions { get; }
 
 		/// <summary>
 		///     returns a model that contains all used placeholders and operations
 		/// </summary>
+		[CanBeNull] 
 		public InferredTemplateModel InferredModel { get; }
 
 		/// <summary>
@@ -51,9 +62,11 @@ namespace Morestachio
 		/// <param name="source"></param>
 		/// <param name="token"></param>
 		/// <returns></returns>
-		public Stream Create(object source, CancellationToken token)
+		[MustUseReturnValue("The Stream contains the template. Use Stringify(Encoding) to get the string of it")]
+		[NotNull]
+		public Stream Create([NotNull]object source, CancellationToken token)
 		{
-			return ParsedTemplateWithCancelation(source, token);
+			return Parser.CreateTemplateStream(this, source, token);
 		}
 
 		/// <summary>
@@ -61,7 +74,9 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="source"></param>
 		/// <returns></returns>
-		public Stream Create(object source)
+		[MustUseReturnValue("The Stream contains the template. Use Stringify(Encoding) to get the string of it")]
+		[NotNull]
+		public Stream Create([NotNull]object source)
 		{
 			return Create(source, CancellationToken.None);
 		}
@@ -71,7 +86,8 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="source"></param>
 		/// <returns></returns>
-		public string CreateAndStringify(object source)
+		[NotNull]
+		public string CreateAndStringify([NotNull]object source)
 		{
 			return Create(source).Stringify(true, ParserOptions.Encoding);
 		}
@@ -82,7 +98,8 @@ namespace Morestachio
 		/// <param name="source"></param>
 		/// <param name="token"></param>
 		/// <returns></returns>
-		public string CreateAndStringify(object source, CancellationToken token)
+		[NotNull]
+		public string CreateAndStringify([NotNull]object source, CancellationToken token)
 		{
 			return Create(source, token).Stringify(true, ParserOptions.Encoding);
 		}

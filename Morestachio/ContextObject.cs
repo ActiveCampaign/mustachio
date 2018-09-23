@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using JetBrains.Annotations;
 
 namespace Morestachio
 {
@@ -12,12 +13,13 @@ namespace Morestachio
 	/// </summary>
 	public class ContextObject
 	{
-		private static readonly Regex _pathFinder = new Regex("(\\.\\.[\\\\/]{1})|([^.]+)",
+		internal static readonly Regex PathFinder = new Regex("(\\.\\.[\\\\/]{1})|([^.]+)",
 			RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
 		/// <summary>
 		///     The default to string operator for any PrintableType
 		/// </summary>
+		[NotNull]
 		public static FormatTemplateElement DefaultToStringWithFormatting = new FormatTemplateElement(
 			"Default string formatter", (value, formatArgument) =>
 			{
@@ -36,6 +38,7 @@ namespace Morestachio
 		///     should not be printed, or their printing should be specialized.
 		///     Add an typeof(object) entry as Type to define a Default Output
 		/// </summary>
+		[NotNull]
 		public static readonly IDictionary<Type, FormatTemplateElement> PrintableTypes =
 			new Dictionary<Type, FormatTemplateElement>
 			{
@@ -57,11 +60,13 @@ namespace Morestachio
 		/// <summary>
 		///     The parent of the current context or null if its the root context
 		/// </summary>
+		[CanBeNull]
 		public ContextObject Parent { get; set; }
 
 		/// <summary>
 		///     The evaluated value of the expression
 		/// </summary>
+		[CanBeNull]
 		public object Value { get; set; }
 
 		/// <summary>
@@ -72,11 +77,13 @@ namespace Morestachio
 		/// <summary>
 		///     The name of the property or key inside the value or indexer expression for lists
 		/// </summary>
+		[NotNull]
 		public string Key { get; set; }
 
 		/// <summary>
 		///     With what options are the template currently is running
 		/// </summary>
+		[NotNull]
 		public ParserOptions Options { get; set; }
 
 		/// <summary>
@@ -108,43 +115,36 @@ namespace Morestachio
 				{
 					return preHandeld;
 				}
-				//if (path.StartsWith("..."))
-				//{
-				//	var parent = Parent;
-				//	var lastParent = parent;
-				//	while (parent != null)
-				//	{
-				//		parent = parent.Parent;
-				//		if (parent != null)
-				//		{
-				//			lastParent = parent;
-				//		}
-				//	}
+				if (path.StartsWith("~"))
+				{
+					var parent = Parent;
+					var lastParent = parent;
+					while (parent != null)
+					{
+						parent = parent.Parent;
+						if (parent != null)
+						{
+							lastParent = parent;
+						}
+					}
 
-				//	retval = lastParent.GetContextForPath(elements);
-				//}
-				//else 
+					retval = lastParent?.GetContextForPath(elements);
+				}
+				else
 				if (path.StartsWith(".."))
 				{
-					if (Parent != null)
-					{
-						retval = Parent.GetContextForPath(elements);
-					}
-					else
-					{
-						//calling "../" too much may be "ok" in that if we're at root,
-						//we may just stop recursion and traverse down the path.
-						retval = GetContextForPath(elements);
-					}
+					retval = Parent?.GetContextForPath(elements) ?? GetContextForPath(elements);
 				}
 				//TODO: handle array accessors and maybe "special" keys.
 				else
 				{
 					//ALWAYS return the context, even if the value is null.
-					var innerContext = new ContextObject();
-					innerContext.Options = Options;
-					innerContext.Key = path;
-					innerContext.Parent = this;
+					var innerContext = new ContextObject
+					{
+						Options = Options,
+						Key = path,
+						Parent = this
+					};
 					var ctx = Value as IDictionary<string, object>;
 					if (ctx != null)
 					{
@@ -176,7 +176,7 @@ namespace Morestachio
 		public ContextObject GetContextForPath(string path)
 		{
 			var elements = new Queue<string>();
-			foreach (var m in _pathFinder.Matches(path).OfType<Match>())
+			foreach (var m in PathFinder.Matches(path).OfType<Match>())
 			{
 				elements.Enqueue(m.Value);
 			}
@@ -192,6 +192,7 @@ namespace Morestachio
 		{
 			return Value != null &&
 			       Value as bool? != false &&
+			       // ReSharper disable once CompareOfFloatsByEqualityOperator
 			       Value as double? != 0 &&
 			       Value as int? != 0 &&
 			       Value as string != string.Empty &&
@@ -201,7 +202,7 @@ namespace Morestachio
 			       );
 		}
 
-		private Type SearchInCollectionForFormatter(Type type, IDictionary<Type, FormatTemplateElement> source)
+		private static Type SearchInCollectionForFormatter(Type type, IDictionary<Type, FormatTemplateElement> source)
 		{
 			FormatTemplateElement formatter;
 			//look for exactly this type
@@ -216,13 +217,7 @@ namespace Morestachio
 
 		private Type GetMostMatchingType(Type type)
 		{
-			var optionFormatterType = SearchInCollectionForFormatter(type, Options.Formatters);
-			if (optionFormatterType != null)
-			{
-				return optionFormatterType;
-			}
-
-			return SearchInCollectionForFormatter(type, PrintableTypes);
+			return SearchInCollectionForFormatter(type, Options.Formatters) ?? SearchInCollectionForFormatter(type, PrintableTypes);
 		}
 
 		/// <summary>
@@ -275,8 +270,7 @@ namespace Morestachio
 		/// <returns></returns>
 		public override string ToString()
 		{
-			var retval = Value;
-			return retval.ToString();
+			return Value?.ToString() ?? Options.Null;
 		}
 
 		/// <summary>
@@ -301,21 +295,15 @@ namespace Morestachio
 		/// <returns></returns>
 		public ContextObject Clone()
 		{
-			var contextClone = new ContextObject();
-			contextClone.CancellationToken = CancellationToken;
-			contextClone.Parent = Parent;
-			contextClone.Options = Options;
-			contextClone.AbortGeneration = AbortGeneration;
-			contextClone.Key = Key;
-
-			if (Value is ICloneable)
+			var contextClone = new ContextObject
 			{
-				contextClone.Value = (Value as ICloneable).Clone();
-			}
-			else
-			{
-				contextClone.Value = Value;
-			}
+				CancellationToken = CancellationToken,
+				Parent = Parent,
+				Options = Options,
+				AbortGeneration = AbortGeneration,
+				Key = Key,
+				Value = (Value as ICloneable)?.Clone() ?? Value
+			};
 
 			return contextClone;
 		}

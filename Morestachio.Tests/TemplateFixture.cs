@@ -1,17 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Morestachio.Helper;
-using Xunit;
-using Xunit.Extensions;
+using NUnit.Framework;
 
 namespace Morestachio.Tests
 {
 	public class TemplateFixture
 	{
-		[Theory]
-		[InlineData(200)]
-		[InlineData(80000)]
-		[InlineData(700000)]
+		[Test]
+		[TestCase(200)]
+		[TestCase(80000)]
+		[TestCase(700000)]
 		public void TemplateMaxSizeLimit(int maxSize)
 		{
 			var tempdata = new List<string>();
@@ -28,13 +27,13 @@ namespace Morestachio.Tests
 			{
 				{"Data", tempdata}
 			});
-			Assert.Equal(templateStream.Length, maxSize);
+			Assert.AreEqual(templateStream.Length, maxSize);
 		}
 
-		[Theory]
-		[InlineData(200)]
-		[InlineData(80000)]
-		[InlineData(700000)]
+		[Test]
+		[TestCase(200)]
+		[TestCase(80000)]
+		[TestCase(700000)]
 		public void TemplateMaxSizeOverLimit(int maxSize)
 		{
 			var tempdata = new List<string>();
@@ -54,12 +53,12 @@ namespace Morestachio.Tests
 			Assert.True(templateStream.Length == maxSize);
 		}
 
-		[InlineData(new int[] { })]
-		[InlineData(false)]
-		[InlineData("")]
-		[InlineData(0.0)]
-		[InlineData(0)]
-		[Theory]
+		[TestCase(new int[] { })]
+		[TestCase(false)]
+		[TestCase("")]
+		[TestCase(0.0)]
+		[TestCase(0)]
+		[Test]
 		public void TemplatesShoudlNotRenderFalseyComplexStructures(object falseyModelValue)
 		{
 			var model = new Dictionary<string, object>
@@ -72,15 +71,15 @@ namespace Morestachio.Tests
 			var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal(string.Empty, result);
+			Assert.AreEqual(string.Empty, result);
 		}
 
-		[InlineData(new int[] { })]
-		[InlineData(false)]
-		[InlineData("")]
-		[InlineData(0.0)]
-		[InlineData(0)]
-		[Theory]
+		[TestCase(new int[] { })]
+		[TestCase(false)]
+		[TestCase("")]
+		[TestCase(0.0)]
+		[TestCase(0)]
+		[Test]
 		public void TemplateShouldTreatFalseyValuesAsEmptyArray(object falseyModelValue)
 		{
 			var model = new Dictionary<string, object>
@@ -93,12 +92,12 @@ namespace Morestachio.Tests
 			var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal(string.Empty, result);
+			Assert.AreEqual(string.Empty, result);
 		}
 
-		[InlineData(0)]
-		[InlineData(0.0)]
-		[Theory]
+		[TestCase(0)]
+		[TestCase(0.0)]
+		[Test]
 		public void TemplateShouldRenderZeroValue(object value)
 		{
 			var model = new Dictionary<string, object>
@@ -111,10 +110,10 @@ namespace Morestachio.Tests
 			var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("You've won 0 times!", result);
+			Assert.AreEqual("You've won 0 times!", result);
 		}
 
-		[Fact]
+		[Test]
 		public void CommentsAreExcludedFromOutput()
 		{
 			var model = new Dictionary<string, object>();
@@ -124,10 +123,10 @@ namespace Morestachio.Tests
 			var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("asdf", rendered);
+			Assert.AreEqual("asdf", rendered);
 		}
 
-		[Fact]
+		[Test]
 		public void HtmlIsEscapedByDefault()
 		{
 			var model = new Dictionary<string, object>();
@@ -138,10 +137,10 @@ namespace Morestachio.Tests
 			var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("&lt;b&gt;inner&lt;/b&gt;", rendered);
+			Assert.AreEqual("&lt;b&gt;inner&lt;/b&gt;", rendered);
 		}
 
-		[Fact]
+		[Test]
 		public void HtmlIsNotEscapedWhenUsingUnsafeSyntaxes()
 		{
 			var model = new Dictionary<string, object>();
@@ -152,15 +151,15 @@ namespace Morestachio.Tests
 			var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("<b>inner</b>", rendered);
+			Assert.AreEqual("<b>inner</b>", rendered);
 
 			plainText = @"{{&stuff}}";
 			rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
-			Assert.Equal("<b>inner</b>", rendered);
+			Assert.AreEqual("<b>inner</b>", rendered);
 		}
 
-		[Fact]
+		[Test]
 		public void NegationGroupRendersContentWhenValueNotSet()
 		{
 			var model = new Dictionary<string, object>();
@@ -169,19 +168,19 @@ namespace Morestachio.Tests
 			var rendered = Parser.ParseWithOptions(new ParserOptions(plainText, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("No Stuff Here.", rendered);
+			Assert.AreEqual("No Stuff Here.", rendered);
 		}
 
-		[Fact]
+		[Test]
 		public void TemplateRendersContentWithNoVariables()
 		{
 			var plainText = "ASDF";
 			var template = Parser.ParseWithOptions(new ParserOptions("ASDF", null, ParserFixture.DefaultEncoding));
-			Assert.Equal(plainText, template.Create(null).Stringify(true, ParserFixture.DefaultEncoding));
+			Assert.AreEqual(plainText, template.Create(null).Stringify(true, ParserFixture.DefaultEncoding));
 		}
 
 
-		[Fact]
+		[Test]
 		public void TemplateRendersWithComplextEachPath()
 		{
 			var template =
@@ -211,12 +210,12 @@ namespace Morestachio.Tests
 
 			var result = parsedTemplate.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("<li>name 0 and version 0 and has a CEO: Smith</li>" +
+			Assert.AreEqual("<li>name 0 and version 0 and has a CEO: Smith</li>" +
 			             "<li>name 1 and version 1 and has a CEO: Smith</li>" +
 			             "<li>name 2 and version 2 and has a CEO: Smith</li>", result);
 		}
 
-		[Fact]
+		[Test]
 		public void TemplateShouldNotRenderNullValue()
 		{
 			var model = new Dictionary<string, object>
@@ -229,10 +228,10 @@ namespace Morestachio.Tests
 			var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("You've won  times!", result);
+			Assert.AreEqual("You've won  times!", result);
 		}
 
-		[Fact]
+		[Test]
 		public void TemplateShouldProcessVariablesInInvertedGroup()
 		{
 			var model = new Dictionary<string, object>
@@ -246,10 +245,10 @@ namespace Morestachio.Tests
 			var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("a placeholder value", result);
+			Assert.AreEqual("a placeholder value", result);
 		}
 
-		[Fact]
+		[Test]
 		public void TemplateShouldRenderFalseValue()
 		{
 			var model = new Dictionary<string, object>
@@ -262,7 +261,7 @@ namespace Morestachio.Tests
 			var result = Parser.ParseWithOptions(new ParserOptions(template, null, ParserFixture.DefaultEncoding))
 				.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
-			Assert.Equal("You've won False times!", result);
+			Assert.AreEqual("You've won False times!", result);
 		}
 	}
 }

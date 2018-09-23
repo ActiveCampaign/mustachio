@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Morestachio.Helper;
-using Xunit;
-using Xunit.Extensions;
+using NUnit.Framework;
 
 namespace Morestachio.Tests
 {
@@ -15,96 +14,94 @@ namespace Morestachio.Tests
 
 		private class CollectionContextInfo
 		{
-			public int IndexProp { get; set; }
-			public bool FirstProp { get; set; }
-			public bool MiddelProp { get; set; }
-			public bool LastProp { get; set; }
+			public int IndexProp { private get; set; }
+			public bool FirstProp { private get; set; }
+			public bool MiddelProp { private get; set; }
+			public bool LastProp { private get; set; }
 
-			public bool OddProp { get; set; }
-			public bool EvenProp { get; set; }
+			public bool OddProp { private get; set; }
+			public bool EvenProp { private get; set; }
 
 			public override string ToString()
 			{
-				return string.Format("{0},{1},{2},{3},{4},{5}.", IndexProp, FirstProp, MiddelProp, LastProp, OddProp,
-					EvenProp);
+				return $"{IndexProp},{FirstProp},{MiddelProp},{LastProp},{OddProp},{EvenProp}.";
 			}
 		}
 
-		[Theory]
-		[InlineData("d")]
-		[InlineData("D")]
-		[InlineData("f")]
-		[InlineData("F")]
-		[InlineData("dd,,MM,,YYYY")]
+		[Test]
+		[TestCase("d")]
+		[TestCase("D")]
+		[TestCase("f")]
+		[TestCase("F")]
+		[TestCase("dd,,MM,,YYYY")]
 		public void ParserCanFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;
 			var resuts =
 				Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}},{{data}}", null,
 					DefaultEncoding));
-			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
-			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
+			Assert.That(data.ToString(dtFormat) + "," + data, Is.EqualTo(result));
 		}
 
-		[Theory]
-		[InlineData("d")]
-		[InlineData("D")]
-		[InlineData("f")]
-		[InlineData("F")]
-		[InlineData("dd,,MM,,YYYY")]
+		[Test]
+		[TestCase("d")]
+		[TestCase("D")]
+		[TestCase("f")]
+		[TestCase("F")]
+		[TestCase("dd,,MM,,YYYY")]
 		public void ParserCanSelfFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;
 			var resuts = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(" + dtFormat + ")}}{{/data}},{{data}}",
 				null, DefaultEncoding));
-			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
-			Assert.Equal(data.ToString(dtFormat) + "," + data, result);
+			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
-		[Theory]
-		[InlineData("{{data(d))}}")]
-		[InlineData("{{data((d)}}")]
-		[InlineData("{{data((d))}}")]
-		[InlineData("{{data)}}")]
-		[InlineData("{{data(}}")]
+		[Test]
+		[TestCase("{{data(d))}}")]
+		[TestCase("{{data((d)}}")]
+		[TestCase("{{data((d))}}")]
+		[TestCase("{{data)}}")]
+		[TestCase("{{data(}}")]
 		public void ParserThrowsAnExceptionWhenFormatIsMismatched(string invalidTemplate)
 		{
 			Assert.Throws(typeof(AggregateException),
 				() => Parser.ParseWithOptions(new ParserOptions(invalidTemplate)));
 		}
 
-		[Theory]
-		[InlineData("{{#ACollection}}{{.}}{{/each}}")]
-		[InlineData("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}")]
-		[InlineData("{{/each}}")]
+		[Test]
+		[TestCase("{{#ACollection}}{{.}}{{/each}}")]
+		[TestCase("{{#ACollection}}{{.}}{{/ACollection}}{{/each}}")]
+		[TestCase("{{/each}}")]
 		public void ParserThrowsAnExceptionWhenEachIsMismatched(string invalidTemplate)
 		{
 			Assert.Throws(typeof(AggregateException),
 				() => Parser.ParseWithOptions(new ParserOptions(invalidTemplate)));
 		}
 
-		[Theory]
-		[InlineData("{{Mike", "{{{{name}}")]
-		[InlineData("{Mike", "{{{name}}")]
-		[InlineData("Mike}", "{{name}}}")]
-		[InlineData("Mike}}", "{{name}}}}")]
+		[Test]
+		[TestCase("{{Mike", "{{{{name}}")]
+		[TestCase("{Mike", "{{{name}}")]
+		[TestCase("Mike}", "{{name}}}")]
+		[TestCase("Mike}}", "{{name}}}}")]
 		public void ParserHandlesPartialOpenAndPartialClose(string expected, string template)
 		{
 			var model = new Dictionary<string, object>();
 			model["name"] = "Mike";
 
-			Assert.Equal(expected,
-				Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).Create(model)
-					.Stringify(true, DefaultEncoding));
+			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).Create(model)
+				.Stringify(true, DefaultEncoding), Is.EqualTo(expected));
 		}
 
 
-		[Theory]
-		[InlineData("{{#each element}}{{name}}")]
-		[InlineData("{{#element}}{{name}}")]
-		[InlineData("{{^element}}{{name}}")]
+		[Test]
+		[TestCase("{{#each element}}{{name}}")]
+		[TestCase("{{#element}}{{name}}")]
+		[TestCase("{{^element}}{{name}}")]
 		public void ParserThrowsParserExceptionForUnclosedGroups(string invalidTemplate)
 		{
 			Assert.Throws(typeof(AggregateException),
@@ -112,43 +109,43 @@ namespace Morestachio.Tests
 		}
 
 
-		[Theory]
-		[InlineData("{{..../asdf.content}}")]
-		[InlineData("{{/}}")]
-		[InlineData("{{./}}")]
-		[InlineData("{{.. }}")]
-		[InlineData("{{..}}")]
-		[InlineData("{{...}}")]
-		[InlineData("{{//}}")]
-		[InlineData("{{@}}")]
-		[InlineData("{{[}}")]
-		[InlineData("{{]}}")]
-		[InlineData("{{)}}")]
-		[InlineData("{{(}}")]
-		[InlineData("{{~}}")]
-		[InlineData("{{%}}")]
+		[Test]
+		[TestCase("{{..../asdf.content}}")]
+		[TestCase("{{/}}")]
+		[TestCase("{{./}}")]
+		[TestCase("{{.. }}")]
+		[TestCase("{{..}}")]
+		[TestCase("{{...}}")]
+		[TestCase("{{//}}")]
+		[TestCase("{{@}}")]
+		[TestCase("{{[}}")]
+		[TestCase("{{]}}")]
+		[TestCase("{{)}}")]
+		[TestCase("{{(}}")]
+		[TestCase("{{~}}")]
+		[TestCase("{{%}}")]
 		public void ParserShouldThrowForInvalidPaths(string template)
 		{
 			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions(template)));
 		}
 
-		[Theory]
-		[InlineData("{{first_name}}")]
-		[InlineData("{{company.name}}")]
-		[InlineData("{{company.address_line_1}}")]
-		[InlineData("{{name}}")]
+		[Test]
+		[TestCase("{{first_name}}")]
+		[TestCase("{{company.name}}")]
+		[TestCase("{{company.address_line_1}}")]
+		[TestCase("{{name}}")]
 		public void ParserShouldNotThrowForValidPath(string template)
 		{
 			Parser.ParseWithOptions(new ParserOptions(template));
 		}
 
 
-		[Theory]
-		[InlineData("1{{first name}}", 1)]
-		[InlineData("ss{{#each company.name}}\nasdf", 1)]
-		[InlineData("xzyhj{{#company.address_line_1}}\nasdf{{dsadskl-sasa@}}\n{{/each}}", 3)]
-		[InlineData("fff{{#each company.address_line_1}}\n{{dsadskl-sasa@}}\n{{/each}}", 1)]
-		[InlineData("a{{name}}dd\ndd{{/each}}dd", 1)]
+		[Test]
+		[TestCase("1{{first name}}", 1)]
+		[TestCase("ss{{#each company.name}}\nasdf", 1)]
+		[TestCase("xzyhj{{#company.address_line_1}}\nasdf{{dsadskl-sasa@}}\n{{/each}}", 3)]
+		[TestCase("fff{{#each company.address_line_1}}\n{{dsadskl-sasa@}}\n{{/each}}", 1)]
+		[TestCase("a{{name}}dd\ndd{{/each}}dd", 1)]
 		public void ParserShouldThrowWithCharacterLocationInformation(string template, int expectedErrorCount)
 		{
 			var didThrow = false;
@@ -159,15 +156,15 @@ namespace Morestachio.Tests
 			catch (AggregateException ex)
 			{
 				didThrow = true;
-				Assert.Equal(expectedErrorCount, ex.InnerExceptions.Count);
+				Assert.That(ex.InnerExceptions.Count, Is.EqualTo(expectedErrorCount));
 			}
 
 			Assert.True(didThrow);
 		}
 
-		[Theory]
-		[InlineData("<wbr>", "{{content}}", "&lt;wbr&gt;")]
-		[InlineData("<wbr>", "{{{content}}}", "<wbr>")]
+		[Test]
+		[TestCase("<wbr>", "{{content}}", "&lt;wbr&gt;")]
+		[TestCase("<wbr>", "{{{content}}}", "<wbr>")]
 		public void ValueEscapingIsActivatedBasedOnValueInterpolationMustacheSyntax(string content, string template,
 			string expected)
 		{
@@ -179,36 +176,35 @@ namespace Morestachio.Tests
 				.Create(model)
 				.Stringify(true, DefaultEncoding);
 
-			Assert.Equal(expected, value);
+			Assert.That(value, Is.EqualTo(expected));
 		}
 
-		[Theory]
-		[InlineData("<wbr>", "{{content}}", "<wbr>")]
-		[InlineData("<wbr>", "{{{content}}}", "<wbr>")]
+		[Test]
+		[TestCase("<wbr>", "{{content}}", "<wbr>")]
+		[TestCase("<wbr>", "{{{content}}}", "<wbr>")]
 		public void ValueEscapingIsDisabledWhenRequested(string content, string template, string expected)
 		{
 			var model = new Dictionary<string, object>
 			{
 				{"content", content}
 			};
-			Assert.Equal(expected,
-				Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding, 0, true))
-					.Create(model).Stringify(true, DefaultEncoding));
+			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding, 0, true))
+					.Create(model).Stringify(true, DefaultEncoding), Is.EqualTo(expected));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanChainFormat()
 		{
 			var data = DateTime.UtcNow;
 			var parsingOptions = new ParserOptions("{{#data}}{{.(d).()}}{{/data}}", null, DefaultEncoding);
 			parsingOptions.AddFormatter<string>((s, s1) => "TEST");
 			var resuts = Parser.ParseWithOptions(parsingOptions);
-			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
-			Assert.Equal("TEST", result);
+			Assert.That(result, Is.EqualTo("TEST"));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanChainWithAndWithoutFormat()
 		{
 			var data = DateTime.UtcNow;
@@ -217,24 +213,24 @@ namespace Morestachio.Tests
 			parsingOptions.AddFormatter<DateTime>((s, s1) => s);
 			parsingOptions.AddFormatter<long>((s, s1) => new TimeSpan(s));
 			var resuts = Parser.ParseWithOptions(parsingOptions);
-			var result = resuts.Create(new Dictionary<string, object> {{"data", data}})
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
-			Assert.Equal(new TimeSpan(data.TimeOfDay.Ticks).ToString(), result);
+			Assert.That(result, Is.EqualTo(new TimeSpan(data.TimeOfDay.Ticks).ToString()));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanFormatAndCombine()
 		{
 			var data = DateTime.UtcNow;
 			var resuts = Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}},{{data}}", null, DefaultEncoding));
 			//this should compile as its valid but not work as the Default
 			//settings for DateTime are ToString(Arg) so it should return a string and not an object
-			Assert.Equal(string.Empty + "," + data, resuts
-				.Create(new Dictionary<string, object> {{"data", data}})
-				.Stringify(true, DefaultEncoding));
+			Assert.That(resuts
+				.Create(new Dictionary<string, object> { { "data", data } })
+				.Stringify(true, DefaultEncoding), Is.EqualTo(string.Empty + "," + data));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanFormatArgumentWithExpression()
 		{
 			var dt = DateTime.Now;
@@ -247,10 +243,10 @@ namespace Morestachio.Tests
 				{"testFormat", format}
 			});
 
-			Assert.Equal(dt.ToString(format), andStringify);
+			Assert.That(andStringify, Is.EqualTo(dt.ToString(format)));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanInferCollection()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions(
@@ -270,10 +266,10 @@ namespace Morestachio.Tests
 
 			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-			Assert.Equal(expected, actual);
+			Assert.That(actual, Is.EqualTo(expected));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanInferNestedProperties()
 		{
 			var results =
@@ -288,20 +284,20 @@ namespace Morestachio.Tests
 
 			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-			Assert.Equal(expected, actual);
+			Assert.That(actual, Is.EqualTo(expected));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanInferScalar()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions("{{Name}}", null, null, 0, false, true));
 			var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
 			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-			Assert.Equal(expected, actual);
+			Assert.That(actual, Is.EqualTo(expected));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanParseEmailAcidTest()
 		{
 			#region Email ACID Test Body:
@@ -581,63 +577,70 @@ namespace Morestachio.Tests
 
 			#endregion
 
-			Parser.ParseWithOptions(new ParserOptions(emailACIDTest));
+			Assert.That(() => Parser.ParseWithOptions(new ParserOptions(emailACIDTest)), Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessComplexValuePath()
 		{
-			Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{../Person.Name}}!{{/content}}"));
+			Assert.That(() =>
+				Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{../Person.Name}}!{{/content}}")), Throws.Nothing);
 		}
 
-		//[Fact]
+		//[Test]
 		//public void ParserCanProcessRootValuePath()
 		//{
 		//	Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{.../Person.Name}}!{{/content}}"));
 		//}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessCompoundConditionalGroup()
 		{
-			Parser.ParseWithOptions(new ParserOptions(
-				"{{#Collection}}Collection has elements{{^Collection}}Collection doesn't have elements{{/Collection}}"));
-			Parser.ParseWithOptions(new ParserOptions(
-				"{{^Collection}}Collection doesn't have elements{{#Collection}}Collection has elements{{/Collection}}"));
+			Assert.That(() =>
+			{
+				Parser.ParseWithOptions(new ParserOptions(
+					"{{#Collection}}Collection has elements{{^Collection}}Collection doesn't have elements{{/Collection}}"));
+				Parser.ParseWithOptions(new ParserOptions(
+					"{{^Collection}}Collection doesn't have elements{{#Collection}}Collection has elements{{/Collection}}"));
+			}, Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessEachConstruct()
 		{
-			Parser.ParseWithOptions(new ParserOptions("{{#each ACollection}}{{.}}{{/each}}"));
+			Assert.That(() => { Parser.ParseWithOptions(new ParserOptions("{{#each ACollection}}{{.}}{{/each}}")); }, Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessHandleMultilineTemplates()
 		{
-			Parser.ParseWithOptions(new ParserOptions(@"{{^Collection}}Collection doesn't have
+			Assert.That(() => Parser.ParseWithOptions(new ParserOptions(@"{{^Collection}}Collection doesn't have
                             elements{{#Collection}}Collection has
-                        elements{{/Collection}}"));
+                        elements{{/Collection}}")), Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessSimpleConditionalGroup()
 		{
-			Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{/Collection}}"));
+			Assert.That(() =>
+				Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{/Collection}}")), Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessSimpleNegatedCondionalGroup()
 		{
-			Parser.ParseWithOptions(new ParserOptions("{{^Collection}}Collection has no elements{{/Collection}}"));
+			Assert.That(() =>
+				Parser.ParseWithOptions(new ParserOptions("{{^Collection}}Collection has no elements{{/Collection}}")), Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserCanProcessSimpleValuePath()
 		{
-			Parser.ParseWithOptions(new ParserOptions("Hello {{Name}}!"));
+			Assert.That(() =>
+				Parser.ParseWithOptions(new ParserOptions("Hello {{Name}}!")), Throws.Nothing);
 		}
 
-		[Fact]
+		[Test]
 		public void ParserChangeDefaultFormatter()
 		{
 			var dateTime = DateTime.UtcNow;
@@ -649,16 +652,16 @@ namespace Morestachio.Tests
 			});
 			var resuts = Parser.ParseWithOptions(options);
 			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
-			Assert.Equal("2," + dateTime, resuts.Create(new Dictionary<string, object>
+			Assert.That(resuts.Create(new Dictionary<string, object>
 				{
 					{
 						"data", dateTime
 					}
 				})
-				.Stringify(true, DefaultEncoding));
+				.Stringify(true, DefaultEncoding), Is.EqualTo("2," + dateTime));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserProducesEmptyObjectWhenTemplateHasNoMustacheMarkup()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions("This template has no mustache thingies.", null,
@@ -668,11 +671,11 @@ namespace Morestachio.Tests
 
 			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-			Assert.Equal(expected, actual);
+			Assert.That(actual, Is.EqualTo(expected));
 		}
 
 
-		[Fact]
+		[Test]
 		public void ParserRendersCollectionObjectsWhenUsed()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions("{{#each Employees}}{{name}}{{/each}}", null, null,
@@ -682,11 +685,11 @@ namespace Morestachio.Tests
 
 			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-			Assert.Equal(expected, actual);
+			Assert.That(actual, Is.EqualTo(expected));
 		}
 
 
-		[Fact]
+		[Test]
 		public void ParserRendersCollectionSubObjectsWhenUsed()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions(
@@ -703,23 +706,23 @@ namespace Morestachio.Tests
 
 			var actual = results.InferredModel.ToString().EliminateWhitespace();
 
-			Assert.Equal(expected, actual);
+			Assert.That(actual, Is.EqualTo(expected));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserThrowsParserExceptionForEachWithoutPath()
 		{
 			Assert.Throws(typeof(AggregateException),
 				() => Parser.ParseWithOptions(new ParserOptions("{{#eachs}}{{name}}{{/each}}")));
 		}
 
-		[Fact]
+		[Test]
 		public void ParserThrowsParserExceptionForEmptyEach()
 		{
 			Assert.Throws(typeof(AggregateException), () => Parser.ParseWithOptions(new ParserOptions("{{#each}}")));
 		}
 
-		[Fact]
+		[Test]
 		public void ParsingThrowsAnExceptionWhenConditionalGroupsAreMismatched()
 		{
 			Assert.Throws(typeof(AggregateException),
@@ -727,7 +730,7 @@ namespace Morestachio.Tests
 					new ParserOptions("{{#Collection}}Collection has elements{{/AnotherCollection}}")));
 		}
 
-		[Fact]
+		[Test]
 		public void TestCancelation()
 		{
 			var token = new CancellationTokenSource();
@@ -738,10 +741,10 @@ namespace Morestachio.Tests
 			{
 				{"data", model}
 			}, token.Token);
-			Assert.Equal(model.ValueA + model.ValueCancel, template);
+			Assert.That(template, Is.EqualTo(model.ValueA + model.ValueCancel));
 		}
 
-		[Fact]
+		[Test]
 		public void TestCollectionContext()
 		{
 			var template = "{{#each data}}{{$index}},{{$first}},{{$middel}},{{$last}},{{$odd}},{{$even}}.{{/each}}";
@@ -778,10 +781,10 @@ namespace Morestachio.Tests
 			};
 
 			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
-			var genTemplate = parsedTemplate.Create(new Dictionary<string, object> {{"data", elementdata}})
+			var genTemplate = parsedTemplate.Create(new Dictionary<string, object> { { "data", elementdata } })
 				.Stringify(true, DefaultEncoding);
 			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
-			Assert.Equal(realData, genTemplate);
+			Assert.That(genTemplate, Is.EqualTo(realData));
 		}
 	}
 }

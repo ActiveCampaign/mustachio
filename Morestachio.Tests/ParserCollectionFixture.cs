@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Morestachio.Helper;
-using Xunit;
+using NUnit.Framework;
 
 namespace Morestachio.Tests
 {
@@ -61,6 +61,7 @@ namespace Morestachio.Tests
 		}
 	}
 
+	[TestFixture]
 	public class ParserCollectionFixture
 	{
 		private void AddCollectionTypeFormatter(ParserOptions options)
@@ -73,7 +74,7 @@ namespace Morestachio.Tests
 			});
 		}
 
-		[Fact]
+		[Test]
 		public void TestCollectionFormatting()
 		{
 			var options = new ParserOptions("{{#each data(order)}}{{.}},{{/each}}", null,
@@ -86,12 +87,12 @@ namespace Morestachio.Tests
 					"data", collection
 				}
 			}).Stringify(true, ParserFixture.DefaultEncoding);
-			Assert.Equal(report,
-				collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ",");
+			Assert.That(report,
+				Is.EqualTo(collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ","));
 			Console.WriteLine(report);
 		}
 
-		[Fact]
+		[Test]
 		public void TestCollectionFormattingScope()
 		{
 			var options = new ParserOptions("{{#each data(order)}}{{.}},{{/each}}|{{#each data}}{{.}},{{/each}}", null,
@@ -109,7 +110,7 @@ namespace Morestachio.Tests
 				collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ",";
 			var resultRightExpression = collection.Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ",";
 
-			Assert.Equal(report, resultLeftExpressionOrdered + "|" + resultRightExpression);
+			Assert.That(report,Is.EqualTo(resultLeftExpressionOrdered + "|" + resultRightExpression));
 			Console.WriteLine(report);
 		}
 	}

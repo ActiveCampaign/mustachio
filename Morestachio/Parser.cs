@@ -285,12 +285,10 @@ namespace Morestachio
 			content = content ?? context.Options.Null;
 
 			var sourceCount = builder.BaseStream.Length;
-			var binaryContent = context.Options.Encoding.GetBytes(content);
-
-			var cl = binaryContent.Length;
+		
 			if (context.Options.MaxSize == 0)
 			{
-				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+				builder.Write(content);
 				return;
 			}
 
@@ -300,20 +298,23 @@ namespace Morestachio
 				return;
 			}
 
+			var cl = context.Options.Encoding.GetByteCount(content);
+
 			var overflow = sourceCount + cl - context.Options.MaxSize;
 			if (overflow < 0)
 			{
-				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+				//builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+				builder.Write(content);
 				return;
 			}
 
 			if (overflow < content.Length)
 			{
-				builder.BaseStream.Write(binaryContent, 0, (int) (cl - overflow));
+				builder.Write(content.ToCharArray(0, (int) (cl - overflow)));
 			}
 			else
 			{
-				builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
+				builder.Write(content.ToCharArray(0, cl));
 			}
 		}
 

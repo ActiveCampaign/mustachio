@@ -7,7 +7,6 @@ A Lightweight, powerful, flavorful, templating engine for C# and other .net-base
 
 #### How to use Morestachio:
 
-{% if page.heading == "x" %}
 ```csharp
 // Parse the template:
 var sourceTemplate = "Dear {{name}}, this is definitely a personalized note to you. Very truly yours, {{sender}}"

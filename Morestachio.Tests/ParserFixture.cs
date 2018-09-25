@@ -64,7 +64,6 @@ namespace Morestachio.Tests
 		[Test]
 		[TestCase("{{data(d))}}")]
 		[TestCase("{{data((d)}}")]
-		[TestCase("{{data((d))}}")]
 		[TestCase("{{data)}}")]
 		[TestCase("{{data(}}")]
 		public void ParserThrowsAnExceptionWhenFormatIsMismatched(string invalidTemplate)
@@ -202,6 +201,19 @@ namespace Morestachio.Tests
 			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
 			Assert.That(result, Is.EqualTo("TEST"));
+		}
+
+		[Test]
+		public void ParserCanTransferChains()
+		{
+			var data = "d";
+			var parsingOptions = new ParserOptions("{{#data}}{{.((d(a)))}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.AddFormatter<string>((s, s1) => s1);
+
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
+				.Stringify(true, DefaultEncoding);
+			Assert.That(result, Is.EqualTo("(d(a))"));
 		}
 
 		[Test]

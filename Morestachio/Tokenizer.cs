@@ -14,8 +14,8 @@ namespace Morestachio
 		private static readonly Regex TokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
 			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
 
-		private static readonly Regex FormatFinder = new Regex(@"(?:([\w.]+)*)+(?:(?:\(){1}([^)]*)(?:\)){1})?");
-		private static readonly Regex FormatInExpressionFinder = new Regex(@"(?:\(){1}([^()]*)*(?:\)){1}");
+		private static readonly Regex FormatFinder = new Regex(@"(?:([\w.]+)*)+(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))");
+		private static readonly Regex FormatInExpressionFinder = new Regex(@"(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))");
 
 		private static readonly Regex NewlineFinder = new Regex("\n", RegexOptions.Compiled);
 
@@ -87,7 +87,7 @@ namespace Morestachio
 						ValidateArgumentHead(scalarValue, formatterArgument, templateString,
 							m.Index, lines, parseErrors))
 					{
-						FormatAs = formatterArgument
+						FormatString = formatterArgument.Substring(1, formatterArgument.Length - 2)
 					};
 				}
 			}
@@ -324,12 +324,12 @@ namespace Morestachio
 
 			Validated(token, content, index, lines, exceptions);
 
-			if (!PositiveArgumentSpec.Match(argument).Success)
-			{
-				var location = HumanizeCharacterLocation(content, index, lines);
-				exceptions.Add(new IndexedParseException(location,
-					"The argument '{0}' is not valid. Please see documentation for examples of valid paths.", token));
-			}
+			//if (!PositiveArgumentSpec.Match(argument).Success)
+			//{
+			//	var location = HumanizeCharacterLocation(content, index, lines);
+			//	exceptions.Add(new IndexedParseException(location,
+			//		"The argument '{0}' is not valid. Please see documentation for examples of valid paths.", token));
+			//}
 
 			return token;
 		}

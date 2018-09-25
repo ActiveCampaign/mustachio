@@ -16,7 +16,7 @@ namespace Morestachio
 
 		public TokenType Type { get; set; }
 
-		public string FormatAs { get; set; }
+		public string FormatString { get; set; }
 
 		public string Value { get; set; }
 

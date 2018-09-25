@@ -215,10 +215,7 @@ namespace Morestachio
 		{
 			return (builder, context) =>
 			{
-				if (scope != null)
-				{
-					scope = scope.GetInferredModelForPath(currentToken.Value, InferredTemplateModel.UsedAs.Scalar);
-				}
+				scope = scope?.GetInferredModelForPath(currentToken.Value, InferredTemplateModel.UsedAs.Scalar);
 
 				if (context == null)
 				{
@@ -226,22 +223,24 @@ namespace Morestachio
 				}
 
 				var c = context.GetContextForPath(currentToken.Value);
-				if (!string.IsNullOrWhiteSpace(currentToken.FormatAs))
+				if (!string.IsNullOrWhiteSpace(currentToken.FormatString))
 				{
-					if (currentToken.FormatAs.StartsWith("$") &&
-					    currentToken.FormatAs.EndsWith("$"))
+					//if pre and suffixed by a $ its a reference to another field.
+					//walk the path in the $ and use the value in the formatter
+					if (currentToken.FormatString.StartsWith("$") &&
+					    currentToken.FormatString.EndsWith("$"))
 					{
-						var formatContext = context.GetContextForPath(currentToken.FormatAs.Trim('$'));
+						var formatContext = context.GetContextForPath(currentToken.FormatString.Trim('$'));
 						context.Value = c.Format(formatContext.Value);
 					}
 					else
 					{
-						context.Value = c.Format(currentToken.FormatAs);
+						context.Value = c.Format(currentToken.FormatString);
 					}
 				}
 				else
 				{
-					context.Value = c.Format(currentToken.FormatAs);
+					context.Value = c.Format(currentToken.FormatString);
 				}
 			};
 		}
@@ -254,27 +253,21 @@ namespace Morestachio
 		private static Action<StreamWriter, ContextObject> HandleSingleValue(TokenPair token, ParserOptions options,
 			InferredTemplateModel scope)
 		{
-			if (scope != null)
-			{
-				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Scalar);
-			}
+			scope = scope?.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Scalar);
 
 			return (builder, context) =>
 			{
-				if (context != null)
+				//try to locate the value in the context, if it exists, append it.
+				var c = context?.GetContextForPath(token.Value);
+				if (c?.Value != null)
 				{
-					//try to locate the value in the context, if it exists, append it.
-					var c = context.GetContextForPath(token.Value);
-					if (c.Value != null)
+					if (token.Type == TokenType.EscapedSingleValue && !options.DisableContentEscaping)
 					{
-						if (token.Type == TokenType.EscapedSingleValue && !options.DisableContentEscaping)
-						{
-							HandleContent(HtmlEncodeString(c.ToString()))(builder, c);
-						}
-						else
-						{
-							HandleContent(c.ToString())(builder, c);
-						}
+						HandleContent(HtmlEncodeString(c.ToString()))(builder, c);
+					}
+					else
+					{
+						HandleContent(c.ToString())(builder, c);
 					}
 				}
 			};
@@ -327,10 +320,7 @@ namespace Morestachio
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
-			if (scope != null)
-			{
-				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
-			}
+			scope = scope?.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
 
 			var innerTemplate = Parse(remainder, options, scope);
 
@@ -350,10 +340,7 @@ namespace Morestachio
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
-			if (scope != null)
-			{
-				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Collection);
-			}
+			scope = scope?.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Collection);
 
 			var innerTemplate = Parse(remainder, options, scope);
 
@@ -408,10 +395,7 @@ namespace Morestachio
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
-			if (scope != null)
-			{
-				scope = scope.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
-			}
+			scope = scope?.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.ConditionalValue);
 
 			var innerTemplate = Parse(remainder, options, scope);
 

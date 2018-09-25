@@ -28,8 +28,6 @@ Stream content = template.Create(model);
 content.Stringify(Encoding.Default); // Dear John, this is definitely a personalized note to you. Very truly yours, Sally
 ```
 
-{% endif %}
-
 #### Installing Morestachio:
 
 Morestachio can be installed via [NuGet](https://www.nuget.org/packages/Morestachio/):

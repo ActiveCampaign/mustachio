@@ -10,7 +10,7 @@ A Lightweight, powerful, flavorful, templating engine for C# and other .net-base
 ```csharp
 // Parse the template:
 var sourceTemplate = "Dear {{name}}, this is definitely a personalized note to you. Very truly yours, {{sender}}"
-var template = Morestachio.Parser.Parse(new Morstachio.ParserOptions(sourceTemplate));
+var template = Morestachio.Parser.ParseWithOptions(new Morstachio.ParserOptions(sourceTemplate));
 
 // Create the values for the template model:
 dynamic model = new ExpandoObject();
@@ -24,8 +24,8 @@ model["sender"] = "Sally";
 var model = new {name= "John", sender= "Sally"}
 
 // Combine the model with the template to get content:
-Stream content = template.ParseTemplate(model);
-content.Stringify(); // Dear John, this is definitely a personalized note to you. Very truly yours, Sally
+Stream content = template.Create(model);
+content.Stringify(Encoding.Default); // Dear John, this is definitely a personalized note to you. Very truly yours, Sally
 ```
 
 #### Installing Morestachio:
@@ -105,7 +105,7 @@ parserOptions.AddFormatter<DateTime, string,   string>((value, argument) => {
   return value.ToString(argument);
 });
 
-Parser.Parse(parserOptions).Stringify() // Friday, September 21, 2018 ish
+Parser.CreateAndStringify(parserOptions); // Friday, September 21, 2018 ish
 
 ```
 

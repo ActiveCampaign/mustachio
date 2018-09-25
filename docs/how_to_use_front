@@ -1,0 +1,19 @@
+```csharp
+// Parse the template:
+var sourceTemplate = "Dear {{name}}, this is definitely a personalized note to you. Very truly yours, {{sender}}"
+var template = Morestachio.Parser.ParseWithOptions(new Morstachio.ParserOptions(sourceTemplate));
+
+// Create the values for the template model:
+dynamic model = new ExpandoObject();
+model.name = "John";
+model.sender = "Sally";
+// or with dictionarys
+IDictionary model = new Dictionary<string, object>();
+model["name"] = "John";
+model["sender"] = "Sally";
+//or with any other object
+var model = new {name= "John", sender= "Sally"}
+
+// Combine the model with the template to get content:
+Stream content = template.Create(model);
+content.Stringify(Encoding.Default); // Dear John, this is definitely a personalized note to you. Very truly yours, Sally

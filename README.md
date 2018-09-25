@@ -105,7 +105,7 @@ parserOptions.AddFormatter<DateTime, string,   string>((value, argument) => {
   return value.ToString(argument);
 });
 
-Parser.CreateAndStringify(parserOptions).Stringify() // Friday, September 21, 2018 ish
+Parser.CreateAndStringify(parserOptions); // Friday, September 21, 2018 ish
 
 ```
 

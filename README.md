@@ -7,8 +7,6 @@ A Lightweight, powerful, flavorful, templating engine for C# and other .net-base
 
 #### How to use Morestachio:
 
-<iframe width="100%" height="475" src="https://dotnetfiddle.net/Widget/QCvjGu" frameborder="0"></iframe>
-
 ```csharp
 // Parse the template:
 var sourceTemplate = "Dear {{name}}, this is definitely a personalized note to you. Very truly yours, {{sender}}"

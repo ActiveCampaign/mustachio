@@ -221,7 +221,7 @@ namespace Morestachio
 			var arguments = formatter.Method.GetParameters().Select((e, index) => new MultiFormatterInfo()
 			{
 				Type = e.ParameterType,
-				Name = string.IsNullOrWhiteSpace(e.Name) ? e.GetCustomAttribute<FormatterArgumentNameAttribute>()?.Name : e.Name,
+				Name = e.GetCustomAttribute<FormatterArgumentNameAttribute>()?.Name ?? e.Name,
 				IsOptional = e.IsOptional,
 				IsSourceObject = e.GetCustomAttribute<SourceObjectAttribute>() != null,
 				Index = index

@@ -26,7 +26,12 @@ namespace Morestachio
 				var o = value as IFormattable;
 				if (o != null && formatArgument != null)
 				{
-					return o.ToString(formatArgument.ToString(), null);
+					if (formatArgument.Any())
+					{
+						return o.ToString(formatArgument[0].Value.ToString(), null);
+					}
+
+					return o.ToString();
 				}
 
 				return value.ToString();
@@ -248,12 +253,12 @@ namespace Morestachio
 			return PrintableTypes.TryGetValue(type, out formatter) ? formatter : null;
 		}
 
-		private object CallMostMatchingFormatter(Type type, object arguments)
+		private object CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments)
 		{
 			return CallMostMatchingFormatter(type, arguments, Value);
 		}
 
-		private object CallMostMatchingFormatter(Type type, object arguments, object value)
+		private object CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments, object value)
 		{
 			var hasFormatter = GetMostMatchingFormatter(type, Options.Formatters);
 			if (hasFormatter == null)
@@ -278,7 +283,7 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="argument"></param>
 		/// <returns></returns>
-		public object Format(object argument)
+		public object Format(KeyValuePair<string, object>[] argument)
 		{
 			var retval = Value;
 			if (Value != null)

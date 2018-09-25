@@ -31,6 +31,9 @@ namespace Morestachio.Tests
 		}
 
 		[Test]
+		[TestCase(6)]
+		[TestCase(7)]
+		[TestCase(8)]
 		[TestCase(200)]
 		[TestCase(80000)]
 		[TestCase(700000)]
@@ -38,7 +41,7 @@ namespace Morestachio.Tests
 		{
 			var tempdata = new List<string>();
 			var sizeOfOneChar = ParserFixture.DefaultEncoding.GetByteCount(" ");
-			for (var i = 0; i < maxSize * sizeOfOneChar; i++)
+			for (var i = 0; i < (maxSize / sizeOfOneChar) + sizeOfOneChar; i++)
 			{
 				tempdata.Add(" ");
 			}
@@ -50,7 +53,7 @@ namespace Morestachio.Tests
 			{
 				{"Data", tempdata}
 			});
-			Assert.True(templateStream.Length == maxSize);
+			Assert.That(templateStream.Length, Is.EqualTo(maxSize).Or.EqualTo(maxSize - 1));
 		}
 
 		[TestCase(new int[] { })]
@@ -211,8 +214,8 @@ namespace Morestachio.Tests
 			var result = parsedTemplate.Create(model).Stringify(true, ParserFixture.DefaultEncoding);
 
 			Assert.AreEqual("<li>name 0 and version 0 and has a CEO: Smith</li>" +
-			             "<li>name 1 and version 1 and has a CEO: Smith</li>" +
-			             "<li>name 2 and version 2 and has a CEO: Smith</li>", result);
+						 "<li>name 1 and version 1 and has a CEO: Smith</li>" +
+						 "<li>name 2 and version 2 and has a CEO: Smith</li>", result);
 		}
 
 		[Test]

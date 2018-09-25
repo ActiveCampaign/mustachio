@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Morestachio.Formatter;
 
 namespace Morestachio
 {
@@ -12,12 +13,27 @@ namespace Morestachio
 	internal class Tokenizer
 	{
 		private static readonly Regex TokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
-			RegexOptions.Compiled | RegexOptions.Compiled); //|([{]{2}[^{}]+?[(]*[)][}]{2})
+			RegexOptions.Compiled); 
 
-		private static readonly Regex FormatFinder = new Regex(@"(?:([\w.]+)*)+(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))");
-		private static readonly Regex FormatInExpressionFinder = new Regex(@"(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))");
+		private static readonly Regex FormatFinder
+			= new Regex(@"(?:([\w.]+)*)+(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))"
+				, RegexOptions.Compiled);
 
-		private static readonly Regex NewlineFinder = new Regex("\n", RegexOptions.Compiled);
+		private static readonly Regex FormatInExpressionFinder
+			= new Regex(@"(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))"
+				, RegexOptions.Compiled);
+
+		private static readonly Regex NewlineFinder
+			= new Regex("\n", RegexOptions.Compiled);
+
+		private static readonly Regex FindSplitterRegEx
+			= new Regex(
+				@"(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|""([^""\\]*(?:\\[\S\s][^""\\]*)*)""|([^,'""\s\\]*(?:\s+[^,'""\s\\]+)*))\s*(?:,|$)",
+				RegexOptions.Compiled);
+
+		private static readonly Regex NameFinder
+			= new Regex(@"(\[[\w]*\])",
+				RegexOptions.Compiled);
 
 		/// <summary>
 		///     Specifies combnations of paths that don't work.
@@ -60,6 +76,31 @@ namespace Morestachio
 			return retval;
 		}
 
+		private static FormatterPart[] TokenizeFormatterHeader(string formatString)
+		{
+			var preMatch = 0;
+			return FindSplitterRegEx
+				.Matches(formatString)
+				.OfType<Match>()
+				.Select(e =>
+				{
+					var indexOfEndMatch = e.Groups[0].Captures[0].Index + e.Groups[0].Captures[0].Length;
+					var formatterArgument = formatString.Substring(preMatch, indexOfEndMatch - preMatch);
+					var name = NameFinder.Match(formatterArgument);
+					preMatch = indexOfEndMatch;
+					var argument = formatterArgument.Remove(name.Index, name.Value.Length)
+						//trim all commas from the formatter
+						.Trim(',')
+						//then trim all spaces that the user might have written
+						.Trim()
+						//then trim all quotes the user might have written for escaping. this will preserve the spaces inside the quotes
+						.Trim('"', '\'');
+					return new FormatterPart(name.Value.Trim('[', ']'), argument);
+				})
+				.Where(e => !string.IsNullOrWhiteSpace(e.Argument))
+				.ToArray();
+		}
+
 		private static IEnumerable<TokenPair> TokenizeFormattables(string token, string templateString, Capture m,
 			List<int> lines, List<IndexedParseException> parseErrors)
 		{
@@ -87,7 +128,7 @@ namespace Morestachio
 						ValidateArgumentHead(scalarValue, formatterArgument, templateString,
 							m.Index, lines, parseErrors))
 					{
-						FormatString = formatterArgument.Substring(1, formatterArgument.Length - 2)
+						FormatString = TokenizeFormatterHeader(formatterArgument.Substring(1, formatterArgument.Length - 2))
 					};
 				}
 			}
@@ -285,7 +326,9 @@ namespace Morestachio
 					}).Reverse()
 					.ToArray();
 
-				parseErrors.AddRange(scopes.Select(unclosedScope => new IndexedParseException(unclosedScope.location, "A scope block to the following path was opened but not closed: '{0}', please close it using the appropriate syntax.", unclosedScope.scope)));
+				parseErrors.AddRange(scopes.Select(unclosedScope => new IndexedParseException(unclosedScope.location,
+					"A scope block to the following path was opened but not closed: '{0}', please close it using the appropriate syntax.",
+					unclosedScope.scope)));
 			}
 
 			#endregion

@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using JetBrains.Annotations;
@@ -74,7 +76,7 @@ namespace Morestachio
 				throw new InvalidOperationException("The stream is ReadOnly");
 			}
 
-			using (var streamWriter = new StreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
+			using (var ByteCounterStreamWriter = new ByteCounterStreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
 			{
 				var context = new ContextObject
 				{
@@ -83,17 +85,16 @@ namespace Morestachio
 					Options = parseOutput.ParserOptions,
 					CancellationToken = token
 				};
-				parseOutput.InternalTemplate.Value(streamWriter, context);
-				streamWriter.Flush();
+				parseOutput.InternalTemplate.Value(ByteCounterStreamWriter, context);
 			}
 
 			return sourceStream;
 		}
 
-		internal static Action<StreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
+		internal static Action<ByteCounterStreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
 			InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new List<Action<StreamWriter, ContextObject>>();
+			var buildArray = new List<Action<ByteCounterStreamWriter, ContextObject>>();
 
 			while (tokens.Any())
 			{
@@ -120,7 +121,7 @@ namespace Morestachio
 						// and if we're not, this should have been detected by the tokenizer!
 						return (builder, context) =>
 						{
-							foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+							foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(builder, context)))
 							{
 								a(builder, context);
 							}
@@ -137,17 +138,17 @@ namespace Morestachio
 
 			return (builder, context) =>
 			{
-				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(builder, context)))
 				{
 					a(builder, context);
 				}
 			};
 		}
 
-		private static Action<StreamWriter, ContextObject> ParseFormatting(TokenPair token, Queue<TokenPair> tokens,
+		private static Action<ByteCounterStreamWriter, ContextObject> ParseFormatting(TokenPair token, Queue<TokenPair> tokens,
 			ParserOptions options, InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new List<Action<StreamWriter, ContextObject>>();
+			var buildArray = new List<Action<ByteCounterStreamWriter, ContextObject>>();
 
 			buildArray.Add(HandleFormattingValue(token, options, currentScope));
 			var nonPrintToken = false;
@@ -177,19 +178,19 @@ namespace Morestachio
 			{
 				//the formatting will may change the object. Clone the current Context to leave the root one untouched
 				var contextClone = context.Clone();
-				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(context)))
+				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(builder, context)))
 				{
 					a(builder, contextClone);
 				}
 			};
 		}
 
-		private static bool StopOrAbortBuilding(ContextObject context)
+		private static bool StopOrAbortBuilding(ByteCounterStreamWriter builder, ContextObject context)
 		{
-			return !context.AbortGeneration && !context.CancellationToken.IsCancellationRequested;
+			return !context.AbortGeneration && !context.CancellationToken.IsCancellationRequested && !builder.ReachedLimit;
 		}
 
-		private static Action<StreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken,
+		private static Action<ByteCounterStreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken,
 			ParserOptions options,
 			InferredTemplateModel currentScope)
 		{
@@ -210,7 +211,7 @@ namespace Morestachio
 			};
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken,
+		private static Action<ByteCounterStreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken,
 			ParserOptions options, InferredTemplateModel scope)
 		{
 			return (builder, context) =>
@@ -221,26 +222,34 @@ namespace Morestachio
 				{
 					return;
 				}
-
 				var c = context.GetContextForPath(currentToken.Value);
-				if (!string.IsNullOrWhiteSpace(currentToken.FormatString))
+
+				if (currentToken.FormatString != null && currentToken.FormatString.Any())
 				{
-					//if pre and suffixed by a $ its a reference to another field.
-					//walk the path in the $ and use the value in the formatter
-					if (currentToken.FormatString.StartsWith("$") &&
-					    currentToken.FormatString.EndsWith("$"))
+					var argList = new List<KeyValuePair<string, object>>();
+
+					foreach (var formatterArgument in currentToken.FormatString)
 					{
-						var formatContext = context.GetContextForPath(currentToken.FormatString.Trim('$'));
-						context.Value = c.Format(formatContext.Value);
+						object value = null;
+						//if pre and suffixed by a $ its a reference to another field.
+						//walk the path in the $ and use the value in the formatter
+						var trimmedArg = formatterArgument.Argument.Trim();
+						if (trimmedArg.StartsWith("$") &&
+							trimmedArg.EndsWith("$"))
+						{
+							var formatContext = context.GetContextForPath(trimmedArg.Trim('$'));
+							argList.Add(new KeyValuePair<string, object>(formatterArgument.Name, formatContext.Value));
+						}
+						else
+						{
+							argList.Add(new KeyValuePair<string, object>(formatterArgument.Name, formatterArgument.Argument));
+						}
 					}
-					else
-					{
-						context.Value = c.Format(currentToken.FormatString);
-					}
+					context.Value = c.Format(argList.ToArray());
 				}
 				else
 				{
-					context.Value = c.Format(currentToken.FormatString);
+					context.Value = c.Format(new KeyValuePair<string, object>[0]);
 				}
 			};
 		}
@@ -250,7 +259,7 @@ namespace Morestachio
 			return HttpUtility.HtmlEncode(context);
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleSingleValue(TokenPair token, ParserOptions options,
+		private static Action<ByteCounterStreamWriter, ContextObject> HandleSingleValue(TokenPair token, ParserOptions options,
 			InferredTemplateModel scope)
 		{
 			scope = scope?.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Scalar);
@@ -273,12 +282,48 @@ namespace Morestachio
 			};
 		}
 
-		internal static void WriteContent(StreamWriter builder, string content, ContextObject context)
+		internal class ByteCounterStreamWriter : IDisposable
+		{
+			public ByteCounterStreamWriter([NotNull] Stream stream, [NotNull] Encoding encoding, int bufferSize, bool leaveOpen)
+			{
+				BaseWriter = new StreamWriter(stream, encoding, bufferSize, leaveOpen);
+			}
+
+			public StreamWriter BaseWriter { get; set; }
+
+			public long BytesWritten { get; set; }
+			public bool ReachedLimit { get; set; }
+
+			public void Write(string value, long sizeOfContent)
+			{
+				BytesWritten += sizeOfContent;
+				BaseWriter.Write(value);
+			}
+
+			public void Write(string value)
+			{
+				BaseWriter.Write(value);
+			}
+
+			public void Write(char[] value, long sizeOfContent)
+			{
+				BytesWritten += sizeOfContent;
+				BaseWriter.Write(value);
+			}
+
+			public void Dispose()
+			{
+				BaseWriter.Flush();
+				BaseWriter.Dispose();
+			}
+		}
+
+		private static void WriteContent(ByteCounterStreamWriter builder, string content, ContextObject context)
 		{
 			content = content ?? context.Options.Null;
 
-			var sourceCount = builder.BaseStream.Length;
-		
+			var sourceCount = builder.BytesWritten;
+
 			if (context.Options.MaxSize == 0)
 			{
 				builder.Write(content);
@@ -287,36 +332,36 @@ namespace Morestachio
 
 			if (sourceCount >= context.Options.MaxSize - 1)
 			{
-				context.AbortGeneration = true;
+				builder.ReachedLimit = true;
 				return;
 			}
 
 			var cl = context.Options.Encoding.GetByteCount(content);
 
 			var overflow = sourceCount + cl - context.Options.MaxSize;
-			if (overflow < 0)
+			if (overflow <= 0)
 			{
 				//builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
-				builder.Write(content);
+				builder.Write(content, cl);
 				return;
 			}
 
 			if (overflow < content.Length)
 			{
-				builder.Write(content.ToCharArray(0, (int) (cl - overflow)));
+				builder.Write(content.ToCharArray(0, (int)(cl - overflow)), cl - overflow);
 			}
 			else
 			{
-				builder.Write(content.ToCharArray(0, cl));
+				builder.Write(content, cl);
 			}
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleContent(string token)
+		private static Action<ByteCounterStreamWriter, ContextObject> HandleContent(string token)
 		{
 			return (builder, context) => { WriteContent(builder, token, context); };
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleInvertedElementOpen(TokenPair token,
+		private static Action<ByteCounterStreamWriter, ContextObject> HandleInvertedElementOpen(TokenPair token,
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
@@ -336,7 +381,7 @@ namespace Morestachio
 		}
 
 
-		private static Action<StreamWriter, ContextObject> HandleCollectionOpen(TokenPair token,
+		private static Action<ByteCounterStreamWriter, ContextObject> HandleCollectionOpen(TokenPair token,
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
@@ -380,7 +425,7 @@ namespace Morestachio
 						innerTemplate(builder, innerContext);
 						index++;
 						current = next;
-					} while (current != null);
+					} while (current != null && StopOrAbortBuilding(builder, context));
 				}
 				else
 				{
@@ -391,7 +436,7 @@ namespace Morestachio
 			};
 		}
 
-		private static Action<StreamWriter, ContextObject> HandleElementOpen(TokenPair token,
+		private static Action<ByteCounterStreamWriter, ContextObject> HandleElementOpen(TokenPair token,
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{

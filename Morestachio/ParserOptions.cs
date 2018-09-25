@@ -3,8 +3,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
+using Morestachio.Attributes;
+using Morestachio.Formatter;
 
 #endregion
 
@@ -143,7 +147,7 @@ namespace Morestachio
 		public string Null { get; set; }
 
 		/// <summary>
-		///     Adds a formatter with typecheck
+		///     Adds a formatter with type check
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
@@ -157,12 +161,12 @@ namespace Morestachio
 					return sourceObject;
 				}
 
-				return formatter((T) sourceObject, argument);
-			}, typeof(T), null, null));
+				return formatter((T)sourceObject, argument.FirstOrDefault().Value);
+			}, typeof(T), null));
 		}
 
 		/// <summary>
-		///     Adds a formatter with typecheck
+		///     Adds a formatter with type check
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <typeparam name="TArg"></typeparam>
@@ -172,17 +176,18 @@ namespace Morestachio
 		{
 			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
-				if (!(sourceObject is T) || !(argument is TArg))
+				var singleArgument = argument.FirstOrDefault();
+				if (!(sourceObject is T) || (singleArgument.Value != null && !(singleArgument.Value is TArg)))
 				{
 					return sourceObject;
 				}
 
-				return formatter((T) sourceObject, (TArg) argument);
+				return formatter((T)sourceObject, (TArg)singleArgument.Value);
 			}, typeof(T), null, typeof(TArg)));
 		}
 
 		/// <summary>
-		///     Adds a formatter with typecheck
+		///     Adds a formatter with type check
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <typeparam name="TArg"></typeparam>
@@ -193,17 +198,104 @@ namespace Morestachio
 		{
 			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
 			{
-				if (!(sourceObject is T) || !(argument is TArg))
+				var singleArgument = argument.FirstOrDefault();
+				if (!(sourceObject is T) || (singleArgument.Value != null && !(singleArgument.Value is TArg)))
 				{
 					return sourceObject;
 				}
 
-				return formatter((T) sourceObject, (TArg) argument);
+				return formatter((T)sourceObject, (TArg)singleArgument.Value);
 			}, typeof(T), typeof(TOut), typeof(TArg)));
 		}
 
 		/// <summary>
-		///     Adds a formatter with typecheck
+		///     Adds a formatter with type check and multiple arguments.
+		///		Ether the first argument must by of type of <typeparamref name="T"/> or any object annotated with the <seealso cref="SourceObjectAttribute"/>.
+		///		Must not return something. The delegate can take use of the <seealso cref="FormatterArgumentNameAttribute"/> to match names of arguments in the template
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="formatter"></param>
+		/// <param name="description"></param>
+		public void AddMultipleArgumentsFormatter<T>([NotNull]Delegate formatter, string description = null)
+		{
+			var arguments = formatter.Method.GetParameters().Select((e, index) => new MultiFormatterInfo()
+			{
+				Type = e.ParameterType,
+				Name = string.IsNullOrWhiteSpace(e.Name) ? e.GetCustomAttribute<FormatterArgumentNameAttribute>()?.Name : e.Name,
+				IsOptional = e.IsOptional,
+				IsSourceObject = e.GetCustomAttribute<SourceObjectAttribute>() != null,
+				Index = index
+			}).ToArray();
+
+			var returnValue = formatter.Method.ReturnParameter?.ParameterType;
+
+			//if there is no declared SourceObject then check if the first object is of type what we are formatting and use this one.
+			if (!arguments.Any(e => e.IsSourceObject) && arguments.Any() && arguments[0].Type == typeof(T))
+			{
+				arguments[0].IsSourceObject = true;
+			}
+
+			var sourceValue = arguments.FirstOrDefault(e => e.IsSourceObject);
+			if (sourceValue != null)
+			{
+				//if we have a source value in the arguments reduce the index of all following 
+				//this is important as the source value is never ommited in the formatter string so we will not "count" it 
+				for (int i = sourceValue.Index; i < arguments.Length; i++)
+				{
+					arguments[i].Index--;
+				}
+
+				sourceValue.Index = -1;
+			}
+
+			AddFormatter<T>(new FormatTemplateElement(description, (sourceObject, argument) =>
+			{
+				var values = new Dictionary<MultiFormatterInfo, object>();
+
+				//var sourceValue = arguments.FirstOrDefault(e => e.IsSourceObject);
+				
+				foreach (var multiFormatterInfo in arguments)
+				{
+					object givenValue;
+					//set ether the source object or the value from the given arguments
+					if (multiFormatterInfo.IsSourceObject)
+					{
+						givenValue = sourceObject;
+					}
+					else
+					{
+						//match by index or name
+						var index = 0;
+						givenValue = argument.FirstOrDefault((g) =>
+						{
+							if (!string.IsNullOrWhiteSpace(g.Key))
+							{
+								index++;
+								return g.Key.Equals(multiFormatterInfo.Name);
+							}
+							return (index++) == multiFormatterInfo.Index;
+						}).Value;
+					}
+
+					values.Add(multiFormatterInfo, givenValue);
+					if (multiFormatterInfo.IsOptional || multiFormatterInfo.IsSourceObject)
+					{
+						continue; //value and source object are optional so we do not to check for its existence 
+					}
+
+					if (Equals(givenValue, null))
+					{
+						//the delegates parameter is not optional so this formatter does not fit. Continue.
+						return sourceObject;
+					}
+				}
+
+				return formatter.DynamicInvoke(values.Select(e => e.Value).ToArray());
+			}, typeof(T), returnValue, arguments.Select(e => e.Type).ToArray()));
+		}
+
+		/// <summary>
+		///     Adds a formatter with type check
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>

@@ -9,11 +9,11 @@ namespace Morestachio
 	public class FormatTemplateElement
 	{
 		/// <summary>
-		///     Ctor
+		///		Ctor
 		/// </summary>
 		/// <param name="desciption"></param>
 		/// <param name="formatTemplate"></param>
-		public FormatTemplateElement(string desciption, FormatTemplateElementDelegate formatTemplate)
+		public FormatTemplateElement([CanBeNull]string desciption, [NotNull] FormatTemplateElementDelegate formatTemplate)
 		{
 			Desciption = desciption;
 			Format = formatTemplate;
@@ -24,13 +24,13 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="desciption"></param>
 		/// <param name="formatTemplate"></param>
-		/// <param name="inputType"></param>
+		/// <param name="inputTypes"></param>
 		/// <param name="outputType"></param>
 		/// <param name="argumentType"></param>
-		public FormatTemplateElement(string desciption, FormatTemplateElementDelegate formatTemplate, Type inputType,
-			Type outputType, Type argumentType) : this(desciption, formatTemplate)
+		public FormatTemplateElement([CanBeNull]string desciption, [NotNull]FormatTemplateElementDelegate formatTemplate, [CanBeNull]Type inputTypes,
+			[CanBeNull]Type outputType, [NotNull, ItemNotNull] params Type[] argumentType) : this(desciption, formatTemplate)
 		{
-			InputType = inputType;
+			InputTypes = inputTypes;
 			OutputType = outputType;
 			ArgumentType = argumentType;
 		}
@@ -51,13 +51,13 @@ namespace Morestachio
 		///     The type of the Argument that the formatter expects. Can be null.
 		/// </summary>
 		[CanBeNull]
-		public Type ArgumentType { get; }
+		public Type[] ArgumentType { get; }
 
 		/// <summary>
 		///     The type of input the Formatter is able to accept. Can be null.
 		/// </summary>
 		[CanBeNull]
-		public Type InputType { get; }
+		public Type InputTypes { get; }
 
 		/// <summary>
 		///     The type that the formatter will return. Can be null.

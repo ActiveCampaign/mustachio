@@ -19,7 +19,7 @@ namespace Morestachio
 		[Obsolete("This is an Serilization only constructor and should not be used in user code!", true)]
 		public ExtendedParseInformation()
 		{
-			InternalTemplate = new Lazy<Action<StreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
+			InternalTemplate = new Lazy<Action<Parser.ByteCounterStreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
 		}
 
 		/// <summary>
@@ -33,10 +33,10 @@ namespace Morestachio
 			InferredModel = inferredModel;
 			ParserOptions = parserOptions;
 			TemplateTokens = tokens;
-			InternalTemplate = new Lazy<Action<StreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
+			InternalTemplate = new Lazy<Action<Parser.ByteCounterStreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
 		}
 
-		internal Lazy<Action<StreamWriter, ContextObject>> InternalTemplate;
+		internal Lazy<Action<Parser.ByteCounterStreamWriter, ContextObject>> InternalTemplate;
 
 		/// <summary>
 		///		The generated tokes from the tokeniser

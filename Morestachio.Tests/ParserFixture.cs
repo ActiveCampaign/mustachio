@@ -33,12 +33,12 @@ namespace Morestachio.Tests
 		[TestCase("D")]
 		[TestCase("f")]
 		[TestCase("F")]
-		[TestCase("dd,,MM,,YYYY")]
+		[TestCase("dd,,MM,,YYY")]
 		public void ParserCanFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;
 			var resuts =
-				Parser.ParseWithOptions(new ParserOptions("{{data(" + dtFormat + ")}},{{data}}", null,
+				Parser.ParseWithOptions(new ParserOptions("{{data(\"" + dtFormat + "\")}},{{data}}", null,
 					DefaultEncoding));
 			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
@@ -50,11 +50,11 @@ namespace Morestachio.Tests
 		[TestCase("D")]
 		[TestCase("f")]
 		[TestCase("F")]
-		[TestCase("dd,,MM,,YYYY")]
+		[TestCase("dd,,MM,,YYY")]
 		public void ParserCanSelfFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;
-			var resuts = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(" + dtFormat + ")}}{{/data}},{{data}}",
+			var resuts = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(\"" + dtFormat + "\")}}{{/data}},{{data}}",
 				null, DefaultEncoding));
 			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
@@ -214,6 +214,40 @@ namespace Morestachio.Tests
 			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
 				.Stringify(true, DefaultEncoding);
 			Assert.That(result, Is.EqualTo("(d(a))"));
+		}
+
+		[Test]
+		public void ParserCanFormatMultipleUnnamed()
+		{
+			var data = 123123123;
+			var parsingOptions = new ParserOptions("{{#data}}{{.(test, arg, 'arg, arg', ' spaced ' , $.$ )}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.AddMultipleArgumentsFormatter<int>(new Func<int, string, string, string, string, int, string>((self, test, arg, argarg, spacedArg, refSelf) =>
+			{
+				return $"{self}|{test}|{arg}|{argarg}|{spacedArg}|{refSelf}";
+			}));
+
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
+				.Stringify(true, DefaultEncoding);
+			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced |123123123"));
+		}	
+		
+		[Test]
+		public void ParserCanFormatMultipleNamed()
+		{
+			var data = 123123123;
+			var parsingOptions = new ParserOptions("{{#data}}{{.([refSelf] $.$, arg,[testArgument]test, [twoArgs]'arg, arg', [anySpaceArg]' spaced ')}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.AddMultipleArgumentsFormatter<int>(new Func<int, string, string, string, string, int, string>(NamedFormatter));
+
+			var resuts = Parser.ParseWithOptions(parsingOptions);
+			var result = resuts.Create(new Dictionary<string, object> { { "data", data } })
+				.Stringify(true, DefaultEncoding);
+			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced |123123123"));
+		}
+
+		private string NamedFormatter(int self, string testArgument, string arg, string twoArgs, string anySpaceArg, int refSelf)
+		{
+			return $"{self}|{testArgument}|{arg}|{twoArgs}|{anySpaceArg}|{refSelf}";
 		}
 
 		[Test]

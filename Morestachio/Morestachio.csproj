@@ -54,11 +54,14 @@
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\FormatterArgumentName.cs" />
+    <Compile Include="Attributes\SourceObjectAttribute.cs" />
     <Compile Include="ContextCollection.cs" />
     <Compile Include="ContextObject.cs" />
     <Compile Include="ExtendedParseInformation.cs" />
     <Compile Include="FormatTemplateElement.cs" />
     <Compile Include="FormatTemplateElementDelegate.cs" />
+    <Compile Include="Formatter\MultiFormatterInfo.cs" />
     <Compile Include="Helper\StreamExtentions.cs" />
     <Compile Include="InferredTemplateModel.cs" />
     <Compile Include="ParserOptions.cs" />

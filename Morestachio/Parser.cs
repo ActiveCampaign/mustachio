@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using JetBrains.Annotations;
@@ -44,7 +43,7 @@ namespace Morestachio
 				throw new ArgumentNullException(nameof(parsingOptions), "The given Stream is null");
 			}
 
-			var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(parsingOptions.Template));
+			var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(parsingOptions));
 			var inferredModel = new InferredTemplateModel();
 
 			var extendedParseInformation = new ExtendedParseInformation(inferredModel, parsingOptions, tokens);

@@ -74,8 +74,7 @@ namespace Morestachio
 		/// Initializes a new instance of the <see cref="ContextObject"/> class.
 		/// </summary>
 		/// <param name="options">The options.</param>
-		public ContextObject(
-			[NotNull]ParserOptions options)
+		public ContextObject([NotNull]ParserOptions options)
 		{
 			Options = options;
 		}
@@ -85,7 +84,7 @@ namespace Morestachio
 		///     should not be printed, or their printing should be specialized.
 		///     Add an typeof(object) entry as Type to define a Default Output
 		/// </summary>
-		//[NotNull]
+		[NotNull]
 		public static FormatterMatcher DefaultFormatter { get; private set; }
 
 		/// <summary>
@@ -257,14 +256,14 @@ namespace Morestachio
 			}
 
 			retval = Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, retval);
-			if ((retval as FormatterFlow?) != FormatterFlow.Skip)
+			if ((retval as FormatterMatcher.FormatterFlow?) != FormatterMatcher.FormatterFlow.Skip)
 			{
 				return retval;
 			}
 
 			retval = Value;
 			retval = DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, retval);
-			if ((retval as FormatterFlow?) == FormatterFlow.Skip)
+			if ((retval as FormatterMatcher.FormatterFlow?) == FormatterMatcher.FormatterFlow.Skip)
 			{
 				return Value;
 			}

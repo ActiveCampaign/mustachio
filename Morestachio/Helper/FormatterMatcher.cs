@@ -9,21 +9,21 @@ using Morestachio.Formatter;
 namespace Morestachio.Helper
 {
 	/// <summary>
-	///		Can be returned by a Formatter to control what formatter should be used
-	/// </summary>
-	public enum FormatterFlow
-	{
-		/// <summary>
-		///		Stop the execution and try another formatter
-		/// </summary>
-		Skip,
-	}
-
-	/// <summary>
 	///		Matches the Arguments from the Template to a Function from .net
 	/// </summary>
 	public class FormatterMatcher
 	{
+		/// <summary>
+		///		Can be returned by a Formatter to control what formatter should be used
+		/// </summary>
+		public enum FormatterFlow
+		{
+			/// <summary>
+			///		Stop the execution and try another formatter
+			/// </summary>
+			Skip,
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>

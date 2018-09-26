@@ -51,7 +51,7 @@ namespace Morestachio.Formatter.Framework
 			var name = arguments.FirstOrDefault();
 			if (name == null)
 			{
-				return FormatterFlow.Skip;
+				return FormatterMatcher.FormatterFlow.Skip;
 			}
 			var directMatch = formatterGroup.Where(e => (name.ToString().StartsWith(e.Name)));
 			var originalObject = sourceObject;
@@ -122,7 +122,7 @@ namespace Morestachio.Formatter.Framework
 				}
 			}
 
-			return sourceObject == null ? originalObject : FormatterFlow.Skip;
+			return sourceObject == null ? originalObject : FormatterMatcher.FormatterFlow.Skip;
 		}
 
 		/// <summary>

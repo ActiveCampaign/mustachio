@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Principal;
 using System.Threading;
 using JetBrains.Annotations;
 using Morestachio.Helper;

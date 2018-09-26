@@ -13,7 +13,7 @@ namespace Morestachio
 	internal class Tokenizer
 	{
 		private static readonly Regex TokenFinder = new Regex("([{]{2}[^{}]+?[}]{2})|([{]{3}[^{}]+?[}]{3})",
-			RegexOptions.Compiled); 
+			RegexOptions.Compiled);
 
 		private static readonly Regex FormatFinder
 			= new Regex(@"(?:([\w.]+)*)+(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))"
@@ -140,9 +140,9 @@ namespace Morestachio
 			}
 		}
 
-		public static IEnumerable<TokenPair> Tokenize(string templateString)
+		public static IEnumerable<TokenPair> Tokenize(ParserOptions parserOptions)
 		{
-			templateString = templateString ?? "";
+			var templateString = parserOptions.Template ?? "";
 			var matches = TokenFinder.Matches(templateString);
 			var scopestack = new Stack<Tuple<string, int>>();
 
@@ -381,6 +381,11 @@ namespace Morestachio
 		{
 			public int Line { get; set; }
 			public int Character { get; set; }
+
+			public override string ToString()
+			{
+				return $"Line: {Line}, Column: {Character}";
+			}
 		}
 	}
 }

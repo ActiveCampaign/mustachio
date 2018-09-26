@@ -29,7 +29,7 @@ namespace Morestachio
 		{
 			if (FormatString != null && FormatString.Any())
 			{
-				return $"{Type} {Value} ({FormatString.Select(e => (e.Name ?? $"[{e.Name}]") + e.Argument).Aggregate((e, f) => e + "," + f)})";
+				return $"{Type} {Value} ({FormatString.Select(e => e.ToString()).Aggregate((e, f) => e + "," + f)})";
 			}
 			return $"{Type} {Value}";
 

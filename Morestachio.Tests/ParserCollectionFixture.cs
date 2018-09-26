@@ -66,12 +66,12 @@ namespace Morestachio.Tests
 	{
 		private void AddCollectionTypeFormatter(ParserOptions options)
 		{
-			options.AddFormatter<IEnumerable, string>((value, arg) =>
+			options.AddFormatter<IEnumerable>(new Func<IEnumerable, string, object>((value, arg) =>
 			{
 				return arg.Split('|').Aggregate(value,
 					(current, format) =>
 						(IEnumerable) new EnumerableFormatter().FormatArgument(current, format.Trim()));
-			});
+			}));
 		}
 
 		[Test]

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Morestachio.Helper;
 
 namespace Morestachio.Formatter.Framework
 {
@@ -22,10 +23,10 @@ namespace Morestachio.Formatter.Framework
 		{
 			GloablFormatterModels = new List<MorestachioFormatterModel>();
 			//AddGlobalFormatter();
-			EmptyFormatter = new Dictionary<Type, FormatTemplateElement>();
+			EmptyFormatter = new FormatterMatcher();
 		}
 
-		private IDictionary<Type, FormatTemplateElement> EmptyFormatter { get; }
+		private FormatterMatcher EmptyFormatter { get; }
 
 		/// <summary>
 		///		Add all formatter into the given options object
@@ -35,10 +36,11 @@ namespace Morestachio.Formatter.Framework
 		[PublicAPI]
 		public void AddFormatterToMorestachio(IEnumerable<MorestachioFormatterModel> listOfFormatter, ParserOptions options)
 		{
-			options.Formatters.Add(typeof(object), new FormatTemplateElement("mustachioGlobalFormatter",
-				(sourceObject, argument) =>
+			foreach (var formatterGroup in listOfFormatter.GroupBy(e => e.InputType).ToArray())
+			{
+				options.Formatters.AddFormatter(formatterGroup.Key, new Func<object, object, object>((sourceObject, argument) =>
 				{
-					var directMatch = listOfFormatter
+					var directMatch = formatterGroup
 						.Where(e => (argument?.ToString().StartsWith(e.Name)).GetValueOrDefault());
 					var orginalObject = sourceObject;
 
@@ -113,14 +115,10 @@ namespace Morestachio.Formatter.Framework
 					}
 					else
 					{
-						var defaultFormatter =
-							ContextObject.GetMostMatchingFormatter(sourceObject.GetType(), EmptyFormatter);
-
-						return defaultFormatter != null
-							? defaultFormatter.Format(sourceObject, argument)
-							: ContextObject.DefaultToStringWithFormatting.Format(sourceObject, argument);
+						return FormatterFlow.Skip;
 					}
 				}));
+			}
 		}
 
 		/// <summary>

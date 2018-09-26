@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using JetBrains.Annotations;
+using Morestachio.Helper;
 
 namespace Morestachio
 {
@@ -13,54 +14,93 @@ namespace Morestachio
 	/// </summary>
 	public class ContextObject
 	{
+		static ContextObject()
+		{
+			DefaultFormatter = new FormatterMatcher();
+			var defaultFormatter = new[]
+			{
+				typeof(IFormattable),
+				typeof(string),
+				typeof(bool),
+				typeof(char),
+				typeof(int),
+				typeof(double),
+				typeof(short),
+				typeof(float),
+				typeof(long),
+				typeof(byte),
+				typeof(sbyte),
+				typeof(decimal),
+				typeof(DateTime),
+			};
+
+			foreach (var type in defaultFormatter)
+			{
+				DefaultFormatter.AddFormatter(type, new Func<object, object, object>(DefaultFormatterImpl));
+			}
+		}
+
 		internal static readonly Regex PathFinder = new Regex("(\\.\\.[\\\\/]{1})|([^.]+)",
 			RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+		/// <summary>
+		///		Calls <seealso cref="DefaultToStringWithFormatting"/>
+		/// </summary>
+		/// <param name="sourceValue">The source value.</param>
+		/// <param name="formatterArgument">The formatter argument.</param>
+		/// <returns></returns>
+		public static object DefaultFormatterImpl(object sourceValue, object formatterArgument = null)
+		{
+			return DefaultToStringWithFormatting(sourceValue, formatterArgument);
+		}
 
 		/// <summary>
 		///     The default to string operator for any PrintableType
 		/// </summary>
 		[NotNull]
-		public static FormatTemplateElement DefaultToStringWithFormatting = new FormatTemplateElement(
-			"Default string formatter", (value, formatArgument) =>
+		public static Func<object, object, object> DefaultToStringWithFormatting = new Func<object, object, object>(
+			(value, formatArgument) =>
 			{
 				var o = value as IFormattable;
 				if (o != null && formatArgument != null)
 				{
-					if (formatArgument.Any())
-					{
-						return o.ToString(formatArgument[0].Value.ToString(), null);
-					}
-
-					return o.ToString();
+					return o.ToString(formatArgument.ToString(), null);
 				}
 
 				return value.ToString();
 			});
-
 
 		/// <summary>
 		///     The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)
 		///     should not be printed, or their printing should be specialized.
 		///     Add an typeof(object) entry as Type to define a Default Output
 		/// </summary>
-		[NotNull]
-		public static readonly IDictionary<Type, FormatTemplateElement> PrintableTypes =
-			new Dictionary<Type, FormatTemplateElement>
-			{
-				{typeof(IFormattable), DefaultToStringWithFormatting},
-				{typeof(string), DefaultToStringWithFormatting},
-				{typeof(bool), DefaultToStringWithFormatting},
-				{typeof(char), DefaultToStringWithFormatting},
-				{typeof(int), DefaultToStringWithFormatting},
-				{typeof(double), DefaultToStringWithFormatting},
-				{typeof(short), DefaultToStringWithFormatting},
-				{typeof(float), DefaultToStringWithFormatting},
-				{typeof(long), DefaultToStringWithFormatting},
-				{typeof(byte), DefaultToStringWithFormatting},
-				{typeof(sbyte), DefaultToStringWithFormatting},
-				{typeof(decimal), DefaultToStringWithFormatting},
-				{typeof(DateTime), DefaultToStringWithFormatting}
-			};
+		//[NotNull]
+		public static FormatterMatcher DefaultFormatter { get; private set; }
+
+		///// <summary>
+		/////     The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)
+		/////     should not be printed, or their printing should be specialized.
+		/////     Add an typeof(object) entry as Type to define a Default Output
+		///// </summary>
+		//[NotNull]
+		//public static readonly IDictionary<Type, FormatTemplateElement> PrintableTypes =
+		//	new Dictionary<Type, FormatTemplateElement>
+		//	{
+		//		{typeof(IFormattable),	DefaultToStringWithFormatting},
+		//		{typeof(string),		DefaultToStringWithFormatting},
+		//		{typeof(bool),			DefaultToStringWithFormatting},
+		//		{typeof(char),			DefaultToStringWithFormatting},
+		//		{typeof(int),			DefaultToStringWithFormatting},
+		//		{typeof(double),			 DefaultToStringWithFormatting},
+		//		{typeof(short),			 DefaultToStringWithFormatting},
+		//		{typeof(float),			 DefaultToStringWithFormatting},
+		//		{typeof(long),			 DefaultToStringWithFormatting},
+		//		{typeof(byte),			 DefaultToStringWithFormatting},
+		//		{typeof(sbyte),			 DefaultToStringWithFormatting},
+		//		{typeof(decimal),			 DefaultToStringWithFormatting},
+		//		{typeof(DateTime),			 DefaultToStringWithFormatting}
+		//	};
 
 		/// <summary>
 		///     The parent of the current context or null if its the root context
@@ -196,78 +236,18 @@ namespace Morestachio
 		public bool Exists()
 		{
 			return Value != null &&
-			       Value as bool? != false &&
-			       // ReSharper disable once CompareOfFloatsByEqualityOperator
-			       Value as double? != 0 &&
-			       Value as int? != 0 &&
-			       Value as string != string.Empty &&
-			       // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
-			       // OR if it IS an enumerable and .Any() returns true, then it exists as well
-			       (!(Value is IEnumerable) || ((IEnumerable) Value).Cast<object>().Any()
-			       );
+				   Value as bool? != false &&
+				   // ReSharper disable once CompareOfFloatsByEqualityOperator
+				   Value as double? != 0 &&
+				   Value as int? != 0 &&
+				   Value as string != string.Empty &&
+				   // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
+				   // OR if it IS an enumerable and .Any() returns true, then it exists as well
+				   (!(Value is IEnumerable) || ((IEnumerable)Value).Cast<object>().Any()
+				   );
 		}
 
-		private static Type SearchInCollectionForFormatter(Type type, IDictionary<Type, FormatTemplateElement> source)
-		{
-			FormatTemplateElement formatter;
-			//look for exactly this type
-			if (source.TryGetValue(type, out formatter))
-			{
-				return type;
-			}
-
-			//this excact type was not found. Look for derivations
-			return source.FirstOrDefault(e => e.Key != null && e.Key.IsAssignableFrom(type)).Key;
-		}
-
-		private Type GetMostMatchingType(Type type)
-		{
-			return SearchInCollectionForFormatter(type, Options.Formatters) ?? SearchInCollectionForFormatter(type, PrintableTypes);
-		}
-
-		/// <summary>
-		///     Gets the Formatter that matches the given type most from ether the Options.Formatter or the global or null
-		/// </summary>
-		/// <param name="type"></param>
-		/// <param name="additionalFormatters"></param>
-		/// <returns></returns>
-		public static FormatTemplateElement GetMostMatchingFormatter(Type type,
-			IDictionary<Type, FormatTemplateElement> additionalFormatters)
-		{
-			FormatTemplateElement formatter;
-			if (type == null)
-			{
-				if (additionalFormatters.TryGetValue(typeof(object), out formatter))
-				{
-					return formatter;
-				}
-
-				return PrintableTypes.TryGetValue(typeof(object), out formatter) ? formatter : null;
-			}
-
-			if (additionalFormatters.TryGetValue(type, out formatter))
-			{
-				return formatter;
-			}
-
-			return PrintableTypes.TryGetValue(type, out formatter) ? formatter : null;
-		}
-
-		private object CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments)
-		{
-			return CallMostMatchingFormatter(type, arguments, Value);
-		}
-
-		private object CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments, object value)
-		{
-			var hasFormatter = GetMostMatchingFormatter(type, Options.Formatters);
-			if (hasFormatter == null)
-			{
-				return value;
-			}
-
-			return hasFormatter.Format(value, arguments);
-		}
+		
 
 		/// <summary>
 		///     Parses the current object by using the current Formatting argument
@@ -286,9 +266,22 @@ namespace Morestachio
 		public object Format(KeyValuePair<string, object>[] argument)
 		{
 			var retval = Value;
-			if (Value != null)
+			if (Value == null)
 			{
-				retval = CallMostMatchingFormatter(GetMostMatchingType(Value.GetType()), argument);
+				return retval;
+			}
+
+			retval = Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, retval);
+			if ((retval as FormatterFlow?) != FormatterFlow.Skip)
+			{
+				return retval;
+			}
+
+			retval = Value;
+			retval = DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, retval);
+			if ((retval as FormatterFlow?) == FormatterFlow.Skip)
+			{
+				return Value;
 			}
 
 			return retval;

@@ -1,5 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
+using Morestachio.Formatter;
 
 namespace Morestachio
 {
@@ -9,69 +10,63 @@ namespace Morestachio
 	public class FormatTemplateElement
 	{
 		/// <summary>
-		///		Ctor
+		///     Ctor
 		/// </summary>
-		/// <param name="desciption"></param>
 		/// <param name="formatTemplate"></param>
-		public FormatTemplateElement([CanBeNull]string desciption, [NotNull] FormatTemplateElementDelegate formatTemplate)
+		/// <param name="inputTypes"></param>
+		/// <param name="outputType"></param>
+		/// <param name="argumentMeta"></param>
+		[PublicAPI]
+		public FormatTemplateElement([NotNull]Delegate formatTemplate, [NotNull]Type inputTypes,
+			[NotNull]Type outputType, [NotNull, ItemNotNull] params MultiFormatterInfo[] argumentMeta)
 		{
-			Desciption = desciption;
 			Format = formatTemplate;
+			InputTypes = inputTypes;
+			OutputType = outputType;
+			MetaData = argumentMeta;
 		}
 
 		/// <summary>
 		///     Ctor
 		/// </summary>
-		/// <param name="desciption"></param>
 		/// <param name="formatTemplate"></param>
 		/// <param name="inputTypes"></param>
 		/// <param name="outputType"></param>
-		/// <param name="argumentType"></param>
-		public FormatTemplateElement([CanBeNull]string desciption, [NotNull]FormatTemplateElementDelegate formatTemplate, [CanBeNull]Type inputTypes,
-			[CanBeNull]Type outputType, [NotNull, ItemNotNull] params Type[] argumentType) : this(desciption, formatTemplate)
+		/// <param name="argumentMeta"></param>
+		[PublicAPI]
+		public FormatTemplateElement([NotNull]Func<object, object, object> formatTemplate, [NotNull]Type inputTypes,
+			[NotNull]Type outputType, [NotNull, ItemNotNull] params MultiFormatterInfo[] argumentMeta)
 		{
+			Format = formatTemplate;
 			InputTypes = inputTypes;
 			OutputType = outputType;
-			ArgumentType = argumentType;
+			MetaData = argumentMeta;
 		}
 
 		/// <summary>
 		///     delegate for formatting template pars
 		/// </summary>
 		[NotNull]
-		public FormatTemplateElementDelegate Format { get; }
+		public Delegate Format { get; }
 
 		/// <summary>
-		///     Help Text for UI editors
+		///		Gets the Meta data for the Arguments
 		/// </summary>
-		[CanBeNull]
-		public string Desciption { get; }
-
-		/// <summary>
-		///     The type of the Argument that the formatter expects. Can be null.
-		/// </summary>
-		[CanBeNull]
-		public Type[] ArgumentType { get; }
+		
+		[NotNull]
+		[ItemNotNull]
+		public MultiFormatterInfo[] MetaData { get; }
 
 		/// <summary>
 		///     The type of input the Formatter is able to accept. Can be null.
 		/// </summary>
-		[CanBeNull]
+		[NotNull]
 		public Type InputTypes { get; }
 
 		/// <summary>
 		///     The type that the formatter will return. Can be null.
 		/// </summary>
-		[CanBeNull]
+		[NotNull]
 		public Type OutputType { get; }
-
-		/// <summary>
-		///     Converts a FormatTemplateElementDelegate to a FormatTemplateElement
-		/// </summary>
-		/// <param name="x"></param>
-		public static implicit operator FormatTemplateElement(FormatTemplateElementDelegate x)
-		{
-			return new FormatTemplateElement(string.Empty, x);
-		}
 	}
 }

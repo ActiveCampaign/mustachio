@@ -71,36 +71,22 @@ namespace Morestachio
 			});
 
 		/// <summary>
+		/// Initializes a new instance of the <see cref="ContextObject"/> class.
+		/// </summary>
+		/// <param name="options">The options.</param>
+		public ContextObject(
+			[NotNull]ParserOptions options)
+		{
+			Options = options;
+		}
+
+		/// <summary>
 		///     The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)
 		///     should not be printed, or their printing should be specialized.
 		///     Add an typeof(object) entry as Type to define a Default Output
 		/// </summary>
 		//[NotNull]
 		public static FormatterMatcher DefaultFormatter { get; private set; }
-
-		///// <summary>
-		/////     The set of allowed types that may be printed. Complex types (such as arrays and dictionaries)
-		/////     should not be printed, or their printing should be specialized.
-		/////     Add an typeof(object) entry as Type to define a Default Output
-		///// </summary>
-		//[NotNull]
-		//public static readonly IDictionary<Type, FormatTemplateElement> PrintableTypes =
-		//	new Dictionary<Type, FormatTemplateElement>
-		//	{
-		//		{typeof(IFormattable),	DefaultToStringWithFormatting},
-		//		{typeof(string),		DefaultToStringWithFormatting},
-		//		{typeof(bool),			DefaultToStringWithFormatting},
-		//		{typeof(char),			DefaultToStringWithFormatting},
-		//		{typeof(int),			DefaultToStringWithFormatting},
-		//		{typeof(double),			 DefaultToStringWithFormatting},
-		//		{typeof(short),			 DefaultToStringWithFormatting},
-		//		{typeof(float),			 DefaultToStringWithFormatting},
-		//		{typeof(long),			 DefaultToStringWithFormatting},
-		//		{typeof(byte),			 DefaultToStringWithFormatting},
-		//		{typeof(sbyte),			 DefaultToStringWithFormatting},
-		//		{typeof(decimal),			 DefaultToStringWithFormatting},
-		//		{typeof(DateTime),			 DefaultToStringWithFormatting}
-		//	};
 
 		/// <summary>
 		///     The parent of the current context or null if its the root context
@@ -115,7 +101,7 @@ namespace Morestachio
 		public object Value { get; set; }
 
 		/// <summary>
-		///     is an abort currenty requested
+		///     is an abort currently requested
 		/// </summary>
 		public bool AbortGeneration { get; set; }
 
@@ -129,7 +115,7 @@ namespace Morestachio
 		///     With what options are the template currently is running
 		/// </summary>
 		[NotNull]
-		public ParserOptions Options { get; set; }
+		public ParserOptions Options { get; }
 
 		/// <summary>
 		/// </summary>
@@ -184,9 +170,8 @@ namespace Morestachio
 				else
 				{
 					//ALWAYS return the context, even if the value is null.
-					var innerContext = new ContextObject
+					var innerContext = new ContextObject(Options)
 					{
-						Options = Options,
 						Key = path,
 						Parent = this
 					};
@@ -293,11 +278,10 @@ namespace Morestachio
 		/// <returns></returns>
 		public ContextObject Clone()
 		{
-			var contextClone = new ContextObject
+			var contextClone = new ContextObject(Options)
 			{
 				CancellationToken = CancellationToken,
 				Parent = Parent,
-				Options = Options,
 				AbortGeneration = AbortGeneration,
 				Key = Key,
 				Value = (Value as ICloneable)?.Clone() ?? Value

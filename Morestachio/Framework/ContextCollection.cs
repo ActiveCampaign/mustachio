@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace Morestachio
 {
@@ -12,7 +13,8 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="index">the current index of the item inside the collection</param>
 		/// <param name="last">true if its the last item</param>
-		public ContextCollection(long index, bool last)
+		/// <param name="options"></param>
+		public ContextCollection(long index, bool last, [NotNull]ParserOptions options) : base(options)
 		{
 			Index = index;
 			Last = last;
@@ -31,8 +33,7 @@ namespace Morestachio
 		/// <inheritdoc />
 		protected override ContextObject HandlePathContext(Queue<string> elements, string path)
 		{
-			var innerContext = new ContextObject();
-			innerContext.Options = Options;
+			var innerContext = new ContextObject(Options);
 			innerContext.Key = path;
 			innerContext.Parent = this;
 

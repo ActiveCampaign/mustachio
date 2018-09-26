@@ -78,11 +78,10 @@ namespace Morestachio
 
 			using (var ByteCounterStreamWriter = new ByteCounterStreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
 			{
-				var context = new ContextObject
+				var context = new ContextObject(parseOutput.ParserOptions)
 				{
 					Value = data,
 					Key = "",
-					Options = parseOutput.ParserOptions,
 					CancellationToken = token
 				};
 				parseOutput.InternalTemplate.Value(ByteCounterStreamWriter, context);
@@ -415,11 +414,10 @@ namespace Morestachio
 					do
 					{
 						var next = enumumerator.MoveNext() ? enumumerator.Current : null;
-						var innerContext = new ContextCollection(index, next == null)
+						var innerContext = new ContextCollection(index, next == null, options)
 						{
 							Value = current,
 							Key = string.Format("[{0}]", index),
-							Options = options,
 							Parent = c
 						};
 						innerTemplate(builder, innerContext);

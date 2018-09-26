@@ -56,24 +56,24 @@
   <ItemGroup>
     <Compile Include="Attributes\FormatterArgumentName.cs" />
     <Compile Include="Attributes\SourceObjectAttribute.cs" />
-    <Compile Include="ContextCollection.cs" />
+    <Compile Include="Framework\ContextCollection.cs" />
     <Compile Include="ContextObject.cs" />
     <Compile Include="ExtendedParseInformation.cs" />
     <Compile Include="FormatTemplateElement.cs" />
-    <Compile Include="FormatTemplateElementDelegate.cs" />
+    <Compile Include="Framework\FormatTemplateElementDelegate.cs" />
     <Compile Include="Formatter\FormatterPart.cs" />
     <Compile Include="Formatter\MultiFormatterInfo.cs" />
     <Compile Include="Helper\FormatterMatcher.cs" />
     <Compile Include="Helper\StreamExtentions.cs" />
-    <Compile Include="InferredTemplateModel.cs" />
+    <Compile Include="Framework\InferredTemplateModel.cs" />
     <Compile Include="ParserOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parser.cs" />
-    <Compile Include="IndexedParseException.cs" />
-    <Compile Include="MustachioException.cs" />
-    <Compile Include="Tokenizer.cs" />
-    <Compile Include="TokenPair.cs" />
-    <Compile Include="TokenType.cs" />
+    <Compile Include="Framework\IndexedParseException.cs" />
+    <Compile Include="Framework\MustachioException.cs" />
+    <Compile Include="Framework\Tokenizer.cs" />
+    <Compile Include="Framework\TokenPair.cs" />
+    <Compile Include="Framework\TokenType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="morestachioKey.snk" />

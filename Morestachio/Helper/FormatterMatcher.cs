@@ -72,7 +72,12 @@ namespace Morestachio.Helper
 		public virtual void AddFormatter([NotNull]Type forType, [NotNull]Delegate formatterDelegate)
 		{
 			var arguments = formatterDelegate.Method.GetParameters().Select((e, index) =>
-				new MultiFormatterInfo(e.ParameterType, e.GetCustomAttribute<FormatterArgumentNameAttribute>()?.Name ?? e.Name, e.IsOptional, index)
+				new MultiFormatterInfo(
+					e.ParameterType,
+					e.GetCustomAttribute<FormatterArgumentNameAttribute>()?.Name ?? e.Name,
+					e.IsOptional,
+					index,
+					e.GetCustomAttribute<ParamArrayAttribute>() != null)
 				{
 					IsSourceObject = e.GetCustomAttribute<SourceObjectAttribute>() != null,
 				}).ToArray();
@@ -98,8 +103,7 @@ namespace Morestachio.Helper
 				sourceValue.Index = -1;
 			}
 
-			FormatTemplateElement formatter = null;
-			formatter = new FormatTemplateElement(
+			var formatter = new FormatTemplateElement(
 				formatterDelegate,
 				forType,
 				returnValue,
@@ -119,8 +123,9 @@ namespace Morestachio.Helper
 			[CanBeNull]object sourceObject, [NotNull] params KeyValuePair<string, object>[] templateArguments)
 		{
 			var values = new Dictionary<MultiFormatterInfo, object>();
+			var matched = new Dictionary<MultiFormatterInfo, KeyValuePair<string, object>>();
 
-			foreach (var multiFormatterInfo in formatter.MetaData)
+			foreach (var multiFormatterInfo in formatter.MetaData.Where(e => !e.IsRestObject))
 			{
 				object givenValue;
 				//set ether the source object or the value from the given arguments
@@ -131,16 +136,20 @@ namespace Morestachio.Helper
 				else
 				{
 					//match by index or name
-					var index = 0;
-					givenValue = templateArguments.FirstOrDefault((g) =>
+
+					//match by name
+					var match = templateArguments.FirstOrDefault(e =>
+						!string.IsNullOrWhiteSpace(e.Key) && e.Key.Equals(multiFormatterInfo.Name));
+
+					if (default(KeyValuePair<string, object>).Equals(match))
 					{
-						if (!String.IsNullOrWhiteSpace(g.Key))
-						{
-							index++;
-							return g.Key.Equals(multiFormatterInfo.Name);
-						}
-						return (index++) == multiFormatterInfo.Index;
-					}).Value;
+						//match by index
+						var index = 0;
+						match = templateArguments.FirstOrDefault((g) => (index++) == multiFormatterInfo.Index);
+					}
+
+					givenValue = match.Value;
+					matched.Add(multiFormatterInfo, match);
 				}
 
 				values.Add(multiFormatterInfo, givenValue);
@@ -154,6 +163,31 @@ namespace Morestachio.Helper
 					//the delegates parameter is not optional so this formatter does not fit. Continue.
 					return null;
 				}
+			}
+
+			var hasRest = formatter.MetaData.FirstOrDefault(e => e.IsRestObject);
+			if (hasRest == null)
+			{
+				return values;
+			}
+
+			//only use the values that are not matched.
+			var restValues = templateArguments.Except(matched.Values);
+
+			if (typeof(KeyValuePair<string, object>[]) == hasRest.Type)
+			{
+				//keep the name value pairs
+				values.Add(hasRest, restValues);
+			}
+			else if (typeof(object[]).IsAssignableFrom(hasRest.Type))
+			{
+				//its requested to transform the rest values and truncate the names from it.
+				values.Add(hasRest, restValues.Select(e => e.Value).ToArray());
+			}
+			else
+			{
+				//unknown type in params argument cannot call
+				return null;
 			}
 
 			return values;
@@ -181,12 +215,11 @@ namespace Morestachio.Helper
 		}
 
 		/// <summary>
-		///     Gets the Formatter that matches the given type most from ether the Options.Formatter or the global or null
+		///     Gets the Formatter that matches the type or is assignable to that type. If null it will search for a object formatter
 		/// </summary>
 		/// <param name="type"></param>
-		/// <param name="additionalFormatters"></param>
 		/// <returns></returns>
-		public IEnumerable<FormatTemplateElement> GetMostMatchingFormatter(Type type)
+		public IEnumerable<FormatTemplateElement> GetMostMatchingFormatter([CanBeNull]Type type)
 		{
 			if (type == null)
 			{

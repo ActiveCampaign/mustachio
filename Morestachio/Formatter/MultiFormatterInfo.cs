@@ -15,12 +15,13 @@ namespace Morestachio.Formatter
 		/// <summary>
 		/// Initializes a new instance of the <see cref="MultiFormatterInfo"/> class.
 		/// </summary>
-		public MultiFormatterInfo(Type type, string name, bool isOptional, int index)
+		public MultiFormatterInfo(Type type, string name, bool isOptional, int index, bool isRestObject)
 		{
 			Type = type;
 			Name = name;
 			IsOptional = isOptional;
 			Index = index;
+			IsRestObject = isRestObject;
 		}
 
 		/// <summary>
@@ -43,5 +44,10 @@ namespace Morestachio.Formatter
 		///		The index in what order the argument is present in the Formatter
 		/// </summary>
 		public int Index { get; internal set; }
+
+		/// <summary>
+		///		Is this parameter a params parameter. If so it will get all following not matched arguments
+		/// </summary>
+		public bool IsRestObject { get; }
 	}
 }

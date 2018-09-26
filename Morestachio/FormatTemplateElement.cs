@@ -18,7 +18,7 @@ namespace Morestachio
 		/// <param name="argumentMeta"></param>
 		[PublicAPI]
 		public FormatTemplateElement([NotNull]Delegate formatTemplate, [NotNull]Type inputTypes,
-			[NotNull]Type outputType, [NotNull, ItemNotNull] params MultiFormatterInfo[] argumentMeta)
+			[CanBeNull]Type outputType, [NotNull, ItemNotNull] params MultiFormatterInfo[] argumentMeta)
 		{
 			Format = formatTemplate;
 			InputTypes = inputTypes;
@@ -35,7 +35,7 @@ namespace Morestachio
 		/// <param name="argumentMeta"></param>
 		[PublicAPI]
 		public FormatTemplateElement([NotNull]Func<object, object, object> formatTemplate, [NotNull]Type inputTypes,
-			[NotNull]Type outputType, [NotNull, ItemNotNull] params MultiFormatterInfo[] argumentMeta)
+			[CanBeNull]Type outputType, [NotNull, ItemNotNull] params MultiFormatterInfo[] argumentMeta)
 		{
 			Format = formatTemplate;
 			InputTypes = inputTypes;
@@ -66,7 +66,7 @@ namespace Morestachio
 		/// <summary>
 		///     The type that the formatter will return. Can be null.
 		/// </summary>
-		[NotNull]
+		[CanBeNull]
 		public Type OutputType { get; }
 	}
 }

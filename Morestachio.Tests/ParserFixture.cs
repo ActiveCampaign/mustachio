@@ -253,21 +253,21 @@ namespace Morestachio.Tests
 			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced | spaced with quote \\\" |123123123"));
 		}
 
-		[Test, Ignore("Future Feature. WIP")]
+		[Test]
 		public void ParserCanFormatMultipleUnnamedParams()
 		{
 			var data = 123123123;
-			var parsingOptions = new ParserOptions("{{#data}}{{.([other][test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$])}}{{/data}}", null, DefaultEncoding);
-			parsingOptions.AddFormatter<int>(new Func<int, object[], string>(UnnamedParamsFormatter));
+			var parsingOptions = new ParserOptions("{{#data}}{{.( arg, 'arg, arg', ' spaced ', [testArgument]test, ' spaced with quote \\\" ' , $.$)}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.AddFormatter<int>(new Func<int, string, object[], string>(UnnamedParamsFormatter));
 
 			var resuts = Parser.ParseWithOptions(parsingOptions);
 			var result = resuts.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced | spaced with quote \\\" |123123123"));
 		}
 
-		private string UnnamedParamsFormatter(int self, object[] other)
+		private string UnnamedParamsFormatter(int self, string testArgument, params object[] other)
 		{
-			return string.Format("{0}|{1}", self, other.Aggregate((e, f) => e + "|" + f));
+			return string.Format("{0}|{1}|{2}", self, testArgument, other.Aggregate((e, f) => e + "|" + f));
 		}
 
 		[Test]

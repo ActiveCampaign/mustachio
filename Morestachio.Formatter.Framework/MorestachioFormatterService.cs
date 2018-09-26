@@ -22,7 +22,7 @@ namespace Morestachio.Formatter.Framework
 		/// </summary>
 		public MorestachioFormatterService()
 		{
-			GloablFormatterModels = new List<MorestachioFormatterModel>();
+			GlobalFormatterModels = new List<MorestachioFormatterModel>();
 			//AddGlobalFormatter();
 			EmptyFormatter = new FormatterMatcher();
 		}
@@ -45,15 +45,20 @@ namespace Morestachio.Formatter.Framework
 			}
 		}
 
-		private object FormatConditonal(object sourceObject, object argument,
+		private object FormatConditonal(object sourceObject, object[] arguments,
 			IEnumerable<MorestachioFormatterModel> formatterGroup)
 		{
-			var directMatch = formatterGroup.Where(e => (argument?.ToString().StartsWith(e.Name)).GetValueOrDefault());
-			var orginalObject = sourceObject;
+			var name = arguments.FirstOrDefault();
+			if (name == null)
+			{
+				return FormatterFlow.Skip;
+			}
+			var directMatch = formatterGroup.Where(e => (name.ToString().StartsWith(e.Name)));
+			var originalObject = sourceObject;
 
 			foreach (var morestachioFormatterModel in directMatch)
 			{
-				var clearedArgument = argument?.ToString().Remove(0, (morestachioFormatterModel.Name).Length).Trim();
+				var clearedArgument = name.ToString().Remove(0, (morestachioFormatterModel.Name).Length).Trim();
 				if (sourceObject == null)
 				{
 					continue;
@@ -68,7 +73,7 @@ namespace Morestachio.Formatter.Framework
 					}
 
 					sourceObject = morestachioFormatterModel.Function.Invoke(null, new[] { sourceObject, clearedArgument });
-					if (sourceObject == null || !sourceObject.Equals(orginalObject))
+					if (sourceObject == null || !sourceObject.Equals(originalObject))
 					{
 						return sourceObject;
 					}
@@ -106,7 +111,7 @@ namespace Morestachio.Formatter.Framework
 				{
 					var makeGenericMethod = morestachioFormatterModel.Function.MakeGenericMethod(templateGen);
 					sourceObject = makeGenericMethod.Invoke(null, new[] { sourceObject, clearedArgument });
-					if (sourceObject == null || !sourceObject.Equals(orginalObject))
+					if (sourceObject == null || !sourceObject.Equals(originalObject))
 					{
 						return sourceObject;
 					}
@@ -117,7 +122,7 @@ namespace Morestachio.Formatter.Framework
 				}
 			}
 
-			return sourceObject == null ? orginalObject : FormatterFlow.Skip;
+			return sourceObject == null ? originalObject : FormatterFlow.Skip;
 		}
 
 		/// <summary>
@@ -142,27 +147,16 @@ namespace Morestachio.Formatter.Framework
 						morestachioFormatterAttribute.OutputType ?? method.ReturnType,
 						method.GetCustomAttributes<MorestachioFormatterInputAttribute>().Select(e => new InputDescription(e.Description, e.OutputType, e.Example)).ToArray(),
 						morestachioFormatterAttribute.ReturnHint, method);
-					GloablFormatterModels.Add(MorestachioFormatterModel);
+					GlobalFormatterModels.Add(MorestachioFormatterModel);
 				}
 
 			}
 		}
 
-		//public void AddGlobalFormatter()
-		//{
-		//	AddFromType(typeof(GlobalFormatter));
-		//	AddFromType(typeof(ListFormatter));
-		//	AddFromType(typeof(StructualFormatter));
-		//}
-
 		/// <summary>
 		/// Gets the gloabl formatter that are used always for any formatting run.
 		/// </summary>
-		public ICollection<MorestachioFormatterModel> GloablFormatterModels { get; private set; }
+		public ICollection<MorestachioFormatterModel> GlobalFormatterModels { get; private set; }
 
-		//public ICollection<MorestachioFormatterModel> GetFormatterForUser(int userId)
-		//{
-		//	return GloablFormatterModels;
-		//}
 	}
 }

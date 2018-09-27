@@ -255,15 +255,18 @@ namespace Morestachio
 				return retval;
 			}
 
+			//call formatters that are given by the Options for this run
 			retval = Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, retval);
-			if ((retval as FormatterMatcher.FormatterFlow?) != FormatterMatcher.FormatterFlow.Skip)
+			if ((retval as FormatterMatcher.FormatterFlow) != FormatterMatcher.FormatterFlow.Skip)
 			{
+				//one formatter has returned a valid value so use this one.
 				return retval;
 			}
 
+			//all formatters in the options object have rejected the value so try use the global ones
 			retval = Value;
 			retval = DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, retval);
-			if ((retval as FormatterMatcher.FormatterFlow?) == FormatterMatcher.FormatterFlow.Skip)
+			if ((retval as FormatterMatcher.FormatterFlow) == FormatterMatcher.FormatterFlow.Skip)
 			{
 				return Value;
 			}
@@ -283,7 +286,7 @@ namespace Morestachio
 				Parent = Parent,
 				AbortGeneration = AbortGeneration,
 				Key = Key,
-				Value = (Value as ICloneable)?.Clone() ?? Value
+				Value = Value
 			};
 
 			return contextClone;

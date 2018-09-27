@@ -11,49 +11,49 @@ namespace Morestachio.Formatter.Linq
 	public static class ListFormatter
 	{
 		[MorestachioFormatter("first or default", "Selects the First item in the list")]
-		public static T FirstOrDefault<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static T FirstOrDefault<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.FirstOrDefault();
 		}
 
 		[MorestachioFormatter("order desc", "Orders the list descending")]
-		public static IEnumerable<T> OrderDesc<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static IEnumerable<T> OrderDesc<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.OrderByDescending(e => e);
 		}
 
 		[MorestachioFormatter("order asc", "Orders the list ascending")]
-		public static IEnumerable<T> Order<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static IEnumerable<T> Order<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.OrderBy(e => e);
 		}
 
 		[MorestachioFormatter("reverse", "Reverses the order of the list")]
-		public static IEnumerable<T> Reverse<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static IEnumerable<T> Reverse<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.Reverse();
 		}
 
 		[MorestachioFormatter("max", "Called on a list of numbers it returns the biggest")]
-		public static T Max<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static T Max<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.Max();
 		}
 
 		[MorestachioFormatter("min", "Called on a list of numbers it returns the smallest")]
-		public static T Min<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static T Min<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.Min();
 		}
 
 		[MorestachioFormatter("contains", "Searches in the list for that the argument")]
 		[MorestachioFormatterInput("Must be ether a fixed value or an reference $other$")]
-		public static bool Contains<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static bool Contains<T>(IEnumerable<T> sourceCollection, object arguments)
 		{
 			return sourceCollection.Any(e => e.Equals(arguments));
 		}
 
-		[MorestachioFormatter("element at", "Gets the item in the list on the postion")]
+		[MorestachioFormatter("element at", "Gets the item in the list on the position")]
 		[MorestachioFormatterInput("Must be a number")]
 		public static T ElementAt<T>(IEnumerable<T> sourceCollection, string arguments)
 		{
@@ -82,13 +82,13 @@ namespace Morestachio.Formatter.Linq
 		}
 
 		[MorestachioFormatter("count", "Gets the count of the list")]
-		public static decimal Count<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static decimal Count<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.Count();
 		}
 
 		[MorestachioFormatter("distinct", "Gets a new list that contains not duplicates")]
-		public static IEnumerable<T> Distinct<T>(IEnumerable<T> sourceCollection, string arguments)
+		public static IEnumerable<T> Distinct<T>(IEnumerable<T> sourceCollection)
 		{
 			return sourceCollection.Distinct();
 		}
@@ -104,7 +104,7 @@ namespace Morestachio.Formatter.Linq
 		[MorestachioFormatter("flat group", "Flattens the Group returned by group by",
 			ReturnHint = "Can be listed with #each")]
 		[MorestachioFormatterInput("Must be Expression to property")]
-		public static IEnumerable<T> GroupByList<TKey, T>(IGrouping<TKey, T> sourceCollection, string arguments)
+		public static IEnumerable<T> GroupByList<TKey, T>(IGrouping<TKey, T> sourceCollection)
 		{
 			return sourceCollection.ToList();
 		}
@@ -123,9 +123,9 @@ namespace Morestachio.Formatter.Linq
 			return sourceCollection.Where(arguments);
 		}
 
-		[MorestachioFormatter("any", "Returns ether true or false if the expression in the argument is furfilled by any item")]
+		[MorestachioFormatter("any", "Returns ether true or false if the expression in the argument is fulfilled by any item")]
 		[MorestachioFormatterInput("Must be Expression to property")]
-		public static bool Any(IEnumerable sourceCollection, string arguments)
+		public static bool Any(IEnumerable sourceCollection)
 		{
 			return sourceCollection.Any();
 		}
@@ -138,7 +138,7 @@ namespace Morestachio.Formatter.Linq
 		}
 
 		[MorestachioFormatter("aggregate", "Aggreates the elements and returns it")]
-		public static object Aggregate(IEnumerable sourceCollection, string arguments)
+		public static object Aggregate(IEnumerable sourceCollection)
 		{
 			var colQuery = sourceCollection.AsQueryable();
 
@@ -155,26 +155,26 @@ namespace Morestachio.Formatter.Linq
 		}
 
 		[MorestachioFormatter("sum", "Aggreates the property in the argument and returns it")]
-		public static decimal Sum(IEnumerable sourceCollection, string arguments)
+		public static decimal Sum(IEnumerable sourceCollection)
 		{
 			var colQuery = sourceCollection.Cast<decimal>();
 			return colQuery.Sum();
 		}
 
 		[MorestachioFormatter("sum", "Aggreates the property in the argument and returns it")]
-		public static int Sum(IEnumerable<int> sourceCollection, string arguments)
+		public static int Sum(IEnumerable<int> sourceCollection)
 		{
 			return sourceCollection.Sum();
 		}
 
 		[MorestachioFormatter("sum", "Aggreates the property in the argument and returns it")]
-		public static decimal Sum(IEnumerable<decimal> sourceCollection, string arguments)
+		public static decimal Sum(IEnumerable<decimal> sourceCollection)
 		{
 			return sourceCollection.Sum();
 		}
 
 		[MorestachioFormatter("sum", "Aggreates the property in the argument and returns it")]
-		public static double Sum(IEnumerable<double> sourceCollection, string arguments)
+		public static double Sum(IEnumerable<double> sourceCollection)
 		{
 			return sourceCollection.Sum();
 		}

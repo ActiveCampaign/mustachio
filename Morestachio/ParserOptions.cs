@@ -143,6 +143,7 @@ namespace Morestachio
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
+		[Obsolete("This function is obsolete. Call Formatters.AddFormatter directly")]
 		public void AddFormatter<T>([NotNull]Func<T, object, object> formatter, string description = null)
 		{
 			Formatters.AddFormatter(typeof(T), formatter);
@@ -154,6 +155,7 @@ namespace Morestachio
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
+		[Obsolete("This function is obsolete. Call Formatters.AddFormatter directly")]
 		public void AddFormatter<T>([NotNull]Func<T, object> formatter, string description = null)
 		{
 			Formatters.AddFormatter(typeof(T), formatter);
@@ -167,6 +169,7 @@ namespace Morestachio
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatter"></param>
 		/// <param name="description"></param>
+		[Obsolete("This function is obsolete. Call Formatters.AddFormatter directly")]
 		public void AddFormatter<T>([NotNull]Delegate formatter, string description = null)
 		{
 			Formatters.AddFormatter(typeof(T), formatter);

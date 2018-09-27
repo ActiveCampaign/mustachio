@@ -3,10 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Morestachio.Attributes;
 using Morestachio.Helper;
 
 namespace Morestachio.Formatter.Framework
 {
+	/// <summary>
+	///		Delegate for mapping formatter function of the Morestachio framework to the params argument
+	/// </summary>
+	/// <param name="originalObject">The original object.</param>
+	/// <param name="name">The name.</param>
+	/// <param name="arguments">The arguments.</param>
+	/// <returns></returns>
+	public delegate object MorstachioFormatter([SourceObject] object originalObject, [FormatterArgumentName("Name")]string name,
+		params object[] arguments);
+
 	/// <summary>
 	///		The Formatter service that can be used to interpret the Native C# formatter.
 	///		To use this kind of formatter you must create a public static class where all formatting functions are located.
@@ -23,11 +34,7 @@ namespace Morestachio.Formatter.Framework
 		public MorestachioFormatterService()
 		{
 			GlobalFormatterModels = new List<MorestachioFormatterModel>();
-			//AddGlobalFormatter();
-			EmptyFormatter = new FormatterMatcher();
 		}
-
-		private FormatterMatcher EmptyFormatter { get; }
 
 		/// <summary>
 		///		Add all formatter into the given options object
@@ -40,25 +47,23 @@ namespace Morestachio.Formatter.Framework
 			foreach (var formatterGroup in listOfFormatter.GroupBy(e => e.InputType).ToArray())
 			{
 				options.Formatters.AddFormatter(formatterGroup.Key,
-					new Func<object, object[], object>((sourceObject, argument) =>
-						FormatConditonal(sourceObject, argument, formatterGroup)));
+					new MorstachioFormatter((sourceObject, name, arguments) =>
+						FormatConditonal(sourceObject, name, arguments, formatterGroup)));
 			}
 		}
 
-		private object FormatConditonal(object sourceObject, object[] arguments,
+		private object FormatConditonal(object sourceObject, string name, object[] arguments,
 			IEnumerable<MorestachioFormatterModel> formatterGroup)
 		{
-			var name = arguments.FirstOrDefault();
 			if (name == null)
 			{
 				return FormatterMatcher.FormatterFlow.Skip;
 			}
-			var directMatch = formatterGroup.Where(e => (name.ToString().StartsWith(e.Name)));
+			var directMatch = formatterGroup.Where(e => (name.ToString().Equals(e.Name)));
 			var originalObject = sourceObject;
 
 			foreach (var morestachioFormatterModel in directMatch)
 			{
-				var clearedArgument = name.ToString().Remove(0, (morestachioFormatterModel.Name).Length).Trim();
 				if (sourceObject == null)
 				{
 					continue;
@@ -72,7 +77,7 @@ namespace Morestachio.Formatter.Framework
 						continue;
 					}
 
-					sourceObject = morestachioFormatterModel.Function.Invoke(null, new[] { sourceObject, clearedArgument });
+					sourceObject = morestachioFormatterModel.Function.Invoke(null, new[] { sourceObject }.Concat(arguments).ToArray());
 					if (sourceObject == null || !sourceObject.Equals(originalObject))
 					{
 						return sourceObject;
@@ -110,7 +115,7 @@ namespace Morestachio.Formatter.Framework
 				try
 				{
 					var makeGenericMethod = morestachioFormatterModel.Function.MakeGenericMethod(templateGen);
-					sourceObject = makeGenericMethod.Invoke(null, new[] { sourceObject, clearedArgument });
+					sourceObject = makeGenericMethod.Invoke(null, new[] { sourceObject }.Concat(arguments).ToArray());
 					if (sourceObject == null || !sourceObject.Equals(originalObject))
 					{
 						return sourceObject;
@@ -141,15 +146,13 @@ namespace Morestachio.Formatter.Framework
 						continue;
 					}
 
-					MorestachioFormatterModel MorestachioFormatterModel;
-					MorestachioFormatterModel = new MorestachioFormatterModel(morestachioFormatterAttribute.Name, morestachioFormatterAttribute.Description,
-						method.GetParameters().FirstOrDefault().ParameterType,
+					var morestachioFormatterModel = new MorestachioFormatterModel(morestachioFormatterAttribute.Name, morestachioFormatterAttribute.Description,
+						method.GetParameters().FirstOrDefault()?.ParameterType,
 						morestachioFormatterAttribute.OutputType ?? method.ReturnType,
 						method.GetCustomAttributes<MorestachioFormatterInputAttribute>().Select(e => new InputDescription(e.Description, e.OutputType, e.Example)).ToArray(),
 						morestachioFormatterAttribute.ReturnHint, method);
-					GlobalFormatterModels.Add(MorestachioFormatterModel);
+					GlobalFormatterModels.Add(morestachioFormatterModel);
 				}
-
 			}
 		}
 
@@ -157,6 +160,5 @@ namespace Morestachio.Formatter.Framework
 		/// Gets the gloabl formatter that are used always for any formatting run.
 		/// </summary>
 		public ICollection<MorestachioFormatterModel> GlobalFormatterModels { get; private set; }
-
 	}
 }

@@ -16,12 +16,17 @@ namespace Morestachio.Helper
 		/// <summary>
 		///		Can be returned by a Formatter to control what formatter should be used
 		/// </summary>
-		public enum FormatterFlow
+		public class FormatterFlow
 		{
+			private FormatterFlow()
+			{
+
+			}
+
 			/// <summary>
-			///		Stop the execution and try another formatter
+			///		Return code for all formatters to skip the execution of the current formatter and try another one that could also match
 			/// </summary>
-			Skip,
+			public static FormatterFlow Skip { get; } = new FormatterFlow();
 		}
 
 		/// <summary>
@@ -59,9 +64,52 @@ namespace Morestachio.Helper
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatterDelegate">The formatter delegate.</param>
-		public virtual void AddFormatter<T>([NotNull]Delegate formatterDelegate)
+		public virtual FormatTemplateElement AddFormatter<T>([NotNull]Delegate formatterDelegate)
 		{
-			AddFormatter(typeof(T), formatterDelegate);
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		/// Adds the formatter.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="formatterDelegate">The formatter delegate.</param>
+		public virtual FormatTemplateElement AddFormatter<T>([NotNull]Func<T> formatterDelegate)
+		{
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		/// Adds the formatter.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TResult"></typeparam>
+		/// <param name="formatterDelegate">The formatter delegate.</param>
+		public virtual FormatTemplateElement AddFormatter<T, TResult>([NotNull]Func<T, TResult> formatterDelegate)
+		{
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		/// Adds the formatter.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TResult"></typeparam>
+		/// <typeparam name="TArgument"></typeparam>
+		/// <param name="formatterDelegate">The formatter delegate.</param>
+		public virtual FormatTemplateElement AddFormatter<T, TArgument, TResult>([NotNull]Func<T, TArgument, TResult> formatterDelegate)
+		{
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		/// Adds the formatter.
+		/// </summary>
+		/// <param name="formatter">The formatter.</param>
+		public virtual FormatTemplateElement AddFormatter([NotNull] FormatTemplateElement formatter)
+		{
+			Formatter.Add(formatter);
+			return formatter;
 		}
 
 		/// <summary>
@@ -69,7 +117,7 @@ namespace Morestachio.Helper
 		/// </summary>
 		/// <param name="forType">For type.</param>
 		/// <param name="formatterDelegate">The formatter delegate.</param>
-		public virtual void AddFormatter([NotNull]Type forType, [NotNull]Delegate formatterDelegate)
+		public virtual FormatTemplateElement AddFormatter([NotNull]Type forType, [NotNull]Delegate formatterDelegate)
 		{
 			var arguments = formatterDelegate.Method.GetParameters().Select((e, index) =>
 				new MultiFormatterInfo(
@@ -103,13 +151,11 @@ namespace Morestachio.Helper
 				sourceValue.Index = -1;
 			}
 
-			var formatter = new FormatTemplateElement(
+			return AddFormatter(new FormatTemplateElement(
 				formatterDelegate,
 				forType,
 				returnValue,
-				arguments);
-
-			Formatter.Add(formatter);
+				arguments));
 		}
 
 		/// <summary>
@@ -208,7 +254,15 @@ namespace Morestachio.Helper
 
 			if (values == null)
 			{
-				return sourceObject;
+				return FormatterFlow.Skip;
+			}
+
+			if (formatter.CanFormat != null)
+			{
+				if (!formatter.CanFormat(sourceObject, templateArguments))
+				{
+					return FormatterFlow.Skip;
+				}
 			}
 
 			return formatter.Format.DynamicInvoke(values.Select(e => e.Value).ToArray());
@@ -242,7 +296,7 @@ namespace Morestachio.Helper
 			foreach (var formatTemplateElement in hasFormatter)
 			{
 				var executeFormatter = Execute(formatTemplateElement, value, arguments);
-				if ((executeFormatter as FormatterFlow?) != FormatterFlow.Skip)
+				if ((executeFormatter as FormatterFlow) != FormatterFlow.Skip)
 				{
 					return executeFormatter;
 				}

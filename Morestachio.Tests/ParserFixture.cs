@@ -224,12 +224,19 @@ namespace Morestachio.Tests
 			var data = 123123123;
 			var formatterResult = "";
 			var parsingOptions = new ParserOptions("{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}", null, DefaultEncoding);
+			
+			parsingOptions.Formatters.AddFormatter<int>(new Action<int, string[]>(
+				(self, test) =>
+				{
+					Assert.Fail("Should not be invoked");
+				}));
+			
 			parsingOptions.Formatters.AddFormatter<int>(new Action<int, string, string, string, string, string, int>(
 				(self, test, arg, argarg, spacedArg, spacedWithQuote, refSelf) =>
 				{
 					formatterResult = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}", self, test, arg, argarg, spacedArg, spacedWithQuote,
 						refSelf);
-				}));
+				}));	
 
 			var results = Parser.ParseWithOptions(parsingOptions);
 			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });

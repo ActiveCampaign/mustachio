@@ -195,6 +195,14 @@ namespace Morestachio.Helper
 					}
 
 					givenValue = match.Value;
+
+					//check for matching types
+					if (!multiFormatterInfo.Type.IsInstanceOfType(match.Value))
+					{
+						//The type in the template and the type defined in the formatter do not match. Abort
+						return null;
+					}
+
 					matched.Add(multiFormatterInfo, match);
 				}
 

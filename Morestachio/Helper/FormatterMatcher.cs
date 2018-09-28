@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
@@ -35,6 +36,16 @@ namespace Morestachio.Helper
 		public FormatterMatcher()
 		{
 			Formatter = new List<FormatTemplateElement>();
+		}
+
+		/// <summary>
+		///		If set writes the Formatters log.
+		/// </summary>
+		public StreamWriter FormatterLog { get; set; }
+
+		private void Write(Func<string> log)
+		{
+			FormatterLog?.WriteLine(log());
 		}
 
 		/// <summary>
@@ -168,37 +179,45 @@ namespace Morestachio.Helper
 		public virtual IDictionary<MultiFormatterInfo, object> ComposeValues([NotNull]FormatTemplateElement formatter,
 			[CanBeNull]object sourceObject, [NotNull] params KeyValuePair<string, object>[] templateArguments)
 		{
+			Write(() => $"Compose values for object '{sourceObject}' with formatter '{formatter.InputTypes}' targets '{formatter.Format}'");
 			var values = new Dictionary<MultiFormatterInfo, object>();
 			var matched = new Dictionary<MultiFormatterInfo, KeyValuePair<string, object>>();
 
 			foreach (var multiFormatterInfo in formatter.MetaData.Where(e => !e.IsRestObject))
 			{
+				Write(() => $"Match parameter '{multiFormatterInfo.Type}' [{multiFormatterInfo.Name}]");
 				object givenValue;
 				//set ether the source object or the value from the given arguments
 				if (multiFormatterInfo.IsSourceObject)
 				{
+					Write(() => $"Is Source object");
 					givenValue = sourceObject;
 				}
 				else
 				{
 					//match by index or name
 
+					
+					Write(() => $"Match by Name");
 					//match by name
 					var match = templateArguments.FirstOrDefault(e =>
 						!string.IsNullOrWhiteSpace(e.Key) && e.Key.Equals(multiFormatterInfo.Name));
 
 					if (default(KeyValuePair<string, object>).Equals(match))
 					{
+						Write(() => $"Match by Index");
 						//match by index
 						var index = 0;
 						match = templateArguments.FirstOrDefault((g) => (index++) == multiFormatterInfo.Index);
 					}
 
 					givenValue = match.Value;
+					Write(() => $"Matched '{match.Key}': '{match.Value}' by Name/Index");
 
 					//check for matching types
 					if (!multiFormatterInfo.Type.IsInstanceOfType(match.Value))
 					{
+						Write(() => $"Match is Invalid because types from Template and Formatter mismatch. Abort.");
 						//The type in the template and the type defined in the formatter do not match. Abort
 						return null;
 					}
@@ -214,6 +233,7 @@ namespace Morestachio.Helper
 
 				if (Equals(givenValue, null))
 				{
+					Write(() => $"Match is Invalid because template value is null where the Formatter does not have a optional value");
 					//the delegates parameter is not optional so this formatter does not fit. Continue.
 					return null;
 				}
@@ -224,6 +244,7 @@ namespace Morestachio.Helper
 			{
 				return values;
 			}
+			Write(() => $"Match Rest argument '{hasRest.Type}'");
 
 			//only use the values that are not matched.
 			var restValues = templateArguments.Except(matched.Values);
@@ -240,6 +261,7 @@ namespace Morestachio.Helper
 			}
 			else
 			{
+				Write(() => $"Match is Invalid because  '{hasRest.Type}' is no supported rest parameter");
 				//unknown type in params argument cannot call
 				return null;
 			}
@@ -262,6 +284,7 @@ namespace Morestachio.Helper
 
 			if (values == null)
 			{
+				Write(() => $"Execute skip as Compose Values returned an invalid value");
 				return FormatterFlow.Skip;
 			}
 
@@ -269,10 +292,12 @@ namespace Morestachio.Helper
 			{
 				if (!formatter.CanFormat(sourceObject, templateArguments))
 				{
+					Write(() => $"Execute skip as CanExecute is false");
 					return FormatterFlow.Skip;
 				}
 			}
-
+			
+			Write(() => $"Execute");
 			return formatter.Format.DynamicInvoke(values.Select(e => e.Value).ToArray());
 		}
 
@@ -299,16 +324,19 @@ namespace Morestachio.Helper
 		/// <returns></returns>
 		public object CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments, object value)
 		{
+			Write(() => $"Call Formatter for Type '{type}' on '{value}'");
 			var hasFormatter = GetMostMatchingFormatter(type).Where(e => e != null);
 
 			foreach (var formatTemplateElement in hasFormatter)
 			{
+				Write(() => $"Try formatter '{formatTemplateElement.InputTypes}' on '{formatTemplateElement.Format}'");
 				var executeFormatter = Execute(formatTemplateElement, value, arguments);
 				if ((executeFormatter as FormatterFlow) != FormatterFlow.Skip)
 				{
 					return executeFormatter;
 				}
 			}
+			Write(() => $"No Formatter has matched. Skip and return Source Value.");
 
 			return FormatterFlow.Skip;
 		}

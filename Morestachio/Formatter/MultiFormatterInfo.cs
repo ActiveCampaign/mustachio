@@ -24,15 +24,15 @@ namespace Morestachio.Formatter
 		/// <summary>
 		///		Of what type is this parameter
 		/// </summary>
-		public Type Type { get; }
+		public Type Type { get; internal set; }
 		/// <summary>
 		///		Ether the name that is declared using the <seealso cref="FormatterArgumentNameAttribute"/> or the name of the Parameter from code ( in that order )
 		/// </summary>
-		public string Name { get; }
+		public string Name { get; internal set; }
 		/// <summary>
 		///		Is the parameter optional
 		/// </summary>
-		public bool IsOptional { get; }
+		public bool IsOptional { get; internal set; }
 		/// <summary>
 		///		Is this parameter the source object
 		/// </summary>
@@ -45,6 +45,6 @@ namespace Morestachio.Formatter
 		/// <summary>
 		///		Is this parameter a params parameter. If so it will get all following not matched arguments
 		/// </summary>
-		public bool IsRestObject { get; }
+		public bool IsRestObject { get; internal set; }
 	}
 }

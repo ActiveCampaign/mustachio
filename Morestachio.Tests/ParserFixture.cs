@@ -301,8 +301,12 @@ namespace Morestachio.Tests
 		public void ParserCanCheckCanFormat()
 		{
 			var data = "d";
-			var parsingOptions = new ParserOptions("{{#data}}{{.((d()))}}{{/data}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>((s) => throw new Exception()));
+			var parsingOptions = new ParserOptions("{{#data}}{{.((d(a)))}}{{/data}}", null, DefaultEncoding);
+			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string, string>((s, inv, inva) => throw new Exception("A")));
+
+			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>((s) => throw new Exception("Wrong Ordering")));
+			parsingOptions.Formatters.AddFormatter<string>(new Action<string>((s) => throw new Exception("Wrong Return Ordering")));
+			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string>((s, inv) => inv));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
 			var result = results.Create(new Dictionary<string, object> { { "data", data } })

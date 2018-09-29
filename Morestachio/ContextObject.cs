@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using JetBrains.Annotations;
+using Morestachio.Formatter;
 using Morestachio.Helper;
 
 namespace Morestachio
@@ -256,7 +257,7 @@ namespace Morestachio
 			}
 
 			//call formatters that are given by the Options for this run
-			retval = Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, retval);
+			retval = Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, Value);
 			if ((retval as FormatterMatcher.FormatterFlow) != FormatterMatcher.FormatterFlow.Skip)
 			{
 				//one formatter has returned a valid value so use this one.
@@ -264,14 +265,12 @@ namespace Morestachio
 			}
 
 			//all formatters in the options object have rejected the value so try use the global ones
-			retval = Value;
-			retval = DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, retval);
-			if ((retval as FormatterMatcher.FormatterFlow) == FormatterMatcher.FormatterFlow.Skip)
+			retval = DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, Value);
+			if ((retval as FormatterMatcher.FormatterFlow) != FormatterMatcher.FormatterFlow.Skip)
 			{
-				return Value;
+				return retval;
 			}
-
-			return retval;
+			return Value;
 		}
 
 		/// <summary>

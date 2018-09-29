@@ -64,7 +64,7 @@
     <Compile Include="Framework\FormatTemplateElementDelegate.cs" />
     <Compile Include="Formatter\FormatterPart.cs" />
     <Compile Include="Formatter\MultiFormatterInfo.cs" />
-    <Compile Include="Helper\FormatterMatcher.cs" />
+    <Compile Include="Formatter\FormatterMatcher.cs" />
     <Compile Include="Helper\StreamExtentions.cs" />
     <Compile Include="Framework\InferredTemplateModel.cs" />
     <Compile Include="ParserOptions.cs" />

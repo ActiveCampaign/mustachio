@@ -16,7 +16,7 @@ namespace Morestachio.Formatter.Framework
 	/// <param name="arguments">The arguments.</param>
 	/// <returns></returns>
 	public delegate object MorstachioFormatter([SourceObject] object originalObject, [FormatterArgumentName("Name")]string name,
-		params object[] arguments);
+		[RestParameter]params object[] arguments);
 
 	/// <summary>
 	///		The Formatter service that can be used to interpret the Native C# formatter.
@@ -47,9 +47,21 @@ namespace Morestachio.Formatter.Framework
 			foreach (var formatterGroup in listOfFormatter.GroupBy(e => e.InputType).ToArray())
 			{
 				options.Formatters.AddFormatter(formatterGroup.Key,
-					new MorstachioFormatter((sourceObject, name, arguments) =>
-						FormatConditonal(sourceObject, name, arguments, formatterGroup)));
+					new MorstachioFormatter((sourceObject, name, arguments) => FormatConditonal(sourceObject, name, arguments, formatterGroup)))
+					.MetaData
+					.LastIsParams()
+					.SetName("name", "Name");
 			}
+		}
+
+		/// <summary>
+		///		Add all formatter into the given options object
+		/// </summary>
+		/// <param name="options">The options.</param>
+		[PublicAPI]
+		public void AddFormatterToMorestachio(ParserOptions options)
+		{
+			AddFormatterToMorestachio(GlobalFormatterModels, options);
 		}
 
 		private object FormatConditonal(object sourceObject, string name, object[] arguments,
@@ -141,7 +153,7 @@ namespace Morestachio.Formatter.Framework
 				var hasFormatterAttr = method.GetCustomAttributes<MorestachioFormatterAttribute>();
 				foreach (var morestachioFormatterAttribute in hasFormatterAttr)
 				{
-					if (morestachioFormatterAttribute == null || method.ReturnType == typeof(void) || method.GetParameters().Length != 2)
+					if (morestachioFormatterAttribute == null)
 					{
 						continue;
 					}

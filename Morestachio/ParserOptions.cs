@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using JetBrains.Annotations;
 using Morestachio.Attributes;
+using Morestachio.Formatter;
 using Morestachio.Helper;
 
 #endregion

@@ -54,6 +54,10 @@
       <Project>{454B0162-E2EB-4C15-85EE-0B4558750F7B}</Project>
       <Name>Morestachio.Formatter.Framework</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Morestachio.Formatter.Linq\Morestachio.Formatter.Linq.csproj">
+      <Project>{18A2D5ED-CE5F-4914-B780-0BC8779501A5}</Project>
+      <Name>Morestachio.Formatter.Linq</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Morestachio\Morestachio.csproj">
       <Project>{4504C65B-A0EC-4601-82EF-D2542414BC86}</Project>
       <Name>Morestachio</Name>

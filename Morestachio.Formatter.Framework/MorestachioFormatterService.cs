@@ -44,11 +44,28 @@ namespace Morestachio.Formatter.Framework
 		[PublicAPI]
 		public void AddFormatterToMorestachio(IEnumerable<MorestachioFormatterModel> listOfFormatter, ParserOptions options)
 		{
-			foreach (var formatterGroup in listOfFormatter.GroupBy(e => e.InputType).ToArray())
+			foreach (var formatterGroup in listOfFormatter.GroupBy(e => e.InputType.Name).ToArray())
 			{
-				options.Formatters.AddFormatter(formatterGroup.Key,
-					new MorstachioFormatter((sourceObject, name, arguments) => FormatConditonal(sourceObject, name, arguments, formatterGroup)))
-					.MetaData
+				//if the object has a generic argument like lists, make it late bound
+				FormatTemplateElement formatter;
+
+				var type = formatterGroup.First().InputType;
+
+				if (type.GetGenericArguments().Any())
+				{
+					formatter = options.Formatters.AddFormatter(type.GetGenericTypeDefinition(),
+							new MorstachioFormatter((sourceObject, name, arguments) =>
+								FormatConditonal(sourceObject, name, arguments, formatterGroup, options)));
+				}
+				else
+				{
+					formatter = options.Formatters.AddFormatter(type,
+						new MorstachioFormatter((sourceObject, name, arguments) =>
+							FormatConditonal(sourceObject, name, arguments, formatterGroup, options)));
+				}
+
+
+				formatter.MetaData
 					.LastIsParams()
 					.SetName("name", "Name");
 			}
@@ -65,73 +82,117 @@ namespace Morestachio.Formatter.Framework
 		}
 
 		private object FormatConditonal(object sourceObject, string name, object[] arguments,
-			IEnumerable<MorestachioFormatterModel> formatterGroup)
+			IEnumerable<MorestachioFormatterModel> formatterGroup, ParserOptions options)
 		{
 			if (name == null)
 			{
+				options.Formatters.Write(() => nameof(MorestachioFormatterService) + " | Name is null. Skip formatter");
 				return FormatterMatcher.FormatterFlow.Skip;
 			}
-			var directMatch = formatterGroup.Where(e => (name.ToString().Equals(e.Name)));
+
+			if (sourceObject == null)
+			{
+				options.Formatters.Write(() => nameof(MorestachioFormatterService) + " | Source Object is null. Skip formatter");
+				return FormatterMatcher.FormatterFlow.Skip;
+			}
+
+			var directMatch = formatterGroup.Where(e => (name.ToString().Equals(e.Name))).ToArray();
+
+			var type = sourceObject.GetType();
 			var originalObject = sourceObject;
+			if (!directMatch.Any())
+			{
+				options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)} | No match Found for name: '{name}' Possible values for '{type}' are [{formatterGroup.Select(e => e.Name).Aggregate((e, f) => e + "," + f)}]");
+				return FormatterMatcher.FormatterFlow.Skip;
+			}
 
 			foreach (var morestachioFormatterModel in directMatch)
 			{
-				if (sourceObject == null)
+				originalObject = sourceObject;
+				options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)} | Test {morestachioFormatterModel.Name}");
+
+				var target = morestachioFormatterModel.Function;
+				var parameterInfos = target.GetParameters().Skip(1).ToArray();
+
+				if (parameterInfos.Count(e => !e.IsOptional) != arguments.Length)
 				{
+					options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)} | Invalid count of parameter");
 					continue;
 				}
 
-				var type = sourceObject.GetType();
-				if (!morestachioFormatterModel.InputType.ContainsGenericParameters)
+				var abort = false;
+
+				for (var index = 0; index < parameterInfos.Length; index++)
 				{
-					if (!morestachioFormatterModel.InputType.IsInstanceOfType(sourceObject))
+					var parameterInfo = parameterInfos[index];
+					var paramVal = arguments[index];
+					if (!parameterInfo.ParameterType.IsInstanceOfType(paramVal))
 					{
+						options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)} | Parameter at index {index} named {parameterInfo.Name} is not assignable from '{paramVal}'");
+						abort = true;
 						continue;
 					}
-
-					sourceObject = morestachioFormatterModel.Function.Invoke(null, new[] { sourceObject }.Concat(arguments).ToArray());
-					if (sourceObject == null || !sourceObject.Equals(originalObject))
-					{
-						return sourceObject;
-					}
-
-					continue;
 				}
 
+				if (abort)
+				{
+					continue;
+				}
 
 				var localGen = morestachioFormatterModel.InputType.GetGenericArguments();
 				var templateGen = type.GetGenericArguments();
 
-				if (localGen.Any() != templateGen.Any())
+				if (morestachioFormatterModel.InputType.ContainsGenericParameters)
 				{
-					if (type.IsArray)
+					if (localGen.Any() != templateGen.Any())
 					{
-						templateGen = new[] { type.GetElementType() };
+						if (type.IsArray)
+						{
+							templateGen = new[] { type.GetElementType() };
+						}
+						else
+						{
+							options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Generic type mismatch");
+							continue;
+						}
 					}
-					else
+
+					if (!morestachioFormatterModel.InputType.ContainsGenericParameters)
 					{
+						options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Type has Generic but Method not");
+						continue;
+					}
+
+					if (localGen.Length != templateGen.LongLength)
+					{
+						options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Generic type count mismatch");
+						continue;
+					}
+
+					target = target.MakeGenericMethod(templateGen);
+				}
+				else
+				{
+					if (!morestachioFormatterModel.InputType.IsInstanceOfType(originalObject))
+					{
+						options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Generic Type mismatch. Expected '{morestachioFormatterModel.InputType}' but got {originalObject.GetType()}");
 						continue;
 					}
 				}
-
-				if (!morestachioFormatterModel.InputType.ContainsGenericParameters)
-				{
-					continue;
-				}
-
-				if (localGen.Length != templateGen.LongLength)
-				{
-					continue;
-				}
-
+				//originalObject = morestachioFormatterModel.Function.Invoke(null, new[] { originalObject }.Concat(arguments).ToArray());
+				//options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Executed. Return '{originalObject}'");
+				//return originalObject;
 				try
 				{
-					var makeGenericMethod = morestachioFormatterModel.Function.MakeGenericMethod(templateGen);
-					sourceObject = makeGenericMethod.Invoke(null, new[] { sourceObject }.Concat(arguments).ToArray());
-					if (sourceObject == null || !sourceObject.Equals(originalObject))
-					{
-						return sourceObject;
-					}
+
+					options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Execute");
+
+					originalObject = target
+						.Invoke(null, new[] { originalObject }.Concat(arguments).Take(parameterInfos.Length + 1)
+							.ToArray());
+
+					options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Formatter created '{originalObject}'");
+					return originalObject;
 				}
 				catch (Exception)
 				{
@@ -139,7 +200,7 @@ namespace Morestachio.Formatter.Framework
 				}
 			}
 
-			return sourceObject == null ? originalObject : FormatterMatcher.FormatterFlow.Skip;
+			return FormatterMatcher.FormatterFlow.Skip;
 		}
 
 		/// <summary>

@@ -36,7 +36,7 @@ namespace Morestachio
 				RegexOptions.Compiled);
 
 		/// <summary>
-		///     Specifies combnations of paths that don't work.
+		///     Specifies combinations of paths that don't work.
 		/// </summary>
 		private static readonly Regex NegativePathSpec =
 			new Regex(@"([.]{4,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))",
@@ -69,7 +69,7 @@ namespace Morestachio
 
 			var retval = new CharacterLocation
 			{
-				//Humans count from 1, so let's do that, too (hence the "++" on these).
+				//Humans count from 1, so let's do that, too (hence the "+1" on these).
 				Line = line + 1,
 				Character = charIdx + 1
 			};
@@ -84,9 +84,9 @@ namespace Morestachio
 				.OfType<Match>()
 				.Select(e =>
 				{
-					var indexOfEndMatch = e.Groups[0].Captures[0].Index + e.Groups[0].Captures[0].Length;
+					var indexOfEndMatch = e.Groups[0].Captures[0].Index + e.Groups[0].Captures[0].Length; //get everything from the index of the regex to its end
 					var formatterArgument = formatString.Substring(preMatch, indexOfEndMatch - preMatch);
-					var name = NameFinder.Match(formatterArgument);
+					var name = NameFinder.Match(formatterArgument); //find the optional [Name] attribute on the formatters argument
 					preMatch = indexOfEndMatch;
 					var argument = formatterArgument.Remove(name.Index, name.Value.Length)
 						//trim all commas from the formatter
@@ -355,7 +355,7 @@ namespace Morestachio
 
 			var location = HumanizeCharacterLocation(content, index, lines);
 			exceptions.Add(new IndexedParseException(location,
-				"The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
+				"The path '{0}' on line:char '{1}:{2}' is not valid. Please see documentation for examples of valid paths.", token, location.Line, location.Character));
 
 			return token;
 		}

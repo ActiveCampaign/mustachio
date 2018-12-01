@@ -50,7 +50,7 @@ namespace Morestachio
 
 			if (parsingOptions.WithModelInference)
 			{
-				//we preparse the template once to get the model
+				//we pre-parse the template once to get the model
 				var s = extendedParseInformation.InternalTemplate.Value;
 			}
 
@@ -75,15 +75,14 @@ namespace Morestachio
 				throw new InvalidOperationException("The stream is ReadOnly");
 			}
 
-			using (var ByteCounterStreamWriter = new ByteCounterStreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
+			using (var byteCounterStreamWriter = new ByteCounterStreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
 			{
-				var context = new ContextObject(parseOutput.ParserOptions)
+				var context = new ContextObject(parseOutput.ParserOptions, "")
 				{
 					Value = data,
-					Key = "",
 					CancellationToken = token
 				};
-				parseOutput.InternalTemplate.Value(ByteCounterStreamWriter, context);
+				parseOutput.InternalTemplate.Value(byteCounterStreamWriter, context);
 			}
 
 			return sourceStream;
@@ -146,9 +145,11 @@ namespace Morestachio
 		private static Action<ByteCounterStreamWriter, ContextObject> ParseFormatting(TokenPair token, Queue<TokenPair> tokens,
 			ParserOptions options, InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new List<Action<ByteCounterStreamWriter, ContextObject>>();
+			var buildArray = new List<Action<ByteCounterStreamWriter, ContextObject>>
+			{
+				HandleFormattingValue(token, options, currentScope)
+			};
 
-			buildArray.Add(HandleFormattingValue(token, options, currentScope));
 			var nonPrintToken = false;
 			while (tokens.Any() && !nonPrintToken)
 			{
@@ -165,7 +166,7 @@ namespace Morestachio
 						buildArray.Add(HandleCollectionOpen(tokens.Dequeue(), tokens, options, currentScope));
 						break;
 					default:
-						//The folloring cannot be formatted and the result of the formatting operation has used.
+						//The following cannot be formatted and the result of the formatting operation has used.
 						//continue with the original Context
 						nonPrintToken = true;
 						break;
@@ -228,7 +229,6 @@ namespace Morestachio
 
 					foreach (var formatterArgument in currentToken.FormatString)
 					{
-						object value = null;
 						//if pre and suffixed by a $ its a reference to another field.
 						//walk the path in the $ and use the value in the formatter
 						var trimmedArg = formatterArgument.Argument.Trim();
@@ -280,6 +280,10 @@ namespace Morestachio
 			};
 		}
 
+		/// <summary>
+		///		Internal class to ensure that the given limit of bytes to write is never extended to ensure template quotas
+		/// </summary>
+		/// <seealso cref="System.IDisposable" />
 		internal class ByteCounterStreamWriter : IDisposable
 		{
 			public ByteCounterStreamWriter([NotNull] Stream stream, [NotNull] Encoding encoding, int bufferSize, bool leaveOpen)
@@ -339,7 +343,6 @@ namespace Morestachio
 			var overflow = sourceCount + cl - context.Options.MaxSize;
 			if (overflow <= 0)
 			{
-				//builder.BaseStream.Write(binaryContent, 0, binaryContent.Length);
 				builder.Write(content, cl);
 				return;
 			}

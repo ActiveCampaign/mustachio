@@ -15,7 +15,7 @@ namespace Morestachio
 		/// <summary>
 		/// Serilize Constructor. Should not be used by user code.
 		/// </summary>
-		[Obsolete("This is an Serilization only constructor and should not be used in user code!", true)]
+		[Obsolete("This is an Serilization only constructor and should not be used in user code!", true), UsedImplicitly]
 		public ExtendedParseInformation()
 		{
 			InternalTemplate = new Lazy<Action<Parser.ByteCounterStreamWriter, ContextObject>>(() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
@@ -61,7 +61,7 @@ namespace Morestachio
 		/// <param name="source"></param>
 		/// <param name="token"></param>
 		/// <returns></returns>
-		[MustUseReturnValue("The Stream contains the template. Use Stringify(Encoding) to get the string of it")]
+		[MustUseReturnValue("The Stream contains the template. Use CreateAndStringify() to get the string of it")]
 		[NotNull]
 		public Stream Create([NotNull]object source, CancellationToken token)
 		{
@@ -73,7 +73,7 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="source"></param>
 		/// <returns></returns>
-		[MustUseReturnValue("The Stream contains the template. Use Stringify(Encoding) to get the string of it")]
+		[MustUseReturnValue("The Stream contains the template. Use CreateAndStringify() to get the string of it")]
 		[NotNull]
 		public Stream Create([NotNull]object source)
 		{

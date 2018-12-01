@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using JetBrains.Annotations;
 using Morestachio.Formatter;
-using Morestachio.Helper;
 
 namespace Morestachio
 {
@@ -18,7 +17,7 @@ namespace Morestachio
 		static ContextObject()
 		{
 			DefaultFormatter = new FormatterMatcher();
-			var defaultFormatter = new[]
+			foreach (var type in new[]
 			{
 				typeof(IFormattable),
 				typeof(string),
@@ -33,11 +32,48 @@ namespace Morestachio
 				typeof(sbyte),
 				typeof(decimal),
 				typeof(DateTime),
-			};
-
-			foreach (var type in defaultFormatter)
+			})
 			{
+				//we have to use a proxy function to get around a changing delegate that maybe overwritten by the user
+				//if the user overwrites the static DefaultToStringWithFormatting after we have added it to the list this would
+				//have no effect
 				DefaultFormatter.AddFormatter(type, new Func<object, object, object>(DefaultFormatterImpl));
+			}
+			DefaultDefinitionOfFalse = (value) => value != null &&
+			                                      value as bool? != false &&
+			                                      // ReSharper disable once CompareOfFloatsByEqualityOperator
+			                                      value as double? != 0 &&
+			                                      value as int? != 0 &&
+			                                      value as string != string.Empty &&
+			                                      // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
+			                                      // OR if it IS an enumerable and .Any() returns true, then it exists as well
+			                                      (!(value is IEnumerable) || ((IEnumerable) value).Cast<object>().Any()
+			                                      );
+			DefinitionOfFalse = DefaultDefinitionOfFalse;
+		}
+
+		/// <summary>
+		///		Gets the Default Definition of false.
+		///		This is ether Null, boolean false, 0 double or int, string.Empty or if collection not Any().
+		///		This field can be used to define your own <see cref="DefinitionOfFalse"/> and then fallback to the default logic
+		/// </summary>
+		public static readonly Func<object, bool> DefaultDefinitionOfFalse;
+		
+		
+		/// <summary>
+		///		Gets the Definition of false on your Template.
+		/// </summary>
+		/// <value>
+		///		Must no be null
+		/// </value>
+		/// <exception cref="InvalidOperationException">If the value is null</exception>
+		[NotNull]
+		public static Func<object, bool> DefinitionOfFalse
+		{
+			get { return _definitionOfFalse; }
+			set
+			{
+				_definitionOfFalse = value ?? throw new InvalidOperationException("The value must not be null");
 			}
 		}
 
@@ -56,7 +92,8 @@ namespace Morestachio
 		}
 
 		/// <summary>
-		///     The default to string operator for any PrintableType
+		///     The default to string operator for any PrintableType.
+		///		Can be overwritten to support an alternative formatting of all templates.
 		/// </summary>
 		[NotNull]
 		public static Func<object, object, object> DefaultToStringWithFormatting = new Func<object, object, object>(
@@ -71,13 +108,17 @@ namespace Morestachio
 				return value.ToString();
 			});
 
+		private static Func<object, bool> _definitionOfFalse;
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ContextObject"/> class.
 		/// </summary>
 		/// <param name="options">The options.</param>
-		public ContextObject([NotNull]ParserOptions options)
+		/// <param name="key">The key as seen in the Template</param>
+		public ContextObject([NotNull]ParserOptions options, [NotNull]string key)
 		{
 			Options = options;
+			Key = key;
 		}
 
 		/// <summary>
@@ -146,7 +187,7 @@ namespace Morestachio
 				{
 					return preHandeld;
 				}
-				if (path.StartsWith("~"))
+				if (path.StartsWith("~")) //go the root object
 				{
 					var parent = Parent;
 					var lastParent = parent;
@@ -161,8 +202,7 @@ namespace Morestachio
 
 					retval = lastParent?.GetContextForPath(elements);
 				}
-				else
-				if (path.StartsWith(".."))
+				else if (path.StartsWith("..")) //go one level up
 				{
 					retval = Parent?.GetContextForPath(elements) ?? GetContextForPath(elements);
 				}
@@ -170,16 +210,13 @@ namespace Morestachio
 				else
 				{
 					//ALWAYS return the context, even if the value is null.
-					var innerContext = new ContextObject(Options)
+					var innerContext = new ContextObject(Options, path)
 					{
-						Key = path,
 						Parent = this
 					};
-					var ctx = Value as IDictionary<string, object>;
-					if (ctx != null)
+					if (Value is IDictionary<string, object> ctx)
 					{
-						object o;
-						ctx.TryGetValue(path, out o);
+						ctx.TryGetValue(path, out var o);
 						innerContext.Value = o;
 					}
 					else if (Value != null)
@@ -220,19 +257,8 @@ namespace Morestachio
 		/// <returns></returns>
 		public bool Exists()
 		{
-			return Value != null &&
-				   Value as bool? != false &&
-				   // ReSharper disable once CompareOfFloatsByEqualityOperator
-				   Value as double? != 0 &&
-				   Value as int? != 0 &&
-				   Value as string != string.Empty &&
-				   // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
-				   // OR if it IS an enumerable and .Any() returns true, then it exists as well
-				   (!(Value is IEnumerable) || ((IEnumerable)Value).Cast<object>().Any()
-				   );
+			return DefinitionOfFalse(Value);
 		}
-
-		
 
 		/// <summary>
 		///     Parses the current object by using the current Formatting argument
@@ -279,12 +305,11 @@ namespace Morestachio
 		/// <returns></returns>
 		public ContextObject Clone()
 		{
-			var contextClone = new ContextObject(Options)
+			var contextClone = new ContextObject(Options,Key)
 			{
 				CancellationToken = CancellationToken,
 				Parent = Parent,
 				AbortGeneration = AbortGeneration,
-				Key = Key,
 				Value = Value
 			};
 

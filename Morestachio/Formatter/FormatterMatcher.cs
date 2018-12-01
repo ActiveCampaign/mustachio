@@ -31,15 +31,7 @@ namespace Morestachio.Formatter
 		[NotNull]
 		[ItemNotNull]
 		public ICollection<FormatTemplateElement> Formatter { get; }
-
-		private class FormatterGenericTypeCache
-		{
-			public FormatTemplateElement Formatter { get; set; }
-			public Type GenericInputType { get; set; }
-		}
-
-		private IDictionary<FormatterGenericTypeCache, MethodInfo> _formatterCache;
-
+		
 		/// <summary>
 		/// Writes the specified log.
 		/// </summary>

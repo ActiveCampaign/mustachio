@@ -1,10 +1,13 @@
-﻿namespace Morestachio
+﻿using JetBrains.Annotations;
+
+namespace Morestachio
 {
 	/// <summary>
 	///     Indicates a parse error including line and character info.
 	/// </summary>
 	public class IndexedParseException : MustachioException
 	{
+		[StringFormatMethod("message")]
 		internal IndexedParseException(Tokenizer.CharacterLocation location, string message,
 			params object[] replacements)
 			: this(message, replacements)
@@ -18,6 +21,7 @@
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="replacements"></param>
+		[StringFormatMethod("message")]
 		public IndexedParseException(string message, params object[] replacements)
 			: base(string.Format(message, replacements))
 		{

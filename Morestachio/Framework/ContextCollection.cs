@@ -14,7 +14,8 @@ namespace Morestachio
 		/// <param name="index">the current index of the item inside the collection</param>
 		/// <param name="last">true if its the last item</param>
 		/// <param name="options"></param>
-		public ContextCollection(long index, bool last, [NotNull]ParserOptions options) : base(options)
+		/// <param name="key"></param>
+		public ContextCollection(long index, bool last, [NotNull] ParserOptions options, string key) : base(options, key)
 		{
 			Index = index;
 			Last = last;
@@ -33,8 +34,7 @@ namespace Morestachio
 		/// <inheritdoc />
 		protected override ContextObject HandlePathContext(Queue<string> elements, string path)
 		{
-			var innerContext = new ContextObject(Options);
-			innerContext.Key = path;
+			var innerContext = new ContextObject(Options, path);
 			innerContext.Parent = this;
 
 			object value = null;

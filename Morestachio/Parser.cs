@@ -416,10 +416,9 @@ namespace Morestachio
 					do
 					{
 						var next = enumumerator.MoveNext() ? enumumerator.Current : null;
-						var innerContext = new ContextCollection(index, next == null, options)
+						var innerContext = new ContextCollection(index, next == null, options, $"[{index}]")
 						{
 							Value = current,
-							Key = string.Format("[{0}]", index),
 							Parent = c
 						};
 						innerTemplate(builder, innerContext);

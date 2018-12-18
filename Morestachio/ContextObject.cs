@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Morestachio.Formatter;
+using Morestachio.Helper;
 
 namespace Morestachio
 {
@@ -148,18 +149,7 @@ namespace Morestachio
 		/// <returns></returns>
 		public async Task EnsureValue()
 		{
-			if (Value is Task task)
-			{
-				await task;
-				if (task is Task<object>)
-				{
-					Value = ((Task<object>) Value).Result;
-				}
-				else
-				{
-					Value = null;
-				}
-			}
+			Value = await Value.UnpackTask();
 		}
 
 		/// <summary>

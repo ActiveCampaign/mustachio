@@ -14,9 +14,29 @@ namespace Morestachio.Helper
     /// <summary>
     /// A Helper class to run Asynchronous functions from synchronous ones
     /// </summary>
-    [DebuggerStepThrough]
     public static class AsyncHelper
     {
+        /// <summary>
+        ///     Unpacks the task. Unpacks also nested Tasks.
+        /// </summary>
+        /// <param name="task">The task.</param>
+        /// <returns></returns>
+        public static async Task<object> UnpackTask(this object maybeTask)
+        {
+            if (maybeTask is Task task)
+            {
+                await task;
+                if (task is Task<object> task1)
+                {
+                    maybeTask = task1.Result;
+                }
+
+                return await maybeTask.UnpackTask();
+            }
+
+            return maybeTask;
+        }
+
         /// <summary>
         /// A class to bridge synchronous asynchronous methods
         /// </summary>

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Morestachio.Attributes;
 using Morestachio.Helper;
 
@@ -179,9 +180,6 @@ namespace Morestachio.Formatter.Framework
 						continue;
 					}
 				}
-				//originalObject = morestachioFormatterModel.Function.Invoke(null, new[] { originalObject }.Concat(arguments).ToArray());
-				//options.Formatters.Write(() => $"{nameof(MorestachioFormatterService)}| Executed. Return '{originalObject}'");
-				//return originalObject;
 				try
 				{
 

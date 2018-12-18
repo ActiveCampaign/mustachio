@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Morestachio.Attributes;
 
@@ -326,7 +327,7 @@ namespace Morestachio.Formatter
 		/// <param name="sourceObject">The source object.</param>
 		/// <param name="templateArguments">The template arguments.</param>
 		/// <returns></returns>
-		public virtual object Execute([NotNull] FormatTemplateElement formatter,
+		public virtual async Task<object> Execute([NotNull] FormatTemplateElement formatter,
 			[CanBeNull] object sourceObject,
 			params KeyValuePair<string, object>[] templateArguments)
 		{
@@ -348,7 +349,14 @@ namespace Morestachio.Formatter
 			}
 
 			Write(() => $"Execute");
-			return formatter.Format.DynamicInvoke(values.Select(e => e.Value).ToArray());
+			var taskAlike = formatter.Format.DynamicInvoke(values.Select(e => e.Value).ToArray());
+
+			if (taskAlike is Task task)
+			{
+				await task;
+				return (task as Task<object>)?.Result;
+			}
+			return taskAlike;
 		}
 
 		/// <summary>
@@ -376,7 +384,7 @@ namespace Morestachio.Formatter
 		/// <param name="arguments">The arguments.</param>
 		/// <param name="value">The value.</param>
 		/// <returns></returns>
-		public object CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments, object value)
+		public async Task<object> CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments, object value)
 		{
 			Write(() => "---------------------------------------------------------------------------------------------");
 			Write(() => $"Call Formatter for Type '{type}' on '{value}'");
@@ -385,7 +393,7 @@ namespace Morestachio.Formatter
 			foreach (var formatTemplateElement in hasFormatter)
 			{
 				Write(() => $"Try formatter '{formatTemplateElement.InputTypes}' on '{formatTemplateElement.Format.Method.Name}'");
-				var executeFormatter = Execute(formatTemplateElement, value, arguments);
+				var executeFormatter = await Execute(formatTemplateElement, value, arguments);
 				if (executeFormatter as FormatterFlow != FormatterFlow.Skip)
 				{
 					Write(() => $"Success. return object {executeFormatter}");

@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 
 namespace Morestachio
 {
@@ -85,7 +85,7 @@ namespace Morestachio
 		private InferredTemplateModel GetContextForPath(string path)
 		{
 			var elements = new Queue<string>();
-			foreach (Match m in ContextObject.PathFinder.Matches(path))
+			foreach (Match m in ContextObject.PathFinder.Matches(path.ToString()))
 			{
 				elements.Enqueue(m.Value);
 			}
@@ -93,7 +93,11 @@ namespace Morestachio
 			return GetContextForPath(elements);
 		}
 
-		private object RepresentedContext()
+		/// <summary>
+		///		Gets an object that wraps the current Model information for Serialization
+		/// </summary>
+		/// <returns></returns>
+		public object RepresentedContext()
 		{
 			object retval = null;
 			if (!Usages.Any())
@@ -124,11 +128,6 @@ namespace Morestachio
 			}
 
 			return retval;
-		}
-
-		public override string ToString()
-		{
-			return JsonConvert.SerializeObject(RepresentedContext());
 		}
 	}
 }

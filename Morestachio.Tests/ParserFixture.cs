@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using Morestachio.Attributes;
 using Morestachio.Helper;
+using Newtonsoft.Json;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
@@ -42,8 +43,7 @@ namespace Morestachio.Tests
 			var results =
 				Parser.ParseWithOptions(new ParserOptions("{{data(\"" + dtFormat + "\")}},{{data}}", null,
 					DefaultEncoding));
-			var result = results.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding);
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
@@ -58,8 +58,7 @@ namespace Morestachio.Tests
 			var data = DateTime.UtcNow;
 			var results = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(\"" + dtFormat + "\")}}{{/data}},{{data}}",
 				null, DefaultEncoding));
-			var result = results.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding);
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
@@ -94,8 +93,7 @@ namespace Morestachio.Tests
 			var model = new Dictionary<string, object>();
 			model["name"] = "Mike";
 
-			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).Create(model)
-				.Stringify(true, DefaultEncoding), Is.EqualTo(expected));
+			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).CreateAndStringify(model), Is.EqualTo(expected));
 		}
 
 
@@ -174,8 +172,7 @@ namespace Morestachio.Tests
 				{"content", content}
 			};
 			var value = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding))
-				.Create(model)
-				.Stringify(true, DefaultEncoding);
+				.CreateAndStringify(model);
 
 			Assert.That(value, Is.EqualTo(expected));
 		}
@@ -190,7 +187,7 @@ namespace Morestachio.Tests
 				{"content", content}
 			};
 			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding, 0, true))
-					.Create(model).Stringify(true, DefaultEncoding), Is.EqualTo(expected));
+					.CreateAndStringify(model), Is.EqualTo(expected));
 		}
 
 		[Test]
@@ -200,8 +197,7 @@ namespace Morestachio.Tests
 			var parsingOptions = new ParserOptions("{{#data}}{{.(d).()}}{{/data}}", null, DefaultEncoding);
 			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>((s) => "TEST"));
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding);
+			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo("TEST"));
 		}
 
@@ -213,8 +209,7 @@ namespace Morestachio.Tests
 			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string>((s, s1) => s1));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding);
+			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo("(d(a))"));
 		}
 
@@ -309,8 +304,7 @@ namespace Morestachio.Tests
 			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string>((s, inv) => inv));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding);
+			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo("(d(a))"));
 		}
 
@@ -323,8 +317,7 @@ namespace Morestachio.Tests
 			parsingOptions.Formatters.AddFormatter<DateTime, DateTime>((s) => s);
 			parsingOptions.Formatters.AddFormatter<long, TimeSpan>((s) => new TimeSpan(s));
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding);
+			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo(new TimeSpan(data.TimeOfDay.Ticks).ToString()));
 		}
 
@@ -336,8 +329,7 @@ namespace Morestachio.Tests
 			//this should compile as its valid but not work as the Default
 			//settings for DateTime are ToString(Arg) so it should return a string and not an object
 			Assert.That(results
-				.Create(new Dictionary<string, object> { { "data", data } })
-				.Stringify(true, DefaultEncoding), Is.EqualTo(string.Empty + "," + data));
+				.CreateAndStringify(new Dictionary<string, object> { { "data", data } }), Is.EqualTo(string.Empty + "," + data));
 		}
 
 		[Test]
@@ -364,17 +356,17 @@ namespace Morestachio.Tests
 				true));
 
 			var expected = @"{
-                ""Person"" :{
-                    ""Name"" : ""Name_Value"",
-                    ""FavoriteColors"" : [
-                        ""FavoriteColors_1"",
-                        ""FavoriteColors_2"",
-                        ""FavoriteColors_3""
-                     ]
-                }
-            }".EliminateWhitespace();
+				""Person"" :{
+					""Name"" : ""Name_Value"",
+					""FavoriteColors"" : [
+						""FavoriteColors_1"",
+						""FavoriteColors_2"",
+						""FavoriteColors_3""
+					 ]
+				}
+			}".EliminateWhitespace();
 
-			var actual = results.InferredModel.ToString().EliminateWhitespace();
+			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
 			Assert.That(actual, Is.EqualTo(expected));
 		}
@@ -387,12 +379,12 @@ namespace Morestachio.Tests
 					true));
 
 			var expected = @"{
-                ""Person"" :{
-                    ""Name"" : ""Name_Value""
-                }
-            }".EliminateWhitespace();
+				""Person"" :{
+					""Name"" : ""Name_Value""
+				}
+			}".EliminateWhitespace();
 
-			var actual = results.InferredModel?.ToString().EliminateWhitespace();
+			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
 			Assert.That(actual, Is.EqualTo(expected));
 		}
@@ -402,7 +394,7 @@ namespace Morestachio.Tests
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions("{{Name}}", null, null, 0, false, true));
 			var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
-			var actual = results.InferredModel?.ToString().EliminateWhitespace();
+			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
 			Assert.That(actual, Is.EqualTo(expected));
 		}
@@ -725,8 +717,8 @@ namespace Morestachio.Tests
 		public void ParserCanProcessHandleMultilineTemplates()
 		{
 			Assert.That(() => Parser.ParseWithOptions(new ParserOptions(@"{{^Collection}}Collection doesn't have
-                            elements{{#Collection}}Collection has
-                        elements{{/Collection}}")), Throws.Nothing);
+							elements{{#Collection}}Collection has
+						elements{{/Collection}}")), Throws.Nothing);
 		}
 
 		[Test]
@@ -762,13 +754,12 @@ namespace Morestachio.Tests
 			});
 			var results = Parser.ParseWithOptions(parsingOptions);
 			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
-			Assert.That(results.Create(new Dictionary<string, object>
+			Assert.That(results.CreateAndStringify(new Dictionary<string, object>
 				{
 					{
 						"data", dateTime
 					}
-				})
-				.Stringify(true, DefaultEncoding), Is.EqualTo("2," + dateTime));
+				}), Is.EqualTo("2," + dateTime));
 		}
 
 		[Test]
@@ -779,7 +770,7 @@ namespace Morestachio.Tests
 
 			var expected = @"{}".EliminateWhitespace();
 
-			var actual = results.InferredModel?.ToString().EliminateWhitespace();
+			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
 			Assert.That(actual, Is.EqualTo(expected));
 		}
@@ -793,7 +784,7 @@ namespace Morestachio.Tests
 
 			var expected = @"{""Employees"" : [{ ""name"" : ""name_Value""}]}".EliminateWhitespace();
 
-			var actual = results.InferredModel?.ToString().EliminateWhitespace();
+			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
 			Assert.That(actual, Is.EqualTo(expected));
 		}
@@ -807,14 +798,14 @@ namespace Morestachio.Tests
 				null, null, 0, false, true));
 
 			var expected = @"{
-                            ""Employees"" : [{
-                                ""person"" : { ""name"" : ""name_Value""},
-                                ""favoriteColors"" : [{""hue"" : ""hue_Value""}],
-                                ""workplaces"" : [ ""workplaces_1"",""workplaces_2"",""workplaces_3"" ]
-                                }]
-                            }".EliminateWhitespace();
+							""Employees"" : [{
+								""person"" : { ""name"" : ""name_Value""},
+								""favoriteColors"" : [{""hue"" : ""hue_Value""}],
+								""workplaces"" : [ ""workplaces_1"",""workplaces_2"",""workplaces_3"" ]
+								}]
+							}".EliminateWhitespace();
 
-			var actual = results.InferredModel?.ToString().EliminateWhitespace();
+			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
 			Assert.That(actual, Is.EqualTo(expected));
 		}
@@ -891,8 +882,7 @@ namespace Morestachio.Tests
 			};
 
 			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
-			var genTemplate = parsedTemplate.Create(new Dictionary<string, object> { { "data", elementdata } })
-				.Stringify(true, DefaultEncoding);
+			var genTemplate = parsedTemplate.CreateAndStringify(new Dictionary<string, object> { { "data", elementdata } });
 			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
 			Assert.That(genTemplate, Is.EqualTo(realData));
 		}

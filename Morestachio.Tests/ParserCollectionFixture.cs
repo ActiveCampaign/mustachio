@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Morestachio.Helper;
 using NUnit.Framework;
 
@@ -60,13 +61,46 @@ namespace Morestachio.Tests
 			return sourceCollection;
 		}
 	}
+	
+	[TestFixture]
+	public class ParserFormatterFixture
+	{
+		private void AddAsyncCollectionTypeFormatter(ParserOptions options)
+		{
+			options.Formatters.AddFormatter<IEnumerable>(new Func<IEnumerable, string, Task<object>>(async (value, arg) =>
+			{
+				await Task.Delay(2500);
+				return arg.Split('|').Aggregate(value,
+					(current, format) =>
+						(IEnumerable) new EnumerableFormatter().FormatArgument(current, format.Trim()));
+			}));
+		}
+		
+		[Test]
+		public void TestCanExecuteAsyncFormatter()
+		{
+			var options = new ParserOptions("{{#each data(order)}}{{.}},{{/each}}", null,
+				ParserFixture.DefaultEncoding);
+			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
+			AddAsyncCollectionTypeFormatter(options);
+			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
+			{
+				{
+					"data", collection
+				}
+			});
+			Assert.That(report,
+				Is.EqualTo(collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ","));
+			Console.WriteLine(report);
+		}
+	}
 
 	[TestFixture]
 	public class ParserCollectionFixture
 	{
 		private void AddCollectionTypeFormatter(ParserOptions options)
 		{
-			options.AddFormatter<IEnumerable>(new Func<IEnumerable, string, object>((value, arg) =>
+			options.Formatters.AddFormatter<IEnumerable>(new Func<IEnumerable, string, object>((value, arg) =>
 			{
 				return arg.Split('|').Aggregate(value,
 					(current, format) =>
@@ -81,12 +115,12 @@ namespace Morestachio.Tests
 				ParserFixture.DefaultEncoding);
 			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
 			AddCollectionTypeFormatter(options);
-			var report = Parser.ParseWithOptions(options).Create(new Dictionary<string, object>
+			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
 			{
 				{
 					"data", collection
 				}
-			}).Stringify(true, ParserFixture.DefaultEncoding);
+			});
 			Assert.That(report,
 				Is.EqualTo(collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ","));
 			Console.WriteLine(report);
@@ -99,12 +133,12 @@ namespace Morestachio.Tests
 				ParserFixture.DefaultEncoding);
 			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
 			AddCollectionTypeFormatter(options);
-			var report = Parser.ParseWithOptions(options).Create(new Dictionary<string, object>
+			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
 			{
 				{
 					"data", collection
 				}
-			}).Stringify(true, ParserFixture.DefaultEncoding);
+			});
 
 			var resultLeftExpressionOrdered =
 				collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ",";

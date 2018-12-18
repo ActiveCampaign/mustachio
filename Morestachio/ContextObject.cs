@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Morestachio.Formatter;
 
@@ -142,6 +143,26 @@ namespace Morestachio
 		public object Value { get; set; }
 
 		/// <summary>
+		///	Ensures that the Value is loaded if needed
+		/// </summary>
+		/// <returns></returns>
+		public async Task EnsureValue()
+		{
+			if (Value is Task task)
+			{
+				await task;
+				if (task is Task<object>)
+				{
+					Value = ((Task<object>) Value).Result;
+				}
+				else
+				{
+					Value = null;
+				}
+			}
+		}
+
+		/// <summary>
 		///     is an abort currently requested
 		/// </summary>
 		public bool AbortGeneration { get; set; }
@@ -176,7 +197,7 @@ namespace Morestachio
 			return null;
 		}
 
-		private ContextObject GetContextForPath(Queue<string> elements)
+		private async Task<ContextObject> GetContextForPath(Queue<string> elements)
 		{
 			var retval = this;
 			if (elements.Any())
@@ -200,11 +221,26 @@ namespace Morestachio
 						}
 					}
 
-					retval = lastParent?.GetContextForPath(elements);
+					retval = await lastParent?.GetContextForPath(elements);
 				}
 				else if (path.StartsWith("..")) //go one level up
 				{
-					retval = Parent?.GetContextForPath(elements) ?? GetContextForPath(elements);
+					if (Parent != null)
+					{
+						var parentsRetVal = (await Parent.GetContextForPath(elements));
+						if (parentsRetVal != null)
+						{
+							retval = parentsRetVal;
+						}
+						else
+						{
+							retval = await GetContextForPath(elements);
+						}
+					}
+					else
+					{
+						retval = await GetContextForPath(elements);
+					}
 				}
 				//TODO: handle array accessors and maybe "special" keys.
 				else
@@ -214,6 +250,7 @@ namespace Morestachio
 					{
 						Parent = this
 					};
+					await EnsureValue();
 					if (Value is IDictionary<string, object> ctx)
 					{
 						ctx.TryGetValue(path, out var o);
@@ -228,7 +265,7 @@ namespace Morestachio
 						}
 					}
 
-					retval = innerContext.GetContextForPath(elements);
+					retval = await innerContext.GetContextForPath(elements);
 				}
 			}
 
@@ -240,7 +277,7 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		public ContextObject GetContextForPath(string path)
+		public async Task<ContextObject> GetContextForPath(string path)
 		{
 			var elements = new Queue<string>();
 			foreach (var m in PathFinder.Matches(path).OfType<Match>())
@@ -248,16 +285,27 @@ namespace Morestachio
 				elements.Enqueue(m.Value);
 			}
 
-			return GetContextForPath(elements);
+			return await GetContextForPath(elements);
 		}
 
 		/// <summary>
 		///     Determines if the value of this context exists.
 		/// </summary>
 		/// <returns></returns>
-		public bool Exists()
+		public async Task<bool> Exists()
 		{
+			await EnsureValue();
 			return DefinitionOfFalse(Value);
+		}
+
+		/// <summary>
+		///		Renders the Current value to a string or if null to the Null placeholder in the Options
+		/// </summary>
+		/// <returns></returns>
+		public async Task<string> RenderToString()
+		{
+			await EnsureValue();
+			return Value?.ToString() ?? Options.Null;
 		}
 
 		/// <summary>
@@ -274,8 +322,9 @@ namespace Morestachio
 		/// </summary>
 		/// <param name="argument"></param>
 		/// <returns></returns>
-		public object Format(KeyValuePair<string, object>[] argument)
+		public async Task<object> Format(KeyValuePair<string, object>[] argument)
 		{
+			await EnsureValue();
 			var retval = Value;
 			if (Value == null)
 			{
@@ -283,7 +332,7 @@ namespace Morestachio
 			}
 
 			//call formatters that are given by the Options for this run
-			retval = Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, Value);
+			retval = await Options.Formatters.CallMostMatchingFormatter(Value.GetType(), argument, Value);
 			if ((retval as FormatterMatcher.FormatterFlow) != FormatterMatcher.FormatterFlow.Skip)
 			{
 				//one formatter has returned a valid value so use this one.
@@ -291,7 +340,7 @@ namespace Morestachio
 			}
 
 			//all formatters in the options object have rejected the value so try use the global ones
-			retval = DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, Value);
+			retval = await DefaultFormatter.CallMostMatchingFormatter(Value.GetType(), argument, Value);
 			if ((retval as FormatterMatcher.FormatterFlow) != FormatterMatcher.FormatterFlow.Skip)
 			{
 				return retval;

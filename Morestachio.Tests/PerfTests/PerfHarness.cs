@@ -113,7 +113,7 @@ namespace Morestachio.Tests.PerfTests
 			renderTime = Stopwatch.StartNew();
 			for (var i = 0; i < runs; i++)
 			{
-				using (var f = template.Create(model.Item1))
+				using (var f = template.CreateAsync(model.Item1))
 				{
 				}
 			}

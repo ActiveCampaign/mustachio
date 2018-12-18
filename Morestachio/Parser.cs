@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using JetBrains.Annotations;
 
@@ -21,6 +22,48 @@ namespace Morestachio
 	public class Parser
 	{
 		private const int BufferSize = 2024;
+
+		private struct ParserActions
+		{
+			private readonly ParserOptions _options;
+
+			public ParserActions(ParserOptions options)
+			{
+				_options = options;
+				Elements = new List<Delegate>();
+			}
+
+			public ICollection<Delegate> Elements { get; set; }
+
+			public void MakeAction(Action<ByteCounterStreamWriter, ContextObject> syncAction)
+			{
+				Elements.Add(syncAction);
+			}
+
+			public void MakeAction(Func<ByteCounterStreamWriter, ContextObject, Task> syncAction)
+			{
+				Elements.Add(syncAction);
+			}
+
+			public async Task ExecuteWith(ByteCounterStreamWriter builder, ContextObject context)
+			{	
+				foreach (var a in Elements.TakeWhile(e => StopOrAbortBuilding(builder, context)))
+				{
+					if (a is Action<ByteCounterStreamWriter, ContextObject> action)
+					{
+						action(builder, context);
+					}
+					else if (a is Func<ByteCounterStreamWriter, ContextObject, Task> asyncAction)
+					{
+						await asyncAction(builder, context);
+					}
+					else
+					{
+						throw new InvalidOperationException($"The internal parser action was of a not recognized type '{a.GetType()}'");
+					}
+				}
+			}
+		}
 
 		/// <summary>
 		///     Parses the Template with the given options
@@ -67,7 +110,7 @@ namespace Morestachio
 		/// <exception cref="InvalidOperationException">The stream is ReadOnly</exception>
 		[MustUseReturnValue("The Stream contains the template. Use Stringify(Encoding) to get the string of it")]
 		[NotNull]
-		public static Stream CreateTemplateStream([NotNull]ExtendedParseInformation parseOutput, [NotNull]object data, CancellationToken token)
+		public static async Task<Stream> CreateTemplateStreamAsync([NotNull]ExtendedParseInformation parseOutput, [NotNull]object data, CancellationToken token)
 		{
 			var sourceStream = parseOutput.ParserOptions.SourceFactory();
 			if (!sourceStream.CanWrite)
@@ -82,16 +125,16 @@ namespace Morestachio
 					Value = data,
 					CancellationToken = token
 				};
-				parseOutput.InternalTemplate.Value(byteCounterStreamWriter, context);
+				await parseOutput.InternalTemplate.Value(byteCounterStreamWriter, context);
 			}
 
 			return sourceStream;
 		}
 
-		internal static Action<ByteCounterStreamWriter, ContextObject> Parse(Queue<TokenPair> tokens, ParserOptions options,
+		internal static Func<ByteCounterStreamWriter, ContextObject, Task> Parse(Queue<TokenPair> tokens, ParserOptions options,
 			InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new List<Action<ByteCounterStreamWriter, ContextObject>>();
+			var buildArray = new ParserActions(options);
 
 			while (tokens.Any())
 			{
@@ -101,54 +144,46 @@ namespace Morestachio
 					case TokenType.Comment:
 						break;
 					case TokenType.Content:
-						buildArray.Add(HandleContent(currentToken.Value));
+						buildArray.MakeAction(HandleContent(currentToken.Value));
 						break;
 					case TokenType.CollectionOpen:
-						buildArray.Add(HandleCollectionOpen(currentToken, tokens, options, currentScope));
+						buildArray.MakeAction(HandleCollectionOpen(currentToken, tokens, options, currentScope));
 						break;
 					case TokenType.ElementOpen:
-						buildArray.Add(HandleElementOpen(currentToken, tokens, options, currentScope));
+						buildArray.MakeAction(HandleElementOpen(currentToken, tokens, options, currentScope));
 						break;
 					case TokenType.InvertedElementOpen:
-						buildArray.Add(HandleInvertedElementOpen(currentToken, tokens, options, currentScope));
+						buildArray.MakeAction(HandleInvertedElementOpen(currentToken, tokens, options, currentScope));
 						break;
 					case TokenType.CollectionClose:
 					case TokenType.ElementClose:
 						// This should immediately return if we're in the element scope,
 						// and if we're not, this should have been detected by the tokenizer!
-						return (builder, context) =>
+						return async (builder, context) =>
 						{
-							foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(builder, context)))
-							{
-								a(builder, context);
-							}
+							await buildArray.ExecuteWith(builder, context);
 						};
 					case TokenType.Format:
-						buildArray.Add(ParseFormatting(currentToken, tokens, options, currentScope));
+						buildArray.MakeAction(ParseFormatting(currentToken, tokens, options, currentScope));
 						break;
 					case TokenType.EscapedSingleValue:
 					case TokenType.UnescapedSingleValue:
-						buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
+						buildArray.MakeAction(HandleSingleValue(currentToken, options, currentScope));
 						break;
 				}
 			}
 
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
-				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(builder, context)))
-				{
-					a(builder, context);
-				}
+				await buildArray.ExecuteWith(builder, context);
 			};
 		}
 
-		private static Action<ByteCounterStreamWriter, ContextObject> ParseFormatting(TokenPair token, Queue<TokenPair> tokens,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> ParseFormatting(TokenPair token, Queue<TokenPair> tokens,
 			ParserOptions options, InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new List<Action<ByteCounterStreamWriter, ContextObject>>
-			{
-				HandleFormattingValue(token, options, currentScope)
-			};
+			var buildArray = new ParserActions(options);
+			buildArray.MakeAction(HandleFormattingValue(token, options, currentScope));
 
 			var nonPrintToken = false;
 			while (tokens.Any() && !nonPrintToken)
@@ -157,13 +192,13 @@ namespace Morestachio
 				switch (currentToken.Type)
 				{
 					case TokenType.Format:
-						buildArray.Add(HandleFormattingValue(tokens.Dequeue(), options, currentScope));
+						buildArray.MakeAction(HandleFormattingValue(tokens.Dequeue(), options, currentScope));
 						break;
 					case TokenType.PrintFormatted:
-						buildArray.Add(PrintFormattedValues(tokens.Dequeue(), options, currentScope));
+						buildArray.MakeAction(PrintFormattedValues(tokens.Dequeue(), options, currentScope));
 						break;
 					case TokenType.CollectionOpen:
-						buildArray.Add(HandleCollectionOpen(tokens.Dequeue(), tokens, options, currentScope));
+						buildArray.MakeAction(HandleCollectionOpen(tokens.Dequeue(), tokens, options, currentScope));
 						break;
 					default:
 						//The following cannot be formatted and the result of the formatting operation has used.
@@ -173,14 +208,11 @@ namespace Morestachio
 				}
 			}
 
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
 				//the formatting will may change the object. Clone the current Context to leave the root one untouched
 				var contextClone = context.Clone();
-				foreach (var a in buildArray.TakeWhile(e => StopOrAbortBuilding(builder, context)))
-				{
-					a(builder, contextClone);
-				}
+				await buildArray.ExecuteWith(builder, contextClone);
 			};
 		}
 
@@ -189,11 +221,11 @@ namespace Morestachio
 			return !context.AbortGeneration && !context.CancellationToken.IsCancellationRequested && !builder.ReachedLimit;
 		}
 
-		private static Action<ByteCounterStreamWriter, ContextObject> PrintFormattedValues(TokenPair currentToken,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> PrintFormattedValues(TokenPair currentToken,
 			ParserOptions options,
 			InferredTemplateModel currentScope)
 		{
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
 				if (context == null)
 				{
@@ -201,19 +233,20 @@ namespace Morestachio
 				}
 
 				string value = null;
+				await context.EnsureValue();
 				if (context.Value != null)
 				{
-					value = context.ToString();
+					value = await context.RenderToString();
 				}
 
 				HandleContent(value)(builder, context);
 			};
 		}
 
-		private static Action<ByteCounterStreamWriter, ContextObject> HandleFormattingValue(TokenPair currentToken,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleFormattingValue(TokenPair currentToken,
 			ParserOptions options, InferredTemplateModel scope)
 		{
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
 				scope = scope?.GetInferredModelForPath(currentToken.Value, InferredTemplateModel.UsedAs.Scalar);
 
@@ -221,7 +254,7 @@ namespace Morestachio
 				{
 					return;
 				}
-				var c = context.GetContextForPath(currentToken.Value);
+				var c = await context.GetContextForPath(currentToken.Value);
 
 				if (currentToken.FormatString != null && currentToken.FormatString.Any())
 				{
@@ -235,7 +268,8 @@ namespace Morestachio
 						if (trimmedArg.StartsWith("$") &&
 							trimmedArg.EndsWith("$"))
 						{
-							var formatContext = context.GetContextForPath(trimmedArg.Trim('$'));
+							var formatContext = await context.GetContextForPath(trimmedArg.Trim('$'));
+							await formatContext.EnsureValue();
 							argList.Add(new KeyValuePair<string, object>(formatterArgument.Name, formatContext.Value));
 						}
 						else
@@ -257,24 +291,25 @@ namespace Morestachio
 			return HttpUtility.HtmlEncode(context);
 		}
 
-		private static Action<ByteCounterStreamWriter, ContextObject> HandleSingleValue(TokenPair token, ParserOptions options,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleSingleValue(TokenPair token, ParserOptions options,
 			InferredTemplateModel scope)
 		{
 			scope = scope?.GetInferredModelForPath(token.Value, InferredTemplateModel.UsedAs.Scalar);
 
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
 				//try to locate the value in the context, if it exists, append it.
-				var c = context?.GetContextForPath(token.Value);
+				var c = context != null ? (await context.GetContextForPath(token.Value)) : null;
 				if (c?.Value != null)
 				{
+					await c.EnsureValue();
 					if (token.Type == TokenType.EscapedSingleValue && !options.DisableContentEscaping)
 					{
-						HandleContent(HtmlEncodeString(c.ToString()))(builder, c);
+						HandleContent(HtmlEncodeString(await c.RenderToString()))(builder, c);
 					}
 					else
 					{
-						HandleContent(c.ToString())(builder, c);
+						HandleContent(await c.RenderToString())(builder, c);
 					}
 				}
 			};
@@ -362,7 +397,7 @@ namespace Morestachio
 			return (builder, context) => { WriteContent(builder, token, context); };
 		}
 
-		private static Action<ByteCounterStreamWriter, ContextObject> HandleInvertedElementOpen(TokenPair token,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleInvertedElementOpen(TokenPair token,
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
@@ -370,19 +405,19 @@ namespace Morestachio
 
 			var innerTemplate = Parse(remainder, options, scope);
 
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
-				var c = context.GetContextForPath(token.Value);
+				var c = await context.GetContextForPath(token.Value);
 				//"falsey" values by Javascript standards...
-				if (!c.Exists())
+				if (!await c.Exists())
 				{
-					innerTemplate(builder, c);
+					await innerTemplate(builder, c);
 				}
 			};
 		}
 
 
-		private static Action<ByteCounterStreamWriter, ContextObject> HandleCollectionOpen(TokenPair token,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleCollectionOpen(TokenPair token,
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
@@ -390,13 +425,13 @@ namespace Morestachio
 
 			var innerTemplate = Parse(remainder, options, scope);
 
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
 				//if we're in the same scope, just negating, then we want to use the same object
-				var c = context.GetContextForPath(token.Value);
+				var c = await context.GetContextForPath(token.Value);
 
 				//"falsey" values by Javascript standards...
-				if (!c.Exists())
+				if (!await c.Exists())
 				{
 					return;
 				}
@@ -421,7 +456,7 @@ namespace Morestachio
 							Value = current,
 							Parent = c
 						};
-						innerTemplate(builder, innerContext);
+						await innerTemplate(builder, innerContext);
 						index++;
 						current = next;
 					} while (current != null && StopOrAbortBuilding(builder, context));
@@ -435,7 +470,7 @@ namespace Morestachio
 			};
 		}
 
-		private static Action<ByteCounterStreamWriter, ContextObject> HandleElementOpen(TokenPair token,
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleElementOpen(TokenPair token,
 			Queue<TokenPair> remainder,
 			ParserOptions options, InferredTemplateModel scope)
 		{
@@ -443,13 +478,13 @@ namespace Morestachio
 
 			var innerTemplate = Parse(remainder, options, scope);
 
-			return (builder, context) =>
+			return async (builder, context) =>
 			{
-				var c = context.GetContextForPath(token.Value);
+				var c = await context.GetContextForPath(token.Value);
 				//"falsey" values by Javascript standards...
-				if (c.Exists())
+				if (await c.Exists())
 				{
-					innerTemplate(builder, c);
+					await innerTemplate(builder, c);
 				}
 			};
 		}

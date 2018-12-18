@@ -50,7 +50,7 @@ namespace Morestachio
 			SourceFactory = sourceStream ?? (() => new MemoryStream());
 			Encoding = encoding ?? Encoding.Default;
 			Formatters = new FormatterMatcher();
-			Null = string.Empty;
+			Null = String.Empty;
 			MaxSize = 0;
 			DisableContentEscaping = false;
 			WithModelInference = false;

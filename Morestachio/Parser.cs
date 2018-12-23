@@ -192,6 +192,11 @@ namespace Morestachio
 				switch (currentToken.Type)
 				{
 					case TokenType.Format:
+						//this will invoke the formatter and copy the scope.
+						//we must copy the scope as the formatting action might break our chain and we are no longer able to 
+						//construct a valid path up
+						//after that there is always a PrintFormatted type that will print the "current" scope and
+						//reset it to the origial scope before we have entered the scope
 						buildArray.MakeAction(HandleFormattingValue(tokens.Dequeue(), options, currentScope));
 						break;
 					case TokenType.PrintFormatted:
@@ -372,7 +377,7 @@ namespace Morestachio
 				builder.ReachedLimit = true;
 				return;
 			}
-
+			//TODO this is a performance critical operation. As we might deal with variable-length encodings this cannot be compute initial
 			var cl = context.Options.Encoding.GetByteCount(content);
 
 			var overflow = sourceCount + cl - context.Options.MaxSize;

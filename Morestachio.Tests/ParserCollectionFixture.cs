@@ -61,27 +61,27 @@ namespace Morestachio.Tests
 			return sourceCollection;
 		}
 	}
-	
+
 	[TestFixture]
 	public class ParserFormatterFixture
 	{
 		private void AddAsyncCollectionTypeFormatter(ParserOptions options)
 		{
-			options.Formatters.AddFormatter<IEnumerable>(new Func<IEnumerable, string, Task<object>>(async (value, arg) =>
+			options.Formatters.AddFormatter<IEnumerable>(new Func<IEnumerable, string, Task<IEnumerable>>(async (value, arg) =>
 			{
 				await Task.Delay(2500);
 				return arg.Split('|').Aggregate(value,
 					(current, format) =>
-						(IEnumerable) new EnumerableFormatter().FormatArgument(current, format.Trim()));
+						(IEnumerable)new EnumerableFormatter().FormatArgument(current, format.Trim()));
 			}));
 		}
-		
+
 		[Test]
 		public void TestCanExecuteAsyncFormatter()
 		{
 			var options = new ParserOptions("{{#each data(order)}}{{.}},{{/each}}", null,
 				ParserFixture.DefaultEncoding);
-			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
+			var collection = new[] { 0, 1, 2, 3, 5, 4, 6, 7 };
 			AddAsyncCollectionTypeFormatter(options);
 			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
 			{
@@ -104,8 +104,27 @@ namespace Morestachio.Tests
 			{
 				return arg.Split('|').Aggregate(value,
 					(current, format) =>
-						(IEnumerable) new EnumerableFormatter().FormatArgument(current, format.Trim()));
+						(IEnumerable)new EnumerableFormatter().FormatArgument(current, format.Trim()));
 			}));
+		}
+
+		[Test]
+		public void TestCollectionSpecialKeyFormatting()
+		{
+			var options = new ParserOptions("{{#each data}}{{$index([Name]plus one)}},{{/each}}", null,
+				ParserFixture.DefaultEncoding);
+			var collection = new[] { 10, 11, 12, 14 };
+			options.Formatters.AddFormatter(new Func<long, long>((value) => value + 1));
+
+			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
+			{
+				{
+					"data", collection
+				}
+			});
+			Assert.That(report,
+				Is.EqualTo(Enumerable.Range(1, collection.Length).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ","));
+			Console.WriteLine(report);
 		}
 
 		[Test]
@@ -113,7 +132,7 @@ namespace Morestachio.Tests
 		{
 			var options = new ParserOptions("{{#each data(order)}}{{.}},{{/each}}", null,
 				ParserFixture.DefaultEncoding);
-			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
+			var collection = new[] { 0, 1, 2, 3, 5, 4, 6, 7 };
 			AddCollectionTypeFormatter(options);
 			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
 			{
@@ -131,7 +150,7 @@ namespace Morestachio.Tests
 		{
 			var options = new ParserOptions("{{#each data(order)}}{{.}},{{/each}}|{{#each data}}{{.}},{{/each}}", null,
 				ParserFixture.DefaultEncoding);
-			var collection = new[] {0, 1, 2, 3, 5, 4, 6, 7};
+			var collection = new[] { 0, 1, 2, 3, 5, 4, 6, 7 };
 			AddCollectionTypeFormatter(options);
 			var report = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>
 			{
@@ -144,7 +163,7 @@ namespace Morestachio.Tests
 				collection.OrderBy(e => e).Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ",";
 			var resultRightExpression = collection.Select(e => e.ToString()).Aggregate((e, f) => e + "," + f) + ",";
 
-			Assert.That(report,Is.EqualTo(resultLeftExpressionOrdered + "|" + resultRightExpression));
+			Assert.That(report, Is.EqualTo(resultLeftExpressionOrdered + "|" + resultRightExpression));
 			Console.WriteLine(report);
 		}
 	}

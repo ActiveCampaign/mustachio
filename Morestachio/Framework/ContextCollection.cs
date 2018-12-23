@@ -67,5 +67,19 @@ namespace Morestachio
 			innerContext.Value = value;
 			return value == null ? null : innerContext;
 		}
+
+		/// <inheritdoc />
+		public override ContextObject Clone()
+		{
+			var contextClone = new ContextCollection(Index, Last, Options, Key)
+			{
+				CancellationToken = CancellationToken,
+				Parent = Parent,
+				AbortGeneration = AbortGeneration,
+				Value = Value
+			};
+
+			return contextClone;
+		}
 	}
 }

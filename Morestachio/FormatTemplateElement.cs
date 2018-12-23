@@ -82,11 +82,11 @@ namespace Morestachio
 		/// <summary>
 		///     Ctor
 		/// </summary>
-		/// <param name="formatTemplate"></param>
-		/// <param name="canFormat"></param>
-		/// <param name="inputTypes"></param>
-		/// <param name="outputType"></param>
-		/// <param name="argumentMeta"></param>
+		/// <param name="formatTemplate">The Delegate that will be invoked when the formatters type is matched by the <see cref="FormatterMatcher"/></param>
+		/// <param name="canFormat">An optional Delegate of type <see cref="CanExecute"/> that will be invoked when the match was successfull, all arguments of the FormatTemplate are provided</param>
+		/// <param name="inputTypes">The type that this formatter is attached to</param>
+		/// <param name="outputType">The type of object this formatter returns</param>
+		/// <param name="argumentMeta">Meta informations of the Formatters Delegate</param>
 		[PublicAPI]
 		public FormatTemplateElement([NotNull] Delegate formatTemplate,
 			[CanBeNull] CanExecute canFormat,

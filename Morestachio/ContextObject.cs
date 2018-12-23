@@ -149,7 +149,7 @@ namespace Morestachio
 		/// <returns></returns>
 		public async Task EnsureValue()
 		{
-			Value = await Value.UnpackTask();
+			Value = await Value.UnpackFormatterTask();
 		}
 
 		/// <summary>
@@ -342,7 +342,7 @@ namespace Morestachio
 		///     Clones the ContextObject into a new Detached object
 		/// </summary>
 		/// <returns></returns>
-		public ContextObject Clone()
+		public virtual ContextObject Clone()
 		{
 			var contextClone = new ContextObject(Options,Key)
 			{

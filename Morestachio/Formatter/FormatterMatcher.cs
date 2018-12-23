@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Morestachio.Attributes;
+using Morestachio.Helper;
 
 namespace Morestachio.Formatter
 {
@@ -351,12 +352,7 @@ namespace Morestachio.Formatter
 			Write(() => $"Execute");
 			var taskAlike = formatter.Format.DynamicInvoke(values.Select(e => e.Value).ToArray());
 
-			if (taskAlike is Task task)
-			{
-				await task;
-				return (task as Task<object>)?.Result;
-			}
-			return taskAlike;
+			return await taskAlike.UnpackFormatterTask();
 		}
 
 		/// <summary>

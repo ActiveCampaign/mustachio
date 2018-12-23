@@ -1,6 +1,7 @@
 ﻿//Taken from https://github.com/tejacques/AsyncBridge/blob/master/src/AsyncBridge/AsyncHelper.cs
 
 using System;
+using System.CodeDom;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
@@ -17,21 +18,26 @@ namespace Morestachio.Helper
     public static class AsyncHelper
     {
         /// <summary>
-        ///     Unpacks the task. Unpacks also nested Tasks.
+        ///     Unpacks the task.
         /// </summary>
-        /// <param name="task">The task.</param>
         /// <returns></returns>
-        public static async Task<object> UnpackTask(this object maybeTask)
+        public static async Task<object> UnpackFormatterTask(this object maybeTask)
         {
             if (maybeTask is Task task)
             {
                 await task;
-                if (task is Task<object> task1)
+
+                if (task is Task<object> task2)
                 {
-                    maybeTask = task1.Result;
+                    return task2.Result;
                 }
 
-                return await maybeTask.UnpackTask();
+                if (task.GetType() != typeof(Task))
+                {
+                    return ((dynamic) task).Result;
+                }
+
+                return maybeTask;
             }
 
             return maybeTask;

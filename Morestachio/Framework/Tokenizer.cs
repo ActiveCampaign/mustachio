@@ -16,7 +16,7 @@ namespace Morestachio
 			RegexOptions.Compiled);
 
 		private static readonly Regex FormatFinder
-			= new Regex(@"(?:([\w.]+)*)+(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))"
+			= new Regex(@"(?:([\w.|$]+)*)+(\((?>\((?<c>)|[^()]+|\)(?<-c>))*(?(c)(?!))\))"
 				, RegexOptions.Compiled);
 
 		private static readonly Regex FormatInExpressionFinder
@@ -283,7 +283,7 @@ namespace Morestachio
 					if (FormatInExpressionFinder.IsMatch(token))
 					{
 						foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines,
-							parseErrors))
+							parseErrors).ToArray())
 						{
 							yield return tokenizeFormattable;
 						}

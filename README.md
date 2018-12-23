@@ -36,6 +36,17 @@ Morestachio can be installed via [NuGet](https://www.nuget.org/packages/Morestac
 Install-Package Morestachio
 ```
 
+To get the Extended Formatter Service please install *ether* the 
+```bash
+Install-Package Morestachio.Formatter.Framework
+```
+or 
+
+```bash
+Install-Package Morestachio.Formatter.Linq
+```
+I am currently working on the CI process to seperate the builds.
+
 ##### Key differences between Morestachio and [mustachio](https://github.com/wildbit/mustachio)
 
 Morestachio is build upon Mustachio and extends the mustachio syntax in a few ways.
@@ -43,14 +54,21 @@ Morestachio is build upon Mustachio and extends the mustachio syntax in a few wa
 1. each value can be formatted by adding formatter the the morestachio
 2. Templates will be parsed as streams and will create a new stream. This is better when creating larger templates and best for web as you can also limit the length of the "to be" created template to a certain size
 3. Morestachio accepts any object besides the Dictionary<string,object> from mustachio.
+4. Root paths are supported, for examle `{{#this.is.a.object}} {{~this.is.from.root}} {{/this.is.a.object}}`
+5. Cancellation of Template generation is supported
+6. Async calls are supported
+7. No Reference to Newtonsoft ( this has proven problematic with other versions of the lib )
+8. No Reference to System.Web ( Rewritten to WebUtility as `HttpUtility.HtmlEncode` just calls `WebUtility.HtmlEncode` )
+9. Using of JetBrains Annotations for R# user ( if you are not a R# user just ignore this point )
+10. Supports user Encoding of the result template
 
 ##### Key differences between Morestachio and [Mustache](https://mustache.github.io/)
 
 Morestachio contains a few modifications to the core Mustache language that are important.
 
-1. `each` blocks are recommended for handling arrays of values. (We have a good reason!)
+1. `each` blocks are recommended for handling arrays of values.
 2. Complex paths are supported, for example `{{ this.is.a.valid.path }}` and `{{ ../this.goes.up.one.level }}`
-3. Template partials (`{{> secondary_template }}`) are not supported. (We have a good reason!)
+3. Template partials (`{{> secondary_template }}`) are not supported. But you could write a Extention that supports this in a basic way. (see wiki)
  
 ###### A little more about the differences:
 
@@ -62,7 +80,6 @@ We think the model inference feature is compelling, because it allows for error 
 
 Including partials would complicate the general process of creating the templates, and allow unknown users to create potentially unbound processing requirements on our servers. It is possible to detect these cycles while parsing templates, so, if this is important to the broader OSS community, partial template support may be added to Morestachio in the future.
 
-
 ###### Infos about new features
  
 Its possible to use plain C# objects they will be called by reflection. 
@@ -72,7 +89,7 @@ Also you can now spezify the excact Size of the template to limit it (this could
 One mayor component is the usage of Streams in morestachio. You can declare a Factory for the streams generated in the `ParserOptions.SourceFactory`. This is very important if you are rendering templates that will be very huge and you want to stream them directly to the harddrive or elsewhere. This has also a very positive effect on the performance as we will not use string concatination for compiling the template. If you do not set the `ParserOptions.SourceFactory` and the `ParserOptions.Encoding`, a memory stream will be created and the `Encoding.Default` will be used.
  
 ###### Formatter
-Use the `ContextObject.PrintableTypes` collection to create own formatter for all your types or add one to the new `ParserOptions.Formatters` object for just one call. To invoke them in your template use the new Function syntax:
+Use the `ContextObject.DefaultFormatter` collection to create own formatter for all your types or add one to the `ParserOptions.Formatters` object for just one call. To invoke them in your template use the new Function syntax:
 ```csharp
 {{Just.One.Formattable(AnyString).Thing}}
 ```
@@ -108,5 +125,6 @@ parserOptions.AddFormatter<DateTime, string,   string>((value, argument) => {
 Parser.CreateAndStringify(parserOptions); // Friday, September 21, 2018 ish
 
 ```
-
+###### Enumerating IDictionarys
+Any instance of IDictionary<string,object> is viewed as an object. You cannot enumerate then with #each but you could write a formatter that accepts an Instance of IDictionary and return a List of KeyValuePair and enumerate this new List. 
 

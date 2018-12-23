@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace Morestachio
 				Elements = new List<Delegate>();
 			}
 
-			public ICollection<Delegate> Elements { get; set; }
+			public ICollection<Delegate> Elements { get; }
 
 			public void MakeAction(Action<ByteCounterStreamWriter, ContextObject> syncAction)
 			{
@@ -186,7 +187,7 @@ namespace Morestachio
 			buildArray.MakeAction(HandleFormattingValue(token, options, currentScope));
 
 			var nonPrintToken = false;
-			while (tokens.Any() && !nonPrintToken)
+			while (tokens.Any() && !nonPrintToken) //only take as few tokens we need for formatting. 
 			{
 				var currentToken = tokens.Peek();
 				switch (currentToken.Type)
@@ -202,7 +203,8 @@ namespace Morestachio
 					case TokenType.PrintFormatted:
 						buildArray.MakeAction(PrintFormattedValues(tokens.Dequeue(), options, currentScope));
 						break;
-					case TokenType.CollectionOpen:
+					case TokenType.CollectionOpen: //in this case we are in a formatting expression followed by a #each.
+						//after this we need to reset the context so handle the open here
 						buildArray.MakeAction(HandleCollectionOpen(tokens.Dequeue(), tokens, options, currentScope));
 						break;
 					default:
@@ -282,6 +284,7 @@ namespace Morestachio
 							argList.Add(new KeyValuePair<string, object>(formatterArgument.Name, formatterArgument.Argument));
 						}
 					}
+					//we do NOT await the task here. We await the task only if we need the value
 					context.Value = c.Format(argList.ToArray());
 				}
 				else
@@ -293,7 +296,7 @@ namespace Morestachio
 
 		private static string HtmlEncodeString(string context)
 		{
-			return HttpUtility.HtmlEncode(context);
+			return WebUtility.HtmlEncode(context);
 		}
 
 		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleSingleValue(TokenPair token, ParserOptions options,

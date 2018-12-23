@@ -98,17 +98,16 @@ namespace Morestachio
 		///		Can be overwritten to support an alternative formatting of all templates.
 		/// </summary>
 		[NotNull]
-		public static Func<object, object, object> DefaultToStringWithFormatting = new Func<object, object, object>(
-			(value, formatArgument) =>
+		public static Func<object, object, object> DefaultToStringWithFormatting = (value, formatArgument) =>
+		{
+			var o = value as IFormattable;
+			if (o != null && formatArgument != null)
 			{
-				var o = value as IFormattable;
-				if (o != null && formatArgument != null)
-				{
-					return o.ToString(formatArgument.ToString(), null);
-				}
+				return o.ToString(formatArgument.ToString(), null);
+			}
 
-				return value.ToString();
-			});
+			return value.ToString();
+		};
 
 		private static Func<object, bool> _definitionOfFalse;
 
@@ -198,6 +197,7 @@ namespace Morestachio
 				{
 					return preHandeld;
 				}
+
 				if (path.StartsWith("~")) //go the root object
 				{
 					var parent = Parent;

@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 using Morestachio.Formatter;
 using Morestachio.Helper;
 
-namespace Morestachio
+namespace Morestachio.Framework
 {
 	/// <summary>
 	///     The current context for any given expression

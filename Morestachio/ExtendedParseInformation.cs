@@ -15,16 +15,6 @@ namespace Morestachio
 	public class ExtendedParseInformation
 	{
 		/// <summary>
-		/// Serilize Constructor. Should not be used by user code.
-		/// </summary>
-		[Obsolete("This is an Serilization only constructor and should not be used in user code!", true), UsedImplicitly]
-		public ExtendedParseInformation()
-		{
-			InternalTemplate = new Lazy<Func<Parser.ByteCounterStreamWriter, ContextObject, Task>>(
-				() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
-		}
-
-		/// <summary>
 		///     ctor
 		/// </summary>
 		/// <param name="inferredModel"></param>

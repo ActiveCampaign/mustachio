@@ -56,6 +56,7 @@ namespace Morestachio
 			MaxSize = 0;
 			DisableContentEscaping = false;
 			WithModelInference = false;
+			Timeout = TimeSpan.Zero;
 		}
 
 		/// <summary>
@@ -104,6 +105,15 @@ namespace Morestachio
 		}
 
 		/// <summary>
+		///		Gets or sets the timeout. After the timeout is reached and the Template has not finished Processing and Exception is thrown.
+		///		For no timeout use <code>TimeSpan.</code>
+		/// </summary>
+		/// <value>
+		/// The timeout.
+		/// </value>
+		public TimeSpan Timeout { get; set; }
+		
+		/// <summary>
 		///     The template content to parse.
 		/// </summary>
 		[NotNull]
@@ -146,43 +156,5 @@ namespace Morestachio
 		/// </summary>
 		[NotNull]
 		public string Null { get; set; }
-
-		/// <summary>
-		///     Adds a formatter with type check
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="formatter"></param>
-		/// <param name="description"></param>
-		[Obsolete("This function is obsolete. Call Formatters.AddFormatter directly")]
-		public void AddFormatter<T>([NotNull]Func<T, object, object> formatter, string description = null)
-		{
-			Formatters.AddFormatter(typeof(T), formatter);
-		}
-
-		/// <summary>
-		///     Adds a formatter with type check
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="formatter"></param>
-		/// <param name="description"></param>
-		[Obsolete("This function is obsolete. Call Formatters.AddFormatter directly")]
-		public void AddFormatter<T>([NotNull]Func<T, object> formatter, string description = null)
-		{
-			Formatters.AddFormatter(typeof(T), formatter);
-		}
-
-		/// <summary>
-		///     Adds a formatter with type check and multiple arguments.
-		///		Ether the first argument must by of type of <typeparamref name="T"/> or any object annotated with the <seealso cref="SourceObjectAttribute"/>.
-		///		Must not return something. The delegate can take use of the <seealso cref="FormatterArgumentNameAttribute"/> to match names of arguments in the template
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="formatter"></param>
-		/// <param name="description"></param>
-		[Obsolete("This function is obsolete. Call Formatters.AddFormatter directly")]
-		public void AddFormatter<T>([NotNull]Delegate formatter, string description = null)
-		{
-			Formatters.AddFormatter(typeof(T), formatter);
-		}
 	}
 }

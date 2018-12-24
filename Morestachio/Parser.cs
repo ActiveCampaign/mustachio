@@ -111,22 +111,45 @@ namespace Morestachio
 		[NotNull]
 		public static async Task<Stream> CreateTemplateStreamAsync([NotNull]ExtendedParseInformation parseOutput, [NotNull]object data, CancellationToken token)
 		{
+			var timeoutCancellation = new CancellationTokenSource();
+			if (parseOutput.ParserOptions.Timeout != TimeSpan.Zero)
+			{
+				timeoutCancellation.CancelAfter(parseOutput.ParserOptions.Timeout);
+				var anyCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutCancellation.Token);
+				token = anyCancellationToken.Token;
+			}
 			var sourceStream = parseOutput.ParserOptions.SourceFactory();
-			if (!sourceStream.CanWrite)
+			try
 			{
-				throw new InvalidOperationException("The stream is ReadOnly");
-			}
-
-			using (var byteCounterStreamWriter = new ByteCounterStreamWriter(sourceStream, parseOutput.ParserOptions.Encoding, BufferSize, true))
-			{
-				var context = new ContextObject(parseOutput.ParserOptions, "")
+				if (!sourceStream.CanWrite)
 				{
-					Value = data,
-					CancellationToken = token
-				};
-				await parseOutput.InternalTemplate.Value(byteCounterStreamWriter, context);
-			}
+					throw new InvalidOperationException("The stream is ReadOnly");
+				}
 
+				using (var byteCounterStreamWriter = new ByteCounterStreamWriter(sourceStream,
+					parseOutput.ParserOptions.Encoding, BufferSize, true))
+				{
+					var context = new ContextObject(parseOutput.ParserOptions, "")
+					{
+						Value = data,
+						CancellationToken = token
+					};
+					await parseOutput.InternalTemplate.Value(byteCounterStreamWriter, context);
+				}
+			
+				if (timeoutCancellation.IsCancellationRequested)
+				{
+					sourceStream.Dispose();
+					throw new TimeoutException($"The requested timeout of {parseOutput.ParserOptions.Timeout:g} for report generation was reached");
+				}
+			}
+			catch
+			{
+				//If there is any exception while generating the template we must dispose any data written to the stream as it will never returned and might 
+				//create a memory leak with this. This is also true for a timeout
+				sourceStream.Dispose();
+				throw;
+			}
 			return sourceStream;
 		}
 

@@ -9,8 +9,8 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using JetBrains.Annotations;
-using Morestachio.Framework;
 
 #endregion
 
@@ -24,10 +24,13 @@ namespace Morestachio
 	{
 		private const int BufferSize = 2024;
 
-		private class ParserActions
+		private struct ParserActions
 		{
-			public ParserActions()
+			private readonly ParserOptions _options;
+
+			public ParserActions(ParserOptions options)
 			{
+				_options = options;
 				Elements = new List<Delegate>();
 			}
 
@@ -92,7 +95,6 @@ namespace Morestachio
 			if (parsingOptions.WithModelInference)
 			{
 				//we pre-parse the template once to get the model
-				//ReSharper disable once UnusedVariable
 				var s = extendedParseInformation.InternalTemplate.Value;
 			}
 
@@ -156,7 +158,7 @@ namespace Morestachio
 		internal static Func<ByteCounterStreamWriter, ContextObject, Task> Parse(Queue<TokenPair> tokens, ParserOptions options,
 			InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new ParserActions();
+			var buildArray = new ParserActions(options);
 
 			while (tokens.Any())
 			{
@@ -204,8 +206,8 @@ namespace Morestachio
 		private static Func<ByteCounterStreamWriter, ContextObject, Task> ParseFormatting(TokenPair token, Queue<TokenPair> tokens,
 			ParserOptions options, InferredTemplateModel currentScope = null)
 		{
-			var buildArray = new ParserActions();
-			buildArray.MakeAction(HandleFormattingValue(token, currentScope));
+			var buildArray = new ParserActions(options);
+			buildArray.MakeAction(HandleFormattingValue(token, options, currentScope));
 
 			var nonPrintToken = false;
 			while (tokens.Any() && !nonPrintToken) //only take as few tokens we need for formatting. 
@@ -219,10 +221,10 @@ namespace Morestachio
 						//construct a valid path up
 						//after that there is always a PrintFormatted type that will print the "current" scope and
 						//reset it to the origial scope before we have entered the scope
-						buildArray.MakeAction(HandleFormattingValue(tokens.Dequeue(), currentScope));
+						buildArray.MakeAction(HandleFormattingValue(tokens.Dequeue(), options, currentScope));
 						break;
 					case TokenType.PrintFormatted:
-						buildArray.MakeAction(PrintFormattedValues());
+						buildArray.MakeAction(PrintFormattedValues(tokens.Dequeue(), options, currentScope));
 						break;
 					case TokenType.CollectionOpen: //in this case we are in a formatting expression followed by a #each.
 						//after this we need to reset the context so handle the open here
@@ -249,11 +251,9 @@ namespace Morestachio
 			return !context.AbortGeneration && !context.CancellationToken.IsCancellationRequested && !builder.ReachedLimit;
 		}
 
-		/// <summary>
-		///		This Gets the Current context and calls RenderToString
-		/// </summary>
-		/// <returns></returns>
-		private static Func<ByteCounterStreamWriter, ContextObject, Task> PrintFormattedValues()
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> PrintFormattedValues(TokenPair currentToken,
+			ParserOptions options,
+			InferredTemplateModel currentScope)
 		{
 			return async (builder, context) =>
 			{
@@ -273,7 +273,8 @@ namespace Morestachio
 			};
 		}
 
-		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleFormattingValue(TokenPair currentToken, InferredTemplateModel scope)
+		private static Func<ByteCounterStreamWriter, ContextObject, Task> HandleFormattingValue(TokenPair currentToken,
+			ParserOptions options, InferredTemplateModel scope)
 		{
 			return async (builder, context) =>
 			{

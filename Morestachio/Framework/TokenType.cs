@@ -1,4 +1,4 @@
-﻿namespace Morestachio.Framework
+﻿namespace Morestachio
 {
 	/// <summary>
 	///     The type of token produced in the lexing stage of template compilation.
@@ -9,6 +9,7 @@
 		UnescapedSingleValue,
 		InvertedElementOpen,
 		ElementOpen,
+		ElementFormat,
 		ElementClose,
 		Comment,
 		Content,

@@ -3,7 +3,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Morestachio.Formatter;
 
-namespace Morestachio.Framework
+namespace Morestachio
 {
 	/// <summary>
 	///     The token that has been lexed out of template content.
@@ -32,6 +32,7 @@ namespace Morestachio.Framework
 				return $"{Type} \"{Value}\" AS ({FormatString.Select(e => e.ToString()).Aggregate((e, f) => e + "," + f)})";
 			}
 			return $"{Type} {Value}";
+
 		}
 	}
 }

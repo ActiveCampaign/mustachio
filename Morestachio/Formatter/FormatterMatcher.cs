@@ -13,7 +13,7 @@ namespace Morestachio.Formatter
 	/// <summary>
 	///     Matches the Arguments from the Template to a Function from .net
 	/// </summary>
-	public class FormatterMatcher : IFormatterMatcher
+	public class FormatterMatcher
 	{
 		/// <summary>
 		/// </summary>
@@ -25,7 +25,6 @@ namespace Morestachio.Formatter
 		/// <summary>
 		///     If set writes the Formatters log.
 		/// </summary>
-		[CanBeNull]
 		public TextWriter FormatterLog { get; set; }
 
 		/// <summary>
@@ -34,12 +33,12 @@ namespace Morestachio.Formatter
 		[NotNull]
 		[ItemNotNull]
 		public ICollection<FormatTemplateElement> Formatter { get; }
-
+		
 		/// <summary>
 		/// Writes the specified log.
 		/// </summary>
 		/// <param name="log">The log.</param>
-		public void Log(Func<string> log)
+		public void Write(Func<string> log)
 		{
 			FormatterLog?.WriteLine(log());
 		}
@@ -54,7 +53,7 @@ namespace Morestachio.Formatter
 		public virtual IEnumerable<FormatTemplateElement> GetMatchingFormatter([NotNull] Type typeToFormat,
 			[NotNull] KeyValuePair<string, object>[] arguments)
 		{
-			Log(() =>
+			Write(() =>
 				$"Test Filter for '{typeToFormat}' with arguments '{arguments.Select(e => $"[{e.Key}]:\"{e.Value}\"").Aggregate((e, f) => e + " & " + f)}'");
 
 			var filteredSourceList = new List<KeyValuePair<FormatTemplateElement, ulong>>();
@@ -62,7 +61,7 @@ namespace Morestachio.Formatter
 			{
 				var formatter = formatTemplateElement;
 
-				Log(() => $"Test filter: '{formatter.InputTypes} : {formatter.Format.Method.Name}'");
+				Write(() => $"Test filter: '{formatter.InputTypes} : {formatter.Format.Method.Name}'");
 
 				if (formatTemplateElement.InputTypes != typeToFormat &&
 					!formatTemplateElement.InputTypes.IsAssignableFrom(typeToFormat))
@@ -83,7 +82,7 @@ namespace Morestachio.Formatter
 					if (typeToFormatGenerics.Length <= 0 || formatterGenerics.Length <= 0 ||
 						typeToFormatGenerics.Length != formatterGenerics.Length)
 					{
-						Log(() =>
+						Write(() =>
 							$"Exclude because formatter accepts '{formatTemplateElement.InputTypes}' is not assignable from '{typeToFormat}'");
 						continue;
 					}
@@ -94,7 +93,7 @@ namespace Morestachio.Formatter
 				if (mandatoryArguments.Length > arguments.Length)
 				//if there are less arguments excluding rest then parameters
 				{
-					Log(() =>
+					Write(() =>
 						"Exclude because formatter has " +
 						$"'{mandatoryArguments.Length}' " +
 						"parameter and " +
@@ -111,7 +110,7 @@ namespace Morestachio.Formatter
 				}
 
 				score = score + (ulong)(arguments.Length - mandatoryArguments.Length);
-				Log(() => $"Take filter: '{formatter.InputTypes} : {formatter.Format}' Score {score}");
+				Write(() => $"Take filter: '{formatter.InputTypes} : {formatter.Format}' Score {score}");
 				filteredSourceList.Add(new KeyValuePair<FormatTemplateElement, ulong>(formatter, score));
 			}
 
@@ -126,7 +125,41 @@ namespace Morestachio.Formatter
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="formatterDelegate">The formatter delegate.</param>
-		public virtual FormatTemplateElement AddFormatter<T>(Delegate formatterDelegate)
+		public virtual FormatTemplateElement AddFormatter<T>([NotNull] Delegate formatterDelegate)
+		{
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		///     Adds the formatter.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="formatterDelegate">The formatter delegate.</param>
+		public virtual FormatTemplateElement AddFormatter<T>([NotNull] Func<T> formatterDelegate)
+		{
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		///     Adds the formatter.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TResult"></typeparam>
+		/// <param name="formatterDelegate">The formatter delegate.</param>
+		public virtual FormatTemplateElement AddFormatter<T, TResult>([NotNull] Func<T, TResult> formatterDelegate)
+		{
+			return AddFormatter(typeof(T), formatterDelegate);
+		}
+
+		/// <summary>
+		///     Adds the formatter.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TResult"></typeparam>
+		/// <typeparam name="TArgument"></typeparam>
+		/// <param name="formatterDelegate">The formatter delegate.</param>
+		public virtual FormatTemplateElement AddFormatter<T, TArgument, TResult>(
+			[NotNull] Func<T, TArgument, TResult> formatterDelegate)
 		{
 			return AddFormatter(typeof(T), formatterDelegate);
 		}
@@ -135,7 +168,7 @@ namespace Morestachio.Formatter
 		///     Adds the formatter.
 		/// </summary>
 		/// <param name="formatter">The formatter.</param>
-		public virtual FormatTemplateElement AddFormatter(FormatTemplateElement formatter)
+		public virtual FormatTemplateElement AddFormatter([NotNull] FormatTemplateElement formatter)
 		{
 			Formatter.Add(formatter);
 			return formatter;
@@ -146,7 +179,7 @@ namespace Morestachio.Formatter
 		/// </summary>
 		/// <param name="forType">For type.</param>
 		/// <param name="formatterDelegate">The formatter delegate.</param>
-		public virtual FormatTemplateElement AddFormatter(Type forType, Delegate formatterDelegate)
+		public virtual FormatTemplateElement AddFormatter([NotNull] Type forType, [NotNull] Delegate formatterDelegate)
 		{
 			var arguments = formatterDelegate.Method.GetParameters().Select((e, index) =>
 				new MultiFormatterInfo(
@@ -197,44 +230,44 @@ namespace Morestachio.Formatter
 		public virtual IDictionary<MultiFormatterInfo, object> ComposeValues([NotNull] FormatTemplateElement formatter,
 			[CanBeNull] object sourceObject, [NotNull] params KeyValuePair<string, object>[] templateArguments)
 		{
-			Log(() =>
+			Write(() =>
 				$"Compose values for object '{sourceObject}' with formatter '{formatter.InputTypes}' targets '{formatter.Format.Method.Name}'");
 			var values = new Dictionary<MultiFormatterInfo, object>();
 			var matched = new Dictionary<MultiFormatterInfo, KeyValuePair<string, object>>();
 
 			foreach (var multiFormatterInfo in formatter.MetaData.Where(e => !e.IsRestObject))
 			{
-				Log(() => $"Match parameter '{multiFormatterInfo.Type}' [{multiFormatterInfo.Name}]");
+				Write(() => $"Match parameter '{multiFormatterInfo.Type}' [{multiFormatterInfo.Name}]");
 				object givenValue;
 				//set ether the source object or the value from the given arguments
 				if (multiFormatterInfo.IsSourceObject)
 				{
-					Log(() => "Is Source object");
+					Write(() => "Is Source object");
 					givenValue = sourceObject;
 				}
 				else
 				{
 					//match by index or name
-					Log(() => "Match by Name");
+					Write(() => "Match by Name");
 					//match by name
 					var match = templateArguments.FirstOrDefault(e =>
 						!string.IsNullOrWhiteSpace(e.Key) && e.Key.Equals(multiFormatterInfo.Name));
 
 					if (default(KeyValuePair<string, object>).Equals(match))
 					{
-						Log(() => "Match by Index");
+						Write(() => "Match by Index");
 						//match by index
 						var index = 0;
 						match = templateArguments.FirstOrDefault(g => index++ == multiFormatterInfo.Index);
 					}
 
 					givenValue = match.Value;
-					Log(() => $"Matched '{match.Key}': '{match.Value}' by Name/Index");
+					Write(() => $"Matched '{match.Key}': '{match.Value}' by Name/Index");
 
 					//check for matching types
 					if (!multiFormatterInfo.Type.IsInstanceOfType(match.Value))
 					{
-						Log(() => "Skip: Match is Invalid because types from Template and Formatter mismatch. Abort.");
+						Write(() => "Skip: Match is Invalid because types from Template and Formatter mismatch. Abort.");
 						//The type in the template and the type defined in the formatter do not match. Abort
 						return null;
 					}
@@ -250,7 +283,7 @@ namespace Morestachio.Formatter
 
 				if (Equals(givenValue, null))
 				{
-					Log(() =>
+					Write(() =>
 						"Skip: Match is Invalid because template value is null where the Formatter does not have a optional value");
 					//the delegates parameter is not optional so this formatter does not fit. Continue.
 					return null;
@@ -263,7 +296,7 @@ namespace Morestachio.Formatter
 				return values;
 			}
 
-			Log(() => $"Match Rest argument '{hasRest.Type}'");
+			Write(() => $"Match Rest argument '{hasRest.Type}'");
 
 			//only use the values that are not matched.
 			var restValues = templateArguments.Except(matched.Values);
@@ -280,7 +313,7 @@ namespace Morestachio.Formatter
 			}
 			else
 			{
-				Log(() => $"Skip: Match is Invalid because  '{hasRest.Type}' is no supported rest parameter");
+				Write(() => $"Skip: Match is Invalid because  '{hasRest.Type}' is no supported rest parameter");
 				//unknown type in params argument cannot call
 				return null;
 			}
@@ -295,15 +328,15 @@ namespace Morestachio.Formatter
 		/// <param name="sourceObject">The source object.</param>
 		/// <param name="templateArguments">The template arguments.</param>
 		/// <returns></returns>
-		public virtual async Task<object> Execute(FormatTemplateElement formatter,
-			object sourceObject,
+		public virtual async Task<object> Execute([NotNull] FormatTemplateElement formatter,
+			[CanBeNull] object sourceObject,
 			params KeyValuePair<string, object>[] templateArguments)
 		{
 			var values = ComposeValues(formatter, sourceObject, templateArguments);
 
 			if (values == null)
 			{
-				Log(() => "Skip: Execute skip as Compose Values returned an invalid value");
+				Write(() => "Skip: Execute skip as Compose Values returned an invalid value");
 				return FormatterFlow.Skip;
 			}
 
@@ -311,12 +344,12 @@ namespace Morestachio.Formatter
 			{
 				if (!formatter.CanFormat(sourceObject, templateArguments))
 				{
-					Log(() => "Skip: Execute skip as CanExecute is false.");
+					Write(() => "Skip: Execute skip as CanExecute is false.");
 					return FormatterFlow.Skip;
 				}
 			}
 
-			Log(() => $"Execute");
+			Write(() => $"Execute");
 			var taskAlike = formatter.Format.DynamicInvoke(values.Select(e => e.Value).ToArray());
 
 			return await taskAlike.UnpackFormatterTask();
@@ -329,7 +362,7 @@ namespace Morestachio.Formatter
 		/// <param name="type"></param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		public IEnumerable<FormatTemplateElement> GetMostMatchingFormatter(Type type,
+		public IEnumerable<FormatTemplateElement> GetMostMatchingFormatter([CanBeNull] Type type,
 			KeyValuePair<string, object>[] arguments)
 		{
 			if (type == null)
@@ -349,23 +382,23 @@ namespace Morestachio.Formatter
 		/// <returns></returns>
 		public async Task<object> CallMostMatchingFormatter(Type type, KeyValuePair<string, object>[] arguments, object value)
 		{
-			Log(() => "---------------------------------------------------------------------------------------------");
-			Log(() => $"Call Formatter for Type '{type}' on '{value}'");
+			Write(() => "---------------------------------------------------------------------------------------------");
+			Write(() => $"Call Formatter for Type '{type}' on '{value}'");
 			var hasFormatter = GetMostMatchingFormatter(type, arguments).Where(e => e != null);
 
 			foreach (var formatTemplateElement in hasFormatter)
 			{
-				Log(() => $"Try formatter '{formatTemplateElement.InputTypes}' on '{formatTemplateElement.Format.Method.Name}'");
+				Write(() => $"Try formatter '{formatTemplateElement.InputTypes}' on '{formatTemplateElement.Format.Method.Name}'");
 				var executeFormatter = await Execute(formatTemplateElement, value, arguments);
 				if (executeFormatter as FormatterFlow != FormatterFlow.Skip)
 				{
-					Log(() => $"Success. return object {executeFormatter}");
+					Write(() => $"Success. return object {executeFormatter}");
 					return executeFormatter;
 				}
-				Log(() => $"Formatter returned '{executeFormatter}'. Try another");
+				Write(() => $"Formatter returned '{executeFormatter}'. Try another");
 			}
 
-			Log(() => "No Formatter has matched. Skip and return Source Value.");
+			Write(() => "No Formatter has matched. Skip and return Source Value.");
 
 			return FormatterFlow.Skip;
 		}

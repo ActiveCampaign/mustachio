@@ -6,6 +6,7 @@ using System.Text;
 using JetBrains.Annotations;
 using Morestachio.Attributes;
 using Morestachio.Formatter;
+using Morestachio.Helper;
 
 #endregion
 
@@ -18,9 +19,6 @@ namespace Morestachio
 	[Serializable]
 	public class ParserOptions
 	{
-		[NotNull]
-		private IFormatterMatcher _formatters;
-
 		/// <summary>
 		///     ctor
 		/// </summary>
@@ -46,13 +44,13 @@ namespace Morestachio
 		/// <param name="template">The template.</param>
 		/// <param name="sourceStream">The source stream.</param>
 		/// <param name="encoding">The encoding.</param>
-		public ParserOptions([CanBeNull]string template, Func<Stream> sourceStream, Encoding encoding)
+		public ParserOptions([NotNull]string template, Func<Stream> sourceStream, Encoding encoding)
 		{
-			Template = template ?? "";
+			Template = template;
 			SourceFactory = sourceStream ?? (() => new MemoryStream());
 			Encoding = encoding ?? Encoding.Default;
-			_formatters = new FormatterMatcher();
-			Null = string.Empty;
+			Formatters = new FormatterMatcher();
+			Null = String.Empty;
 			MaxSize = 0;
 			DisableContentEscaping = false;
 			WithModelInference = false;
@@ -95,14 +93,7 @@ namespace Morestachio
 		///     Adds an Formatter overwrite or new Formatter for an Type
 		/// </summary>
 		[NotNull]
-		public IFormatterMatcher Formatters
-		{
-			get { return _formatters; }
-			set
-			{
-				_formatters = value ?? throw new InvalidOperationException("You must set the Formatters matcher");
-			}
-		}
+		public FormatterMatcher Formatters { get; }
 
 		/// <summary>
 		///		Gets or sets the timeout. After the timeout is reached and the Template has not finished Processing and Exception is thrown.

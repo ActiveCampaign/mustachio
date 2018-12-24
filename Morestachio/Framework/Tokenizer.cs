@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Morestachio.Formatter;
 
-namespace Morestachio.Framework
+namespace Morestachio
 {
 	/// <summary>
 	///     Reads in a mustache template and lexes it into tokens.
@@ -24,7 +24,7 @@ namespace Morestachio.Framework
 				, RegexOptions.Compiled);
 
 		private static readonly Regex NewlineFinder
-			= new Regex("\n|\r", RegexOptions.Compiled);
+			= new Regex("\n", RegexOptions.Compiled);
 
 		private static readonly Regex FindSplitterRegEx
 			= new Regex(
@@ -41,7 +41,10 @@ namespace Morestachio.Framework
 		private static readonly Regex NegativePathSpec =
 			new Regex(@"([.]{4,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))",
 				RegexOptions.Singleline | RegexOptions.Compiled);
-		
+
+		private static readonly Regex PositiveArgumentSpec =
+			new Regex(@"^([^()]*)$", RegexOptions.Singleline | RegexOptions.Compiled);
+
 		private static CharacterLocation HumanizeCharacterLocation(string content, int characterIndex, List<int> lines)
 		{
 			if (lines == null)
@@ -139,7 +142,7 @@ namespace Morestachio.Framework
 
 		public static IEnumerable<TokenPair> Tokenize(ParserOptions parserOptions)
 		{
-			var templateString = parserOptions.Template;
+			var templateString = parserOptions.Template ?? "";
 			var matches = TokenFinder.Matches(templateString);
 			var scopestack = new Stack<Tuple<string, int>>();
 

@@ -128,7 +128,7 @@ namespace Morestachio
 		///     Add an typeof(object) entry as Type to define a Default Output
 		/// </summary>
 		[NotNull]
-		public static IFormatterMatcher DefaultFormatter { get; private set; }
+		public static FormatterMatcher DefaultFormatter { get; private set; }
 
 		/// <summary>
 		///     The parent of the current context or null if its the root context
@@ -211,10 +211,7 @@ namespace Morestachio
 						}
 					}
 
-					if (lastParent != null)
-					{
-						retval = await lastParent.GetContextForPath(elements);
-					}
+					retval = await lastParent?.GetContextForPath(elements);
 				}
 				else if (path.StartsWith("..")) //go one level up
 				{

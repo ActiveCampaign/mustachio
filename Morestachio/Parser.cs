@@ -222,6 +222,7 @@ namespace Morestachio
 						buildArray.MakeAction(HandleFormattingValue(tokens.Dequeue(), currentScope));
 						break;
 					case TokenType.PrintFormatted:
+						tokens.Dequeue(); //this must be the flow token type that has no real value execpt for a dot
 						buildArray.MakeAction(PrintFormattedValues());
 						break;
 					case TokenType.CollectionOpen: //in this case we are in a formatting expression followed by a #each.

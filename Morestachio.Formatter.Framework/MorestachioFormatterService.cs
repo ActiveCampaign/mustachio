@@ -9,6 +9,17 @@ using Morestachio.Helper;
 
 namespace Morestachio.Formatter.Framework
 {
+	internal static class FormatterLogExtentions
+	{
+		public static void Write(this IFormatterMatcher matcher, Func<string> log)
+		{
+			if (matcher is FormatterMatcher defaultMatcher)
+			{
+				defaultMatcher.Log(log);
+			}
+		}
+	}
+
 	/// <summary>
 	///		Delegate for mapping formatter function of the Morestachio framework to the params argument
 	/// </summary>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Morestachio.Helper;
+using Morestachio.Formatter;
 using NUnit.Framework;
 
 namespace Morestachio.Tests

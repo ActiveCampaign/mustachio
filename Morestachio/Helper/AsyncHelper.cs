@@ -1,9 +1,7 @@
 ﻿//Taken from https://github.com/tejacques/AsyncBridge/blob/master/src/AsyncBridge/AsyncHelper.cs
 
 using System;
-using System.CodeDom;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 

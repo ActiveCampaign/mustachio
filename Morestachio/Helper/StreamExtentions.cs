@@ -6,7 +6,7 @@ namespace Morestachio.Helper
 	/// <summary>
 	///     Helper class for Steam operations
 	/// </summary>
-	public static class StreamExtentions
+	public static class StreamExtensions
 	{
 		/// <summary>
 		///     Reads all content from the Stream and returns it as a String
@@ -20,8 +20,7 @@ namespace Morestachio.Helper
 			try
 			{
 				source.Seek(0, SeekOrigin.Begin);
-				var stream = source as MemoryStream;
-				if (stream != null)
+				if (source is MemoryStream stream)
 				{
 					return encoding.GetString(stream.ToArray());
 				}

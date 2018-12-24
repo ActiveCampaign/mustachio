@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using Morestachio.Attributes;
 using Morestachio.Helper;
+using Morestachio.Formatter;
 using Newtonsoft.Json;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed

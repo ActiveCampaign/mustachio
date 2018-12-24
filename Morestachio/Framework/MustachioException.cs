@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Morestachio
+namespace Morestachio.Framework
 {
 	/// <summary>
 	///     The General Exception type for Framework Exceptions

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Morestachio
+namespace Morestachio.Framework
 {
 	/// <summary>
 	///     Records elements used in a model, and allowing a

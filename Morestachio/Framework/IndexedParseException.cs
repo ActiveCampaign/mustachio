@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 
-namespace Morestachio
+namespace Morestachio.Framework
 {
 	/// <summary>
 	///     Indicates a parse error including line and character info.

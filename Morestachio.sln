@@ -30,7 +30,51 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.1", "2.1", "{C3D62B38-990
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.NetCore.2.1", "..\NetCore\mustachio\Morestachio.NetCore.2.1\Morestachio.NetCore.2.1.csproj", "{1C3AB3DA-6749-4807-8703-88C1D90934CB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{FD43415C-3D80-4933-A6E7-5F51611DFE86}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Core", "Morestachio.Core\Morestachio.Core.shproj", "{B27DF4CC-167C-4246-8BD7-FE82E863A7CC}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Formatter.Framework.Core", "Morestachio.Formatter.Framework.Core\Morestachio.Formatter.Framework.Core.shproj", "{0B30548C-B890-49F6-A9FA-E1D0A7ABCE7B}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Formatter.Linq.Core", "Morestachio.Formatter.Linq.Core\Morestachio.Formatter.Linq.Core.shproj", "{7EE52949-CEC3-484C-B692-AED82F56F43C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E34021C8-17F0-4112-ACE8-152E5C762518}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Tests.Core", "Morestachio.Tests.Core\Morestachio.Tests.Core.shproj", "{882BEB6E-050A-4A86-8BC3-78C270522E4D}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Formatter.Framework.Test.Core", "Morestachio.Formatter.Framework.Test.Core\Morestachio.Formatter.Framework.Test.Core.shproj", "{179EA6DF-0EB7-4FB1-97CE-5BB2F5BD4937}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Formatter.Framework.NetCore.2.1", "Morestachio.Formatter.Framework.NetCore.2.1\Morestachio.Formatter.Framework.NetCore.2.1.csproj", "{7C45C965-2C92-481F-8FBF-D65C624AEAFC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Formatter.Linq.NetCore.2.1", "Morestachio.Formatter.Framework.Linq\Morestachio.Formatter.Linq.NetCore.2.1.csproj", "{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetFramework", "NetFramework", "{A25FF6AF-2FD6-433E-9175-54B54653368A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetCore", "NetCore", "{721520FE-F479-49C9-A7D4-77133960C2E6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.1", "2.1", "{9B8FD390-8C9B-466C-81D8-FCE5BA57F23C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Tests.NetCore.2.1", "Morestachio.Tests.NetCore.2.1\Morestachio.Tests.NetCore.2.1.csproj", "{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Formatter.Framework.Tests.NetCore.2.1", "Morestachio.Formatter.Framework.Tests.NetCore.2.1\Morestachio.Formatter.Framework.Tests.NetCore.2.1.csproj", "{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedBase", "SharedBase", "{35408B01-FD7E-4236-9AEC-7B2138A15A77}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{EA6E6142-0363-4557-BECA-DB4B6313F21E}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Morestachio.Formatter.Framework.Core\Morestachio.Formatter.Framework.Core.projitems*{0b30548c-b890-49f6-a9fa-e1d0a7abce7b}*SharedItemsImports = 13
+		Morestachio.Formatter.Framework.Test.Core\Morestachio.Formatter.Framework.Test.Core.projitems*{179ea6df-0eb7-4fb1-97ce-5bb2f5bd4937}*SharedItemsImports = 13
+		Morestachio.Formatter.Linq.Core\Morestachio.Formatter.Linq.Core.projitems*{18a2d5ed-ce5f-4914-b780-0bc8779501a5}*SharedItemsImports = 4
+		Morestachio.Tests.Core\Morestachio.Tests.Core.projitems*{29eb8e0d-5490-4886-857e-31695de45b1b}*SharedItemsImports = 4
+		Morestachio.Core\Morestachio.Core.projitems*{4504c65b-a0ec-4601-82ef-d2542414bc86}*SharedItemsImports = 4
+		Morestachio.Formatter.Framework.Core\Morestachio.Formatter.Framework.Core.projitems*{454b0162-e2eb-4c15-85ee-0b4558750f7b}*SharedItemsImports = 4
+		Morestachio.Formatter.Linq.Core\Morestachio.Formatter.Linq.Core.projitems*{7ee52949-cec3-484c-b692-aed82f56f43c}*SharedItemsImports = 13
+		Morestachio.Tests.Core\Morestachio.Tests.Core.projitems*{882beb6e-050a-4a86-8bc3-78c270522e4d}*SharedItemsImports = 13
+		Morestachio.Core\Morestachio.Core.projitems*{b27df4cc-167c-4246-8bd7-fe82e863a7cc}*SharedItemsImports = 13
+		Morestachio.Formatter.Framework.Test.Core\Morestachio.Formatter.Framework.Test.Core.projitems*{e3bc2585-06df-49dc-a775-eec7efe846fb}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -60,18 +104,50 @@ Global
 		{1C3AB3DA-6749-4807-8703-88C1D90934CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C3AB3DA-6749-4807-8703-88C1D90934CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C3AB3DA-6749-4807-8703-88C1D90934CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C45C965-2C92-481F-8FBF-D65C624AEAFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C45C965-2C92-481F-8FBF-D65C624AEAFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C45C965-2C92-481F-8FBF-D65C624AEAFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C45C965-2C92-481F-8FBF-D65C624AEAFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4504C65B-A0EC-4601-82EF-D2542414BC86} = {68C82FD9-2540-48FA-863E-789B6263FCAC}
-		{29EB8E0D-5490-4886-857E-31695DE45B1B} = {7DB4A019-26F3-402C-A4D2-34BA19C5C2AA}
+		{29EB8E0D-5490-4886-857E-31695DE45B1B} = {A25FF6AF-2FD6-433E-9175-54B54653368A}
 		{454B0162-E2EB-4C15-85EE-0B4558750F7B} = {68C82FD9-2540-48FA-863E-789B6263FCAC}
 		{18A2D5ED-CE5F-4914-B780-0BC8779501A5} = {68C82FD9-2540-48FA-863E-789B6263FCAC}
-		{E3BC2585-06DF-49DC-A775-EEC7EFE846FB} = {7DB4A019-26F3-402C-A4D2-34BA19C5C2AA}
+		{E3BC2585-06DF-49DC-A775-EEC7EFE846FB} = {A25FF6AF-2FD6-433E-9175-54B54653368A}
+		{68C82FD9-2540-48FA-863E-789B6263FCAC} = {EA6E6142-0363-4557-BECA-DB4B6313F21E}
+		{8D3CDDCA-2D04-4971-8B84-4F6EFEA4F81D} = {EA6E6142-0363-4557-BECA-DB4B6313F21E}
 		{C3D62B38-990F-4A7D-972F-1F682FB96C54} = {8D3CDDCA-2D04-4971-8B84-4F6EFEA4F81D}
 		{1C3AB3DA-6749-4807-8703-88C1D90934CB} = {C3D62B38-990F-4A7D-972F-1F682FB96C54}
+		{FD43415C-3D80-4933-A6E7-5F51611DFE86} = {35408B01-FD7E-4236-9AEC-7B2138A15A77}
+		{B27DF4CC-167C-4246-8BD7-FE82E863A7CC} = {FD43415C-3D80-4933-A6E7-5F51611DFE86}
+		{0B30548C-B890-49F6-A9FA-E1D0A7ABCE7B} = {FD43415C-3D80-4933-A6E7-5F51611DFE86}
+		{7EE52949-CEC3-484C-B692-AED82F56F43C} = {FD43415C-3D80-4933-A6E7-5F51611DFE86}
+		{E34021C8-17F0-4112-ACE8-152E5C762518} = {35408B01-FD7E-4236-9AEC-7B2138A15A77}
+		{882BEB6E-050A-4A86-8BC3-78C270522E4D} = {E34021C8-17F0-4112-ACE8-152E5C762518}
+		{179EA6DF-0EB7-4FB1-97CE-5BB2F5BD4937} = {E34021C8-17F0-4112-ACE8-152E5C762518}
+		{7C45C965-2C92-481F-8FBF-D65C624AEAFC} = {C3D62B38-990F-4A7D-972F-1F682FB96C54}
+		{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E} = {C3D62B38-990F-4A7D-972F-1F682FB96C54}
+		{A25FF6AF-2FD6-433E-9175-54B54653368A} = {7DB4A019-26F3-402C-A4D2-34BA19C5C2AA}
+		{721520FE-F479-49C9-A7D4-77133960C2E6} = {7DB4A019-26F3-402C-A4D2-34BA19C5C2AA}
+		{9B8FD390-8C9B-466C-81D8-FCE5BA57F23C} = {721520FE-F479-49C9-A7D4-77133960C2E6}
+		{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE} = {9B8FD390-8C9B-466C-81D8-FCE5BA57F23C}
+		{84AC63A9-EC05-43B5-8E81-8D1DD257B31E} = {9B8FD390-8C9B-466C-81D8-FCE5BA57F23C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {96AB97D9-9D65-41D3-8164-800A5C9CE961}

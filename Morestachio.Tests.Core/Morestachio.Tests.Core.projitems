@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>882beb6e-050a-4a86-8bc3-78c270522e4d</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Morestachio.Tests.Core</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ParserCancellationional.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ParserCollectionFixture.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ParserFixture.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PerfTests\PerfHarness.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TemplateFixture.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WhitespaceNormalizer.cs" />
+  </ItemGroup>
+</Project>

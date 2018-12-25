@@ -42,7 +42,7 @@ namespace Morestachio.Formatter.Framework.Tests
 			formatterService.AddFormatterToMorestachio(options);
 			var template = Parser.ParseWithOptions(options);
 
-			var andStringify = template.CreateAndStringifyAsync(new Dictionary<string, object>() { { "data", "Test" } });
+			var andStringify = template.CreateAndStringify(new Dictionary<string, object>() { { "data", "Test" } });
 			Assert.That(andStringify, Is.EqualTo("tseT"));
 		}
 
@@ -56,7 +56,7 @@ namespace Morestachio.Formatter.Framework.Tests
 			formatterService.AddFormatterToMorestachio(options);
 			var template = Parser.ParseWithOptions(options);
 
-			var andStringify = template.CreateAndStringifyAsync(new Dictionary<string, object>() { { "data", "Test" } });
+			var andStringify = template.CreateAndStringify(new Dictionary<string, object>() { { "data", "Test" } });
 			Assert.That(andStringify, Is.EqualTo("TEST"));
 		}
 
@@ -71,7 +71,7 @@ namespace Morestachio.Formatter.Framework.Tests
 			formatterService.AddFormatterToMorestachio(options);
 			var template = Parser.ParseWithOptions(options);
 
-			var andStringify = template.CreateAndStringifyAsync(new Dictionary<string, object>() { { "data", new[] { "TEST", "test" } } });
+			var andStringify = template.CreateAndStringify(new Dictionary<string, object>() { { "data", new[] { "TEST", "test" } } });
 			Assert.That(andStringify, Is.EqualTo("TEST"));
 		}
 	}

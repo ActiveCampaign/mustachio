@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>Morestachio.Formatter.Framework.NetCore._2._1</RootNamespace>
+  </PropertyGroup>
+
+  <Import Project="..\Morestachio.Formatter.Framework.Core\Morestachio.Formatter.Framework.Core.projitems" Label="Shared" />
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\NetCore\mustachio\Morestachio.NetCore.2.1\Morestachio.NetCore.2.1.csproj" />
+  </ItemGroup>
+
+</Project>

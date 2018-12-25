@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>0b30548c-b890-49f6-a9fa-e1d0a7abce7b</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Morestachio.Formatter.Framework.Core</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)InputDescription.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MorestachioFormatterAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MorestachioFormatterInputAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MorestachioFormatterModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MorestachioFormatterService.cs" />
+  </ItemGroup>
+</Project>

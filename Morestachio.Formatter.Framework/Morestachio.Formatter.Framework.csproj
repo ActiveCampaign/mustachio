@@ -42,11 +42,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MorestachioFormatterService.cs" />
-    <Compile Include="InputDescription.cs" />
-    <Compile Include="MorestachioFormatterAttribute.cs" />
-    <Compile Include="MorestachioFormatterInputAttribute.cs" />
-    <Compile Include="MorestachioFormatterModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -58,5 +53,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <Import Project="..\Morestachio.Formatter.Framework.Core\Morestachio.Formatter.Framework.Core.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

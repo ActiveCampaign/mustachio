@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>b27df4cc-167c-4246-8bd7-fe82e863a7cc</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Morestachio.Core</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\FormatterArgumentNameAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\RestParameterAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\SourceObjectAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CanExecute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExtendedParseInformation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FormatTemplateElement.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Formatter\DisabledFormatterMatcher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Formatter\FormatterMatcher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Formatter\FormatterMatcherExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Formatter\FormatterPart.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Formatter\IFormatterMatcher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Formatter\MultiFormatterInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\ContextCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\ContextObject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\IndexedParseException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\InferredTemplateModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\MustachioException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\Tokenizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\TokenPair.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\TokenType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helper\AsyncHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helper\StreamExtentions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MultiFormatterInfoCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ParserOptions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)morestachioKey.snk" />
+    <None Include="$(MSBuildThisFileDirectory)packages.config" />
+  </ItemGroup>
+</Project>

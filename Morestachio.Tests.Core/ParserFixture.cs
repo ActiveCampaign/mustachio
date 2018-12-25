@@ -337,7 +337,7 @@ namespace Morestachio.Tests
 		public void ParserCanFormatArgumentWithExpression()
 		{
 			var dt = DateTime.Now;
-			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data($testFormat$)}}"));
+			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data($testFormat$)}}", null, DefaultEncoding));
 
 			var format = "yyyy.mm";
 			var andStringify = extendedParseInformation.CreateAndStringify(new Dictionary<string, object>

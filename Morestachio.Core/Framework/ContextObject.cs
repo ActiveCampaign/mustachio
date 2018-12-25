@@ -247,6 +247,7 @@ namespace Morestachio.Framework
 							{
 								innerContext.Value = Value
 									.GetType()
+									.GetTypeInfo()
 									.GetProperties(BindingFlags.Instance | BindingFlags.Public)
 									.Select(e => new KeyValuePair<string, object>(e.Name, e.GetValue(Value)));
 							}
@@ -273,7 +274,7 @@ namespace Morestachio.Framework
 					}
 					else if (Value != null)
 					{
-						var propertyInfo = Value.GetType().GetProperty(path);
+						var propertyInfo = Value.GetType().GetTypeInfo().GetProperty(path);
 						if (propertyInfo != null)
 						{
 							innerContext.Value = propertyInfo.GetValue(Value);

@@ -69,12 +69,12 @@ namespace Morestachio.Formatter
 			{
 				var formatter = formatTemplateElement;
 
-				Log(() => $"Test filter: '{formatter.InputTypes} : {formatter.Format.Method.Name}'");
+				Log(() => $"Test filter: '{formatter.InputTypes} : {formatter.Format.GetMethodInfo().Name}'");
 
 				if (formatTemplateElement.InputTypes != typeToFormat &&
-					!formatTemplateElement.InputTypes.IsAssignableFrom(typeToFormat))
+					!formatTemplateElement.InputTypes.GetTypeInfo().IsAssignableFrom(typeToFormat))
 				{
-					var typeToFormatGenerics = typeToFormat.GetGenericArguments();
+					var typeToFormatGenerics = typeToFormat.GetTypeInfo().GetGenericArguments();
 
 					//explicit check for array support
 					if (typeToFormat.HasElementType)
@@ -85,7 +85,7 @@ namespace Morestachio.Formatter
 
 					//the type check has maybe failed because of generic parameter. Check if both the formatter and the typ have generic arguments
 
-					var formatterGenerics = formatTemplateElement.InputTypes.GetGenericArguments();
+					var formatterGenerics = formatTemplateElement.InputTypes.GetTypeInfo().GetGenericArguments();
 
 					if (typeToFormatGenerics.Length <= 0 || formatterGenerics.Length <= 0 ||
 						typeToFormatGenerics.Length != formatterGenerics.Length)
@@ -112,7 +112,7 @@ namespace Morestachio.Formatter
 				}
 
 				ulong score = 1L;
-				if (formatter.Format.Method.ReturnParameter == null || formatter.Format.Method.ReturnParameter.ParameterType == typeof(void))
+				if (formatter.Format.GetMethodInfo().ReturnParameter == null || formatter.Format.GetMethodInfo().ReturnParameter.ParameterType == typeof(void))
 				{
 					score++;
 				}
@@ -159,7 +159,7 @@ namespace Morestachio.Formatter
 		/// <param name="formatterDelegate">The formatter delegate.</param>
 		public virtual FormatTemplateElement AddFormatter(Type forType, Delegate formatterDelegate)
 		{
-			var arguments = formatterDelegate.Method.GetParameters().Select((e, index) =>
+			var arguments = formatterDelegate.GetMethodInfo().GetParameters().Select((e, index) =>
 				new MultiFormatterInfo(
 					e.ParameterType,
 					e.GetCustomAttribute<FormatterArgumentNameAttribute>()?.Name ?? e.Name,
@@ -170,10 +170,10 @@ namespace Morestachio.Formatter
 					IsSourceObject = e.GetCustomAttribute<SourceObjectAttribute>() != null
 				}).ToArray();
 
-			var returnValue = formatterDelegate.Method.ReturnParameter?.ParameterType;
+			var returnValue = formatterDelegate.GetMethodInfo().ReturnParameter?.ParameterType;
 
 			//if there is no declared SourceObject then check if the first object is of type what we are formatting and use this one.
-			if (!arguments.Any(e => e.IsSourceObject) && arguments.Any() && arguments[0].Type.IsAssignableFrom(forType))
+			if (!arguments.Any(e => e.IsSourceObject) && arguments.Any() && arguments[0].Type.GetTypeInfo().IsAssignableFrom(forType))
 			{
 				arguments[0].IsSourceObject = true;
 			}
@@ -209,7 +209,7 @@ namespace Morestachio.Formatter
 			[CanBeNull] object sourceObject, [NotNull] params KeyValuePair<string, object>[] templateArguments)
 		{
 			Log(() =>
-				$"Compose values for object '{sourceObject}' with formatter '{formatter.InputTypes}' targets '{formatter.Format.Method.Name}'");
+				$"Compose values for object '{sourceObject}' with formatter '{formatter.InputTypes}' targets '{formatter.Format.GetMethodInfo().Name}'");
 			var values = new Dictionary<MultiFormatterInfo, object>();
 			var matched = new Dictionary<MultiFormatterInfo, KeyValuePair<string, object>>();
 
@@ -243,7 +243,7 @@ namespace Morestachio.Formatter
 					Log(() => $"Matched '{match.Key}': '{match.Value}' by Name/Index");
 
 					//check for matching types
-					if (!multiFormatterInfo.Type.IsInstanceOfType(match.Value))
+					if (!multiFormatterInfo.Type.GetTypeInfo().IsInstanceOfType(match.Value))
 					{
 						Log(() => "Skip: Match is Invalid because types from Template and Formatter mismatch. Abort.");
 						//The type in the template and the type defined in the formatter do not match. Abort
@@ -284,7 +284,7 @@ namespace Morestachio.Formatter
 				//keep the name value pairs
 				values.Add(hasRest, restValues);
 			}
-			else if (typeof(object[]).IsAssignableFrom(hasRest.Type))
+			else if (typeof(object[]).GetTypeInfo().IsAssignableFrom(hasRest.Type))
 			{
 				//its requested to transform the rest values and truncate the names from it.
 				values.Add(hasRest, restValues.Select(e => e.Value).ToArray());
@@ -366,7 +366,7 @@ namespace Morestachio.Formatter
 
 			foreach (var formatTemplateElement in hasFormatter)
 			{
-				Log(() => $"Try formatter '{formatTemplateElement.InputTypes}' on '{formatTemplateElement.Format.Method.Name}'");
+				Log(() => $"Try formatter '{formatTemplateElement.InputTypes}' on '{formatTemplateElement.Format.GetMethodInfo().Name}'");
 				var executeFormatter = await Execute(formatTemplateElement, value, arguments);
 				if (executeFormatter as FormatterFlow != FormatterFlow.Skip)
 				{

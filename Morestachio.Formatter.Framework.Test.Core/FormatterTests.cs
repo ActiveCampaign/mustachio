@@ -32,13 +32,15 @@ namespace Morestachio.Formatter.Framework.Tests
 	[TestFixture]
 	public class FormatterTests
 	{
+		public static Encoding DefaultEncoding { get; set; } = new UnicodeEncoding(true, false, false);
+
 		[Test]
 		public void TestSingleNamed()
 		{
 			var formatterService = new MorestachioFormatterService();
 			formatterService.AddFromType(typeof(StringFormatter));
 
-			var options = new ParserOptions("{{data([Name]reverse)}}");
+			var options = new ParserOptions("{{data([Name]reverse)}}", null, DefaultEncoding);
 			formatterService.AddFormatterToMorestachio(options);
 			var template = Parser.ParseWithOptions(options);
 
@@ -52,7 +54,7 @@ namespace Morestachio.Formatter.Framework.Tests
 			var formatterService = new MorestachioFormatterService();
 			formatterService.AddFromType(typeof(StringFormatter));
 
-			var options = new ParserOptions("{{data([Name]reverse-arg, TEST)}}");
+			var options = new ParserOptions("{{data([Name]reverse-arg, TEST)}}", null, DefaultEncoding);
 			formatterService.AddFormatterToMorestachio(options);
 			var template = Parser.ParseWithOptions(options);
 
@@ -67,7 +69,7 @@ namespace Morestachio.Formatter.Framework.Tests
 			formatterService.AddFromType(typeof(StringFormatter));
 			formatterService.AddFromType(typeof(ListFormatter));
 
-			var options = new ParserOptions("{{data([Name]fod)}}");
+			var options = new ParserOptions("{{data([Name]fod)}}", null, DefaultEncoding);
 			formatterService.AddFormatterToMorestachio(options);
 			var template = Parser.ParseWithOptions(options);
 

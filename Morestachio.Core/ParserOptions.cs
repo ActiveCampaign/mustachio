@@ -15,7 +15,6 @@ namespace Morestachio
 	///     Options for Parsing run
 	/// </summary>
 	[PublicAPI]
-	[Serializable]
 	public class ParserOptions
 	{
 		[NotNull]
@@ -50,7 +49,7 @@ namespace Morestachio
 		{
 			Template = template ?? "";
 			SourceFactory = sourceStream ?? (() => new MemoryStream());
-			Encoding = encoding ?? Encoding.Default;
+			Encoding = encoding ?? Encoding.UTF8;
 			_formatters = new FormatterMatcher();
 			Null = string.Empty;
 			MaxSize = 0;
@@ -146,7 +145,7 @@ namespace Morestachio
 
 		/// <summary>
 		///     In what encoding should the text be written
-		///     Default is <code>Encoding.Default</code>
+		///     Default is <code>Encoding.Utf8</code>
 		/// </summary>
 		[NotNull]
 		public Encoding Encoding { get; }

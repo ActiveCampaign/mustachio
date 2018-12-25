@@ -28,7 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetCore", "NetCore", "{8D3C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.1", "2.1", "{C3D62B38-990F-4A7D-972F-1F682FB96C54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.NetCore.2.1", "..\NetCore\mustachio\Morestachio.NetCore.2.1\Morestachio.NetCore.2.1.csproj", "{1C3AB3DA-6749-4807-8703-88C1D90934CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Morestachio.NetCore.2.1", "..\NetCore\mustachio\Morestachio.NetCore.2.1\Morestachio.NetCore.2.1.csproj", "{1C3AB3DA-6749-4807-8703-88C1D90934CB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{FD43415C-3D80-4933-A6E7-5F51611DFE86}"
 EndProject
@@ -44,9 +44,9 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Tests.Core", "M
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Morestachio.Formatter.Framework.Test.Core", "Morestachio.Formatter.Framework.Test.Core\Morestachio.Formatter.Framework.Test.Core.shproj", "{179EA6DF-0EB7-4FB1-97CE-5BB2F5BD4937}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Formatter.Framework.NetCore.2.1", "Morestachio.Formatter.Framework.NetCore.2.1\Morestachio.Formatter.Framework.NetCore.2.1.csproj", "{7C45C965-2C92-481F-8FBF-D65C624AEAFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Morestachio.Formatter.Framework.NetCore.2.1", "Morestachio.Formatter.Framework.NetCore.2.1\Morestachio.Formatter.Framework.NetCore.2.1.csproj", "{7C45C965-2C92-481F-8FBF-D65C624AEAFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Formatter.Linq.NetCore.2.1", "Morestachio.Formatter.Framework.Linq\Morestachio.Formatter.Linq.NetCore.2.1.csproj", "{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Morestachio.Formatter.Linq.NetCore.2.1", "Morestachio.Formatter.Framework.Linq\Morestachio.Formatter.Linq.NetCore.2.1.csproj", "{2D0AB8F5-D85D-415F-8BE6-5558D7B0921E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetFramework", "NetFramework", "{A25FF6AF-2FD6-433E-9175-54B54653368A}"
 EndProject
@@ -54,13 +54,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetCore", "NetCore", "{7215
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.1", "2.1", "{9B8FD390-8C9B-466C-81D8-FCE5BA57F23C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Tests.NetCore.2.1", "Morestachio.Tests.NetCore.2.1\Morestachio.Tests.NetCore.2.1.csproj", "{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Morestachio.Tests.NetCore.2.1", "Morestachio.Tests.NetCore.2.1\Morestachio.Tests.NetCore.2.1.csproj", "{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Morestachio.Formatter.Framework.Tests.NetCore.2.1", "Morestachio.Formatter.Framework.Tests.NetCore.2.1\Morestachio.Formatter.Framework.Tests.NetCore.2.1.csproj", "{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Morestachio.Formatter.Framework.Tests.NetCore.2.1", "Morestachio.Formatter.Framework.Tests.NetCore.2.1\Morestachio.Formatter.Framework.Tests.NetCore.2.1.csproj", "{84AC63A9-EC05-43B5-8E81-8D1DD257B31E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedBase", "SharedBase", "{35408B01-FD7E-4236-9AEC-7B2138A15A77}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{EA6E6142-0363-4557-BECA-DB4B6313F21E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetStandard", "NetStandard", "{4E889CE2-750E-4545-BFEF-8F3DAE40864E}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -148,6 +150,7 @@ Global
 		{9B8FD390-8C9B-466C-81D8-FCE5BA57F23C} = {721520FE-F479-49C9-A7D4-77133960C2E6}
 		{99ADCB4F-52E5-4E10-A0FF-9CC1B1F51BDE} = {9B8FD390-8C9B-466C-81D8-FCE5BA57F23C}
 		{84AC63A9-EC05-43B5-8E81-8D1DD257B31E} = {9B8FD390-8C9B-466C-81D8-FCE5BA57F23C}
+		{4E889CE2-750E-4545-BFEF-8F3DAE40864E} = {EA6E6142-0363-4557-BECA-DB4B6313F21E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {96AB97D9-9D65-41D3-8164-800A5C9CE961}

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,7 +33,11 @@ namespace Morestachio.Helper
 
                 if (task.GetType() != typeof(Task))
                 {
-                    return ((dynamic) task).Result;
+#if !NETStandard
+                    return ((dynamic)task).Result;
+#else
+                    return task.GetType().GetTypeInfo().GetProperty(nameof(Task<object>.Result)).GetValue(task);
+#endif
                 }
 
                 return maybeTask;

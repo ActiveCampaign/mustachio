@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,15 +43,15 @@ namespace Morestachio.Framework
 				DefaultFormatter.AddFormatter(type, new Func<object, object, object>(DefaultFormatterImpl));
 			}
 			DefaultDefinitionOfFalse = (value) => value != null &&
-			                                      value as bool? != false &&
-			                                      // ReSharper disable once CompareOfFloatsByEqualityOperator
-			                                      value as double? != 0 &&
-			                                      value as int? != 0 &&
-			                                      value as string != string.Empty &&
-			                                      // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
-			                                      // OR if it IS an enumerable and .Any() returns true, then it exists as well
-			                                      (!(value is IEnumerable) || ((IEnumerable) value).Cast<object>().Any()
-			                                      );
+												  value as bool? != false &&
+												  // ReSharper disable once CompareOfFloatsByEqualityOperator
+												  value as double? != 0 &&
+												  value as int? != 0 &&
+												  value as string != string.Empty &&
+												  // We've gotten this far, if it is an object that does NOT cast as enumberable, it exists
+												  // OR if it IS an enumerable and .Any() returns true, then it exists as well
+												  (!(value is IEnumerable) || ((IEnumerable)value).Cast<object>().Any()
+												  );
 			DefinitionOfFalse = DefaultDefinitionOfFalse;
 		}
 
@@ -60,8 +61,8 @@ namespace Morestachio.Framework
 		///		This field can be used to define your own <see cref="DefinitionOfFalse"/> and then fallback to the default logic
 		/// </summary>
 		public static readonly Func<object, bool> DefaultDefinitionOfFalse;
-		
-		
+
+
 		/// <summary>
 		///		Gets the Definition of false on your Template.
 		/// </summary>
@@ -171,8 +172,7 @@ namespace Morestachio.Framework
 		/// <summary>
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; }
-
-
+		
 		/// <summary>
 		///     if overwritten by a class it returns a context object for any non standard key or operation.
 		///     if non of that
@@ -234,6 +234,39 @@ namespace Morestachio.Framework
 					{
 						retval = await GetContextForPath(elements);
 					}
+				}
+				else if (path.StartsWith("?")) //enumerate ether an IDictionary, an cs object or an IEnumerable to a KeyValuePair array
+				{
+					//ALWAYS return the context, even if the value is null.
+					var innerContext = new ContextObject(Options, path)
+					{
+						Parent = this
+					};
+					await EnsureValue();
+					switch (Value)
+					{
+						case IDictionary<string, object> dictList:
+							innerContext.Value = dictList.Select(e => e);
+							break;
+						//This is a draft that i have discarded as its more likely to enumerate a single IEnumerable with #each alone
+						//case IEnumerable ctx:
+						//	innerContext.Value = ctx.OfType<object>().Select((item, index) => new KeyValuePair<string, object>(index.ToString(), item));
+						//	break;
+						default:
+						{
+							if (Value != null)
+							{
+								innerContext.Value = Value
+									.GetType()
+									.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+									.Select(e => new KeyValuePair<string, object>(e.Name, e.GetValue(Value)));
+							}
+
+							break;
+						}
+					}
+
+					retval = await innerContext.GetContextForPath(elements);
 				}
 				//TODO: handle array accessors and maybe "special" keys.
 				else
@@ -347,7 +380,7 @@ namespace Morestachio.Framework
 		/// <returns></returns>
 		public virtual ContextObject Clone()
 		{
-			var contextClone = new ContextObject(Options,Key)
+			var contextClone = new ContextObject(Options, Key)
 			{
 				CancellationToken = CancellationToken,
 				Parent = Parent,

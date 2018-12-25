@@ -39,9 +39,9 @@ namespace Morestachio.Framework
 		///     Specifies combinations of paths that don't work.
 		/// </summary>
 		private static readonly Regex NegativePathSpec =
-			new Regex(@"([.]{4,})|([^\w./_$]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))",
+			new Regex(@"([.]{4,})|([^\w./_$?]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))",
 				RegexOptions.Singleline | RegexOptions.Compiled);
-		
+
 		private static CharacterLocation HumanizeCharacterLocation(string content, int characterIndex, List<int> lines)
 		{
 			if (lines == null)

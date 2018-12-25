@@ -99,6 +99,44 @@ namespace Morestachio.Tests
 	[TestFixture]
 	public class ParserCollectionFixture
 	{
+		public class EveryObjectTest
+		{
+			public string TestA { get; set; }
+			public string TestB { get; set; }
+			public EveryObjectTest ObjectTest { get; set; }
+		}
+		
+		[Test]
+		public void TestEveryKeywordOnObject()
+		{
+			var options = new ParserOptions("{{#each ?.}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
+				ParserFixture.DefaultEncoding);
+			var andStringify = Parser.ParseWithOptions(options).CreateAndStringify(new EveryObjectTest()
+			{
+				TestA = "Du",
+				TestB = "Hast"
+			});
+			Assert.That(andStringify, Is.EqualTo($"{nameof(EveryObjectTest.TestA)}:\"Du\"," +
+			                                     $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
+			                                     $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
+		}
+		
+		[Test]
+		public void TestEveryKeywordOnDictionary()
+		{
+			var options = new ParserOptions("{{#each ?.}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
+				ParserFixture.DefaultEncoding);
+			var andStringify = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>()
+			{
+				{nameof(EveryObjectTest.TestA), "Du"},
+				{nameof(EveryObjectTest.TestB), "Hast"},
+				{nameof(EveryObjectTest.ObjectTest), null},
+			});
+			Assert.That(andStringify, Is.EqualTo($"{nameof(EveryObjectTest.TestA)}:\"Du\"," +
+			                                     $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
+			                                     $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
+		}
+
 		private void AddCollectionTypeFormatter(ParserOptions options)
 		{
 			options.Formatters.AddFormatter<IEnumerable>(new Func<IEnumerable, string, object>((value, arg) =>

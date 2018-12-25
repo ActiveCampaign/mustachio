@@ -84,7 +84,7 @@ namespace Morestachio.Framework
 		private InferredTemplateModel GetContextForPath(string path)
 		{
 			var elements = new Queue<string>();
-			foreach (Match m in ContextObject.PathFinder.Matches(path.ToString()))
+			foreach (Match m in ContextObject.PathFinder.Matches(path))
 			{
 				elements.Enqueue(m.Value);
 			}

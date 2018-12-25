@@ -23,6 +23,13 @@ namespace Morestachio.Formatter
 		}
 
 		/// <summary>
+		///		If set to <code>true</code> this Formatter will search for existing formatter for the given type and if found any, replace
+		///		them with the new one.
+		///		Default: <code>False</code>
+		/// </summary>
+		public bool ReplaceExisting { get; set; }
+
+		/// <summary>
 		///     If set writes the Formatters log.
 		/// </summary>
 		[CanBeNull]
@@ -137,6 +144,10 @@ namespace Morestachio.Formatter
 		/// <param name="formatter">The formatter.</param>
 		public virtual FormatTemplateElement AddFormatter(FormatTemplateElement formatter)
 		{
+			if (ReplaceExisting)
+			{
+				Formatter.Remove(Formatter.FirstOrDefault(e => e.InputTypes == formatter.InputTypes));
+			}
 			Formatter.Add(formatter);
 			return formatter;
 		}

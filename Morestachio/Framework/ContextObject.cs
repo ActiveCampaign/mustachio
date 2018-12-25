@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -23,18 +24,6 @@ namespace Morestachio.Framework
 			foreach (var type in new[]
 			{
 				typeof(IFormattable),
-				typeof(string),
-				typeof(bool),
-				typeof(char),
-				typeof(int),
-				typeof(double),
-				typeof(short),
-				typeof(float),
-				typeof(long),
-				typeof(byte),
-				typeof(sbyte),
-				typeof(decimal),
-				typeof(DateTime),
 			})
 			{
 				//we have to use a proxy function to get around a changing delegate that maybe overwritten by the user
@@ -331,15 +320,6 @@ namespace Morestachio.Framework
 		public async Task<string> RenderToString()
 		{
 			await EnsureValue();
-			return Value?.ToString() ?? Options.Null;
-		}
-
-		/// <summary>
-		///     Parses the current object by using the current Formatting argument
-		/// </summary>
-		/// <returns></returns>
-		public override string ToString()
-		{
 			return Value?.ToString() ?? Options.Null;
 		}
 

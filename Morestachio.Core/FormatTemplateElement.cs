@@ -146,11 +146,6 @@ namespace Morestachio
 		[PublicAPI]
 		public FormatTemplateElement SetCanFormat([CanBeNull]CanExecute canFormat)
 		{
-			if (IsFrozen)
-			{
-				throw new InvalidOperationException("This object is Frozen");
-			}
-
 			CanFormat = canFormat;
 			return this;
 		}
@@ -185,14 +180,5 @@ namespace Morestachio
 		/// </summary>
 		[CanBeNull]
 		public Type OutputType { get; }
-		
-		/// <inheritdoc />
-		public bool IsFrozen { get; private set; }
-
-		/// <inheritdoc />
-		public void Freeze()
-		{
-			IsFrozen = true;
-		}
 	}
 }

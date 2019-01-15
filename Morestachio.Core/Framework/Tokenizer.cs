@@ -170,7 +170,7 @@ namespace Morestachio.Framework
 					else
 					{
 						partialsNames.Add(token);
-						yield return new TokenPair(TokenType.PartialOpen, token);
+						yield return new TokenPair(TokenType.PartialDeclarationOpen, token);
 					}
 				}
 				else if (m.Value.StartsWith("{{/declare"))
@@ -185,7 +185,7 @@ namespace Morestachio.Framework
 					{
 						var token = scopestack.Pop().Item1.TrimStart('{').TrimEnd('}').TrimStart('#').Trim()
 							.Substring("declare".Length);
-						yield return new TokenPair(TokenType.PartialClose, token);
+						yield return new TokenPair(TokenType.PartialDeclarationClose, token);
 					}
 					else
 					{
@@ -213,7 +213,7 @@ Partial names are case sensitive and must be declared before an include.", token
 				else if (m.Value.StartsWith("{{#each"))
 				{
 					scopestack.Push(Tuple.Create(m.Value, m.Index));
-					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim().Substring(4);
+					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim().Substring("each".Length);
 
 					if (token.StartsWith(" ") && token.Trim() != "")
 					{
@@ -265,8 +265,6 @@ Partial names are case sensitive and must be declared before an include.", token
 				{
 					//open group
 					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim();
-
-
 					if (scopestack.Any() && scopestack.Peek().Item1 == token)
 					{
 						yield return new TokenPair(TokenType.ElementClose,
@@ -277,8 +275,21 @@ Partial names are case sensitive and must be declared before an include.", token
 						scopestack.Push(Tuple.Create(token, m.Index));
 					}
 
-					yield return new TokenPair(TokenType.ElementOpen,
-						Validated(token, templateString, m.Index, lines, parseErrors));
+					if (FormatInExpressionFinder.IsMatch(token))
+					{
+						foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines,
+							parseErrors))
+						{
+							yield return tokenizeFormattable;
+						}
+
+						yield return new TokenPair(TokenType.ElementOpen, ".");
+					}
+					else
+					{
+						yield return new TokenPair(TokenType.ElementOpen,
+							Validated(token, templateString, m.Index, lines, parseErrors));
+					}
 				}
 				else if (m.Value.StartsWith("{{^"))
 				{
@@ -295,8 +306,21 @@ Partial names are case sensitive and must be declared before an include.", token
 						scopestack.Push(Tuple.Create(token, m.Index));
 					}
 
-					yield return new TokenPair(TokenType.InvertedElementOpen,
-						Validated(token, templateString, m.Index, lines, parseErrors));
+					if (FormatInExpressionFinder.IsMatch(token))
+					{
+						foreach (var tokenizeFormattable in TokenizeFormattables(token, templateString, m, lines,
+							parseErrors))
+						{
+							yield return tokenizeFormattable;
+						}
+
+						yield return new TokenPair(TokenType.InvertedElementOpen, ".");
+					}
+					else
+					{
+						yield return new TokenPair(TokenType.InvertedElementOpen,
+							Validated(token, templateString, m.Index, lines, parseErrors));
+					}
 				}
 				else if (m.Value.StartsWith("{{/"))
 				{
@@ -305,8 +329,7 @@ Partial names are case sensitive and must be declared before an include.", token
 					if (scopestack.Any() && scopestack.Peek().Item1 == token)
 					{
 						scopestack.Pop();
-						yield return new TokenPair(TokenType.ElementClose,
-							Validated(token, templateString, m.Index, lines, parseErrors));
+						yield return new TokenPair(TokenType.ElementClose, token);
 					}
 					else
 					{

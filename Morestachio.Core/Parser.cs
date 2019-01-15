@@ -228,7 +228,7 @@ namespace Morestachio
 					case TokenType.UnescapedSingleValue:
 						buildArray.MakeAction(HandleSingleValue(currentToken, options, scopeData, currentScope));
 						break;
-					case TokenType.PartialOpen:
+					case TokenType.PartialDeclarationOpen:
 						// currently same named partials will override each other
 						// to allow recursive calls of partials we first have to declare the partial and then load it as we would parse
 						// -the partial as a whole and then add it to the list would lead to unknown calls of partials inside the partial
@@ -287,7 +287,7 @@ namespace Morestachio
 			var partialTokens = new Queue<TokenPair>();
 			var token = currentToken;
 			while (tokens.Any() &&
-				   (token.Type != TokenType.PartialClose || token.Value != currentToken.Value)) //just look for the closing tag and buffer it seperate
+				   (token.Type != TokenType.PartialDeclarationClose || token.Value != currentToken.Value)) //just look for the closing tag and buffer it seperate
 			{
 				token = tokens.Dequeue();
 				partialTokens.Enqueue(token);
@@ -322,6 +322,14 @@ namespace Morestachio
 					case TokenType.CollectionOpen: //in this case we are in a formatting expression followed by a #each.
 												   //after this we need to reset the context so handle the open here
 						buildArray.MakeAction(HandleCollectionOpen(tokens.Dequeue(), tokens, options, scopeData, currentScope));
+						break;
+					case TokenType.ElementOpen: //in this case we are in a formatting expression followed by a #.
+												   //after this we need to reset the context so handle the open here
+						buildArray.MakeAction(HandleElementOpen(tokens.Dequeue(), tokens, options, scopeData, currentScope));
+						break;
+					case TokenType.InvertedElementOpen: //in this case we are in a formatting expression followed by a ^.
+												   //after this we need to reset the context so handle the open here
+						buildArray.MakeAction(HandleElementOpen(tokens.Dequeue(), tokens, options, scopeData, currentScope));
 						break;
 					default:
 						//The following cannot be formatted and the result of the formatting operation has used.

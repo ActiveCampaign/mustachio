@@ -28,12 +28,12 @@
 		/// <summary>
 		///		A Partial that is inserted into the one or multiple places in the Template
 		/// </summary>
-		PartialOpen,
+		PartialDeclarationOpen,
 
 		/// <summary>
 		///		End of a Partial
 		/// </summary>
-		PartialClose,
+		PartialDeclarationClose,
 
 		/// <summary>
 		///		Defines the place for rendering a single partial

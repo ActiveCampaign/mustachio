@@ -448,6 +448,32 @@ namespace Morestachio.Tests
 		}
 
 		[Test]
+		public async Task ParserCanCreateNestedPartials()
+		{
+			var data = new Dictionary<string, object>();
+			var template = @"{{#declare TestPartial}}{{#declare InnerPartial}}1{{/declare}}2{{/declare}}{{#include TestPartial}}{{#include InnerPartial}}";
+
+			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
+			var result = await parsed.CreateAndStringifyAsync(data);
+			Assert.That(result, Is.EqualTo("21"));
+		}
+
+		[Test]
+		public async Task ParserCanPrintNested()
+		{
+			var data = new Dictionary<string, object>();
+			//declare TestPartial -> Print Recursion -> If Recursion is smaller then 10 -> Print TestPartial
+			//Print TestPartial
+			var template = @"{{#declare TestPartial}}{{$recursion}}{{#$recursion()}}{{#include TestPartial}}{{/$recursion()}}{{/declare}}{{#include TestPartial}}";
+
+			var parsingOptions = new ParserOptions(template, null, DefaultEncoding);
+			parsingOptions.Formatters.AddFormatter<int, bool>(e => { return e < 9; });
+			var parsed = Parser.ParseWithOptions(parsingOptions);
+			var result = await parsed.CreateAndStringifyAsync(data);
+			Assert.That(result, Is.EqualTo("123456789"));
+		}
+
+		[Test]
 		public void ParserCanInferCollection()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions(

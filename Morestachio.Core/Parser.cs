@@ -255,17 +255,30 @@ namespace Morestachio
 							scopeData.PartialDepth.Push(currentPartial);
 							if (scopeData.PartialDepth.Count >= options.PartialStackSize)
 							{
-								throw new MustachioStackOverflowException(
-									$"You have exceeded the maximum stack Size for nested Partial calls of '{options.PartialStackSize}'. See Data for call stack")
+								switch (options.StackOverflowBehavior)
 								{
-									Data =
-									{
-										{"Callstack", scopeData.PartialDepth}
-									}
-								};
-							}
+									case ParserOptions.PartialStackOverflowBehavior.FailWithException:
+										throw new MustachioStackOverflowException(
+											$"You have exceeded the maximum stack Size for nested Partial calls of '{options.PartialStackSize}'. See Data for call stack")
+										{
+											Data =
+											{
+												{"Callstack", scopeData.PartialDepth}
+											}
+										};
+										break;
+									case ParserOptions.PartialStackOverflowBehavior.FailSilent:
 
-							await partialCode(a, f);
+										break;
+									default:
+										throw new ArgumentOutOfRangeException();
+								}
+								
+							}
+							else
+							{
+								await partialCode(a, f);
+							}
 							scopeData.PartialDepth.Pop();
 						});
 						break;

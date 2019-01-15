@@ -6,6 +6,7 @@ using System.Text;
 using JetBrains.Annotations;
 using Morestachio.Attributes;
 using Morestachio.Formatter;
+using Morestachio.Framework;
 
 #endregion
 
@@ -108,6 +109,26 @@ namespace Morestachio
 		///		Gets or sets the max Stack size for nested Partials in execution. Recommended to be not exceeding 2000. Defaults to 255.
 		/// </summary>
 		public uint PartialStackSize { get; set; }
+
+		/// <summary>
+		///		Defines how the Parser should behave when encountering a the PartialStackSize to be exceeded 
+		/// </summary>
+		public PartialStackOverflowBehavior StackOverflowBehavior { get; set; }
+
+		/// <summary>
+		///		Defines how the Parser should behave when encountering a the PartialStackSize to be exceeded
+		/// </summary>
+		public enum PartialStackOverflowBehavior
+		{
+			/// <summary>
+			///		Throw a <see cref="MustachioStackOverflowException"/>
+			/// </summary>
+			FailWithException,
+			/// <summary>
+			///		Do nothing and skip further calls
+			/// </summary>
+			FailSilent
+		}
 
 		/// <summary>
 		///		Gets or sets the timeout. After the timeout is reached and the Template has not finished Processing and Exception is thrown.

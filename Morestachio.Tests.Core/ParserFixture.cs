@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Morestachio.Attributes;
-using Morestachio.Helper;
 using Morestachio.Formatter;
 using Morestachio.Framework;
 using Newtonsoft.Json;
 using NUnit.Framework;
+
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
 
 namespace Morestachio.Tests
@@ -17,22 +17,6 @@ namespace Morestachio.Tests
 	public class ParserFixture
 	{
 		public static Encoding DefaultEncoding { get; set; } = new UnicodeEncoding(true, false, false);
-
-		private class CollectionContextInfo
-		{
-			public int IndexProp { private get; set; }
-			public bool FirstProp { private get; set; }
-			public bool MiddelProp { private get; set; }
-			public bool LastProp { private get; set; }
-
-			public bool OddProp { private get; set; }
-			public bool EvenProp { private get; set; }
-
-			public override string ToString()
-			{
-				return $"{IndexProp},{FirstProp},{MiddelProp},{LastProp},{OddProp},{EvenProp}.";
-			}
-		}
 
 		[Test]
 		[TestCase("d")]
@@ -46,7 +30,7 @@ namespace Morestachio.Tests
 			var results =
 				Parser.ParseWithOptions(new ParserOptions("{{data(\"" + dtFormat + "\")}},{{data}}", null,
 					DefaultEncoding));
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
@@ -59,9 +43,10 @@ namespace Morestachio.Tests
 		public void ParserCanSelfFormat(string dtFormat)
 		{
 			var data = DateTime.UtcNow;
-			var results = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(\"" + dtFormat + "\")}}{{/data}},{{data}}",
+			var results = Parser.ParseWithOptions(new ParserOptions(
+				"{{#data}}{{.(\"" + dtFormat + "\")}}{{/data}},{{data}}",
 				null, DefaultEncoding));
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
@@ -96,7 +81,9 @@ namespace Morestachio.Tests
 			var model = new Dictionary<string, object>();
 			model["name"] = "Mike";
 
-			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).CreateAndStringify(model), Is.EqualTo(expected));
+			Assert.That(
+				Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding)).CreateAndStringify(model),
+				Is.EqualTo(expected));
 		}
 
 
@@ -190,7 +177,7 @@ namespace Morestachio.Tests
 				{"content", content}
 			};
 			Assert.That(Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding, 0, true))
-					.CreateAndStringify(model), Is.EqualTo(expected));
+				.CreateAndStringify(model), Is.EqualTo(expected));
 		}
 
 		[Test]
@@ -198,9 +185,9 @@ namespace Morestachio.Tests
 		{
 			var data = DateTime.UtcNow;
 			var parsingOptions = new ParserOptions("{{#data}}{{.(d).()}}{{/data}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>((s) => "TEST"));
+			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>(s => "TEST"));
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo("TEST"));
 		}
 
@@ -212,7 +199,7 @@ namespace Morestachio.Tests
 			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string>((s, s1) => s1));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo("(d(a))"));
 		}
 
@@ -221,43 +208,50 @@ namespace Morestachio.Tests
 		{
 			var data = 123123123;
 			var formatterResult = "";
-			var parsingOptions = new ParserOptions("{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}", null, DefaultEncoding);
+			var parsingOptions =
+				new ParserOptions(
+					"{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}",
+					null, DefaultEncoding);
 
 			parsingOptions.Formatters.AddFormatter<int>(new Action<int, string[]>(
-				(self, test) =>
-				{
-					Assert.Fail("Should not be invoked");
-				}));
+				(self, test) => { Assert.Fail("Should not be invoked"); }));
 
 			parsingOptions.Formatters.AddFormatter<int>(new Action<int, string, string, string, string, string, int>(
 				(self, test, arg, argarg, spacedArg, spacedWithQuote, refSelf) =>
 				{
-					formatterResult = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}", self, test, arg, argarg, spacedArg, spacedWithQuote,
+					formatterResult = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}", self, test, arg, argarg, spacedArg,
+						spacedWithQuote,
 						refSelf);
 				}));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.Empty);
-			Assert.That(formatterResult, Is.EqualTo("123123123|test|arg|arg, arg| spaced | spaced with quote \\\" |123123123"));
+			Assert.That(formatterResult,
+				Is.EqualTo("123123123|test|arg|arg, arg| spaced | spaced with quote \\\" |123123123"));
 		}
 
 		[Test]
 		public void ParserCanFormatMultipleUnnamed()
 		{
 			var data = 123123123;
-			var parsingOptions = new ParserOptions("{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}", null, DefaultEncoding);
+			var parsingOptions =
+				new ParserOptions(
+					"{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}",
+					null, DefaultEncoding);
 
 
-			parsingOptions.Formatters.AddFormatter<int>(new Func<int, string, string, string, string, string, int, string>(
-				(self, test, arg, argarg, spacedArg, spacedWithQuote, refSelf) =>
-			{
-				return string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}", self, test, arg, argarg, spacedArg, spacedWithQuote,
-					refSelf);
-			}));
+			parsingOptions.Formatters.AddFormatter<int>(
+				new Func<int, string, string, string, string, string, int, string>(
+					(self, test, arg, argarg, spacedArg, spacedWithQuote, refSelf) =>
+					{
+						return string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}", self, test, arg, argarg, spacedArg,
+							spacedWithQuote,
+							refSelf);
+					}));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced | spaced with quote \\\" |123123123"));
 		}
 
@@ -265,11 +259,15 @@ namespace Morestachio.Tests
 		public void ParserCanFormatMultipleUnnamedParams()
 		{
 			var data = 123123123;
-			var parsingOptions = new ParserOptions("{{#data}}{{.( arg, 'arg, arg', ' spaced ', [testArgument]test, ' spaced with quote \\\" ' , $.$)}}{{/data}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<int>(new Func<int, string, object[], string>(UnnamedParamsFormatter));
+			var parsingOptions =
+				new ParserOptions(
+					"{{#data}}{{.( arg, 'arg, arg', ' spaced ', [testArgument]test, ' spaced with quote \\\" ' , $.$)}}{{/data}}",
+					null, DefaultEncoding);
+			parsingOptions.Formatters.AddFormatter<int>(
+				new Func<int, string, object[], string>(UnnamedParamsFormatter));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced | spaced with quote \\\" |123123123"));
 		}
 
@@ -282,15 +280,20 @@ namespace Morestachio.Tests
 		public void ParserCanFormatMultipleNamed()
 		{
 			var data = 123123123;
-			var parsingOptions = new ParserOptions("{{#data}}{{.([refSelf] $.$, arg,[Fob]test, [twoArgs]'arg, arg', [anySpaceArg]' spaced ')}}{{/data}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<int>(new Func<int, string, string, string, string, int, string>(NamedFormatter));
+			var parsingOptions =
+				new ParserOptions(
+					"{{#data}}{{.([refSelf] $.$, arg,[Fob]test, [twoArgs]'arg, arg', [anySpaceArg]' spaced ')}}{{/data}}",
+					null, DefaultEncoding);
+			parsingOptions.Formatters.AddFormatter<int>(
+				new Func<int, string, string, string, string, int, string>(NamedFormatter));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo("123123123|test|arg|arg, arg| spaced |123123123"));
 		}
 
-		private string NamedFormatter(int self, [FormatterArgumentName("Fob")]string testArgument, string arg, string twoArgs, string anySpaceArg, int refSelf)
+		private string NamedFormatter(int self, [FormatterArgumentName("Fob")] string testArgument, string arg,
+			string twoArgs, string anySpaceArg, int refSelf)
 		{
 			return string.Format("{0}|{1}|{2}|{3}|{4}|{5}", self, testArgument, arg, twoArgs, anySpaceArg, refSelf);
 		}
@@ -300,14 +303,17 @@ namespace Morestachio.Tests
 		{
 			var data = "d";
 			var parsingOptions = new ParserOptions("{{#data}}{{.((d(a)))}}{{/data}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string, string>((s, inv, inva) => throw new Exception("A")));
+			parsingOptions.Formatters.AddFormatter<string>(
+				new Func<string, string, string, string>((s, inv, inva) => throw new Exception("A")));
 
-			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>((s) => throw new Exception("Wrong Ordering")));
-			parsingOptions.Formatters.AddFormatter<string>(new Action<string>((s) => throw new Exception("Wrong Return Ordering")));
+			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string>(s =>
+				throw new Exception("Wrong Ordering")));
+			parsingOptions.Formatters.AddFormatter<string>(new Action<string>(s =>
+				throw new Exception("Wrong Return Ordering")));
 			parsingOptions.Formatters.AddFormatter<string>(new Func<string, string, string>((s, inv) => inv));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo("(d(a))"));
 		}
 
@@ -316,11 +322,11 @@ namespace Morestachio.Tests
 		{
 			var data = DateTime.UtcNow;
 			var parsingOptions = new ParserOptions("{{data().TimeOfDay.Ticks().()}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<string, string>((s) => s);
-			parsingOptions.Formatters.AddFormatter<DateTime, DateTime>((s) => s);
-			parsingOptions.Formatters.AddFormatter<long, TimeSpan>((s) => new TimeSpan(s));
+			parsingOptions.Formatters.AddFormatter<string, string>(s => s);
+			parsingOptions.Formatters.AddFormatter<DateTime, DateTime>(s => s);
+			parsingOptions.Formatters.AddFormatter<long, TimeSpan>(s => new TimeSpan(s));
 			var results = Parser.ParseWithOptions(parsingOptions);
-			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
+			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
 			Assert.That(result, Is.EqualTo(new TimeSpan(data.TimeOfDay.Ticks).ToString()));
 		}
 
@@ -328,18 +334,21 @@ namespace Morestachio.Tests
 		public void ParserCanFormatAndCombine()
 		{
 			var data = DateTime.UtcNow;
-			var results = Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}},{{data}}", null, DefaultEncoding));
+			var results =
+				Parser.ParseWithOptions(new ParserOptions("{{data(d).Year}},{{data}}", null, DefaultEncoding));
 			//this should compile as its valid but not work as the Default
 			//settings for DateTime are ToString(Arg) so it should return a string and not an object
 			Assert.That(results
-				.CreateAndStringify(new Dictionary<string, object> { { "data", data } }), Is.EqualTo(string.Empty + "," + data));
+					.CreateAndStringify(new Dictionary<string, object> {{"data", data}}),
+				Is.EqualTo(string.Empty + "," + data));
 		}
 
 		[Test]
 		public void ParserCanFormatArgumentWithExpression()
 		{
 			var dt = DateTime.Now;
-			var extendedParseInformation = Parser.ParseWithOptions(new ParserOptions("{{data($testFormat$)}}", null, DefaultEncoding));
+			var extendedParseInformation =
+				Parser.ParseWithOptions(new ParserOptions("{{data($testFormat$)}}", null, DefaultEncoding));
 
 			var format = "yyyy.mm";
 			var andStringify = extendedParseInformation.CreateAndStringify(new Dictionary<string, object>
@@ -355,30 +364,30 @@ namespace Morestachio.Tests
 		public async Task ParserCanPartials()
 		{
 			var data = new Dictionary<string, object>();
-			data["Data"] = new List<object>()
+			data["Data"] = new List<object>
 			{
-				new Dictionary<string, object>()
+				new Dictionary<string, object>
 				{
 					{
-						"self", new Dictionary<string, object>()
+						"self", new Dictionary<string, object>
 						{
 							{"Test", 1}
 						}
 					}
 				},
-				new Dictionary<string, object>()
+				new Dictionary<string, object>
 				{
 					{
-						"self", new Dictionary<string, object>()
+						"self", new Dictionary<string, object>
 						{
 							{"Test", 2}
 						}
 					}
 				},
-				new Dictionary<string, object>()
+				new Dictionary<string, object>
 				{
 					{
-						"self", new Dictionary<string, object>()
+						"self", new Dictionary<string, object>
 						{
 							{"Test", 3}
 						}
@@ -386,7 +395,8 @@ namespace Morestachio.Tests
 				}
 			};
 
-			var template = @"{{#declare TestPartial}}{{self.Test}}{{/declare}}{{#each Data}}{{#include TestPartial}}{{/each}}";
+			var template =
+				@"{{#declare TestPartial}}{{self.Test}}{{/declare}}{{#each Data}}{{#include TestPartial}}{{/each}}";
 
 			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
 			var andStringify = await parsed.CreateAndStringifyAsync(data);
@@ -397,21 +407,21 @@ namespace Morestachio.Tests
 		public async Task ParserCanPartialsOneUp()
 		{
 			var data = new Dictionary<string, object>();
-			data["Data"] = new List<object>()
+			data["Data"] = new List<object>
 			{
-				new Dictionary<string, object>()
+				new Dictionary<string, object>
 				{
 					{
-						"self", new Dictionary<string, object>()
+						"self", new Dictionary<string, object>
 						{
 							{"Test", 1}
 						}
 					}
 				},
-				new Dictionary<string, object>()
+				new Dictionary<string, object>
 				{
 					{
-						"self", new Dictionary<string, object>()
+						"self", new Dictionary<string, object>
 						{
 							{"Test", 2}
 						}
@@ -420,17 +430,18 @@ namespace Morestachio.Tests
 			};
 
 			data["DataOneUp"] =
-				new Dictionary<string, object>()
+				new Dictionary<string, object>
 				{
 					{
-						"self", new Dictionary<string, object>()
+						"self", new Dictionary<string, object>
 						{
 							{"Test", "Is:"}
 						}
 					}
 				};
 
-			var template = @"{{#declare TestPartial}}{{../../DataOneUp.self.Test}}{{self.Test}}{{/declare}}{{#each Data}}{{#include TestPartial}}{{/each}}";
+			var template =
+				@"{{#declare TestPartial}}{{../../DataOneUp.self.Test}}{{self.Test}}{{/declare}}{{#each Data}}{{#include TestPartial}}{{/each}}";
 
 			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
 			var andStringify = await parsed.CreateAndStringifyAsync(data);
@@ -444,14 +455,16 @@ namespace Morestachio.Tests
 			var template = @"{{#declare TestPartial}}{{#include TestPartial}}{{/declare}}{{#include TestPartial}}";
 
 			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
-			Assert.That(async () => await parsed.CreateAndStringifyAsync(data), Throws.Exception.TypeOf<MustachioStackOverflowException>());
+			Assert.That(async () => await parsed.CreateAndStringifyAsync(data),
+				Throws.Exception.TypeOf<MustachioStackOverflowException>());
 		}
 
 		[Test]
 		public async Task ParserCanCreateNestedPartials()
 		{
 			var data = new Dictionary<string, object>();
-			var template = @"{{#declare TestPartial}}{{#declare InnerPartial}}1{{/declare}}2{{/declare}}{{#include TestPartial}}{{#include InnerPartial}}";
+			var template =
+				@"{{#declare TestPartial}}{{#declare InnerPartial}}1{{/declare}}2{{/declare}}{{#include TestPartial}}{{#include InnerPartial}}";
 
 			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
 			var result = await parsed.CreateAndStringifyAsync(data);
@@ -464,7 +477,8 @@ namespace Morestachio.Tests
 			var data = new Dictionary<string, object>();
 			//declare TestPartial -> Print Recursion -> If Recursion is smaller then 10 -> Print TestPartial
 			//Print TestPartial
-			var template = @"{{#declare TestPartial}}{{$recursion}}{{#$recursion()}}{{#include TestPartial}}{{/$recursion()}}{{/declare}}{{#include TestPartial}}";
+			var template =
+				@"{{#declare TestPartial}}{{$recursion}}{{#$recursion()}}{{#include TestPartial}}{{/$recursion()}}{{/declare}}{{#include TestPartial}}";
 
 			var parsingOptions = new ParserOptions(template, null, DefaultEncoding);
 			parsingOptions.Formatters.AddFormatter<int, bool>(e => { return e < 9; });
@@ -811,7 +825,8 @@ namespace Morestachio.Tests
 		public void ParserCanProcessComplexValuePath()
 		{
 			Assert.That(() =>
-				Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{../Person.Name}}!{{/content}}")), Throws.Nothing);
+					Parser.ParseWithOptions(new ParserOptions("{{#content}}Hello {{../Person.Name}}!{{/content}}")),
+				Throws.Nothing);
 		}
 
 		//[Test]
@@ -835,7 +850,8 @@ namespace Morestachio.Tests
 		[Test]
 		public void ParserCanProcessEachConstruct()
 		{
-			Assert.That(() => { Parser.ParseWithOptions(new ParserOptions("{{#each ACollection}}{{.}}{{/each}}")); }, Throws.Nothing);
+			Assert.That(() => { Parser.ParseWithOptions(new ParserOptions("{{#each ACollection}}{{.}}{{/each}}")); },
+				Throws.Nothing);
 		}
 
 		[Test]
@@ -850,14 +866,17 @@ namespace Morestachio.Tests
 		public void ParserCanProcessSimpleConditionalGroup()
 		{
 			Assert.That(() =>
-				Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{/Collection}}")), Throws.Nothing);
+					Parser.ParseWithOptions(new ParserOptions("{{#Collection}}Collection has elements{{/Collection}}")),
+				Throws.Nothing);
 		}
 
 		[Test]
 		public void ParserCanProcessSimpleNegatedCondionalGroup()
 		{
 			Assert.That(() =>
-				Parser.ParseWithOptions(new ParserOptions("{{^Collection}}Collection has no elements{{/Collection}}")), Throws.Nothing);
+					Parser.ParseWithOptions(
+						new ParserOptions("{{^Collection}}Collection has no elements{{/Collection}}")),
+				Throws.Nothing);
 		}
 
 		[Test]
@@ -872,7 +891,7 @@ namespace Morestachio.Tests
 		{
 			var dateTime = DateTime.UtcNow;
 			var parsingOptions = new ParserOptions("{{data(d).AnyInt}},{{data}}", null, DefaultEncoding);
-			parsingOptions.Formatters.AddFormatter<DateTime, object>((dt) => new
+			parsingOptions.Formatters.AddFormatter<DateTime, object>(dt => new
 			{
 				Dt = dt,
 				AnyInt = 2
@@ -880,11 +899,11 @@ namespace Morestachio.Tests
 			var results = Parser.ParseWithOptions(parsingOptions);
 			//this should not work as the Default settings for DateTime are ToString(Arg) so it should return a string and not an object
 			Assert.That(results.CreateAndStringify(new Dictionary<string, object>
+			{
 				{
-					{
-						"data", dateTime
-					}
-				}), Is.EqualTo("2," + dateTime));
+					"data", dateTime
+				}
+			}), Is.EqualTo("2," + dateTime));
 		}
 
 		[Test]
@@ -1007,9 +1026,25 @@ namespace Morestachio.Tests
 			};
 
 			var parsedTemplate = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
-			var genTemplate = parsedTemplate.CreateAndStringify(new Dictionary<string, object> { { "data", elementdata } });
+			var genTemplate = parsedTemplate.CreateAndStringify(new Dictionary<string, object> {{"data", elementdata}});
 			var realData = elementdata.Select(e => e.ToString()).Aggregate((e, f) => e + f);
 			Assert.That(genTemplate, Is.EqualTo(realData));
+		}
+
+		private class CollectionContextInfo
+		{
+			public int IndexProp { private get; set; }
+			public bool FirstProp { private get; set; }
+			public bool MiddelProp { private get; set; }
+			public bool LastProp { private get; set; }
+
+			public bool OddProp { private get; set; }
+			public bool EvenProp { private get; set; }
+
+			public override string ToString()
+			{
+				return $"{IndexProp},{FirstProp},{MiddelProp},{LastProp},{OddProp},{EvenProp}.";
+			}
 		}
 	}
 }

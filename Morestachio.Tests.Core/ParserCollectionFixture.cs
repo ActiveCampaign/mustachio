@@ -105,11 +105,11 @@ namespace Morestachio.Tests
 			public string TestB { get; set; }
 			public EveryObjectTest ObjectTest { get; set; }
 		}
-		
+
 		[Test]
 		public void TestEveryKeywordOnObject()
 		{
-			var options = new ParserOptions("{{#each ?.}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
+			var options = new ParserOptions("{{#each ?}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
 				ParserFixture.DefaultEncoding);
 			var andStringify = Parser.ParseWithOptions(options).CreateAndStringify(new EveryObjectTest()
 			{
@@ -117,14 +117,14 @@ namespace Morestachio.Tests
 				TestB = "Hast"
 			});
 			Assert.That(andStringify, Is.EqualTo($"{nameof(EveryObjectTest.TestA)}:\"Du\"," +
-			                                     $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
-			                                     $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
+												 $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
+												 $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
 		}
-		
+
 		[Test]
 		public void TestEveryKeywordOnDictionary()
 		{
-			var options = new ParserOptions("{{#each ?.}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
+			var options = new ParserOptions("{{#each ?}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
 				ParserFixture.DefaultEncoding);
 			var andStringify = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>()
 			{
@@ -133,8 +133,29 @@ namespace Morestachio.Tests
 				{nameof(EveryObjectTest.ObjectTest), null},
 			});
 			Assert.That(andStringify, Is.EqualTo($"{nameof(EveryObjectTest.TestA)}:\"Du\"," +
-			                                     $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
-			                                     $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
+												 $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
+												 $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
+		}
+
+		[Test]
+		public void TestEveryKeywordOnComplexPathDictionary()
+		{
+			var options = new ParserOptions("{{#each Data.?}}{{Key}}:\"{{Value}}\"{{^$last}},{{/$last}}{{/each}}", null,
+				ParserFixture.DefaultEncoding);
+			var andStringify = Parser.ParseWithOptions(options).CreateAndStringify(new Dictionary<string, object>()
+			{
+				{
+					"Data", new Dictionary<string, object>()
+					{
+						{nameof(EveryObjectTest.TestA), "Du"},
+						{nameof(EveryObjectTest.TestB), "Hast"},
+						{nameof(EveryObjectTest.ObjectTest), null},
+					}
+				}
+			});
+			Assert.That(andStringify, Is.EqualTo($"{nameof(EveryObjectTest.TestA)}:\"Du\"," +
+												 $"{nameof(EveryObjectTest.TestB)}:\"Hast\"," +
+												 $"{nameof(EveryObjectTest.ObjectTest)}:\"\""));
 		}
 
 		private void AddCollectionTypeFormatter(ParserOptions options)

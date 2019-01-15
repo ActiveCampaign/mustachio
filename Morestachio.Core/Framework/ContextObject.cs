@@ -257,6 +257,7 @@ namespace Morestachio.Framework
 										.GetType()
 										.GetTypeInfo()
 										.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+										.Where(e => !e.IsSpecialName && !e.GetIndexParameters().Any())
 										.Select(e => new KeyValuePair<string, object>(e.Name, e.GetValue(Value)));
 								}
 

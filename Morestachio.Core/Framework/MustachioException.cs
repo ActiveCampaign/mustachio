@@ -12,8 +12,23 @@ namespace Morestachio.Framework
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="replacements"></param>
-		public MustachioException(string message, params object[] replacements) : base(string.Format(message,
-			replacements))
+		public MustachioException(string message, params object[] replacements) 
+			: base(string.Format(message, replacements))
+		{
+		}
+	}
+
+	/// <summary>
+	///		The Infinite Partials Exception type
+	/// </summary>
+	public class MustachioStackOverflowException : MustachioException
+	{
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="replacements"></param>
+		public MustachioStackOverflowException(string message, params object[] replacements) : base(message, replacements)
 		{
 		}
 	}

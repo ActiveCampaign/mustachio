@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Morestachio.Attributes;
 using Morestachio.Helper;
 using Morestachio.Formatter;
+using Morestachio.Framework;
 using Newtonsoft.Json;
 using NUnit.Framework;
 // ReSharper disable ReturnValueOfPureMethodIsNotUsed
@@ -44,7 +46,7 @@ namespace Morestachio.Tests
 			var results =
 				Parser.ParseWithOptions(new ParserOptions("{{data(\"" + dtFormat + "\")}},{{data}}", null,
 					DefaultEncoding));
-			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
+			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
@@ -59,7 +61,7 @@ namespace Morestachio.Tests
 			var data = DateTime.UtcNow;
 			var results = Parser.ParseWithOptions(new ParserOptions("{{#data}}{{.(\"" + dtFormat + "\")}}{{/data}},{{data}}",
 				null, DefaultEncoding));
-			var result = results.CreateAndStringify(new Dictionary<string, object> {{"data", data}});
+			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
 			Assert.That(result, Is.EqualTo(data.ToString(dtFormat) + "," + data));
 		}
 
@@ -220,19 +222,19 @@ namespace Morestachio.Tests
 			var data = 123123123;
 			var formatterResult = "";
 			var parsingOptions = new ParserOptions("{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}", null, DefaultEncoding);
-			
+
 			parsingOptions.Formatters.AddFormatter<int>(new Action<int, string[]>(
 				(self, test) =>
 				{
 					Assert.Fail("Should not be invoked");
 				}));
-			
+
 			parsingOptions.Formatters.AddFormatter<int>(new Action<int, string, string, string, string, string, int>(
 				(self, test, arg, argarg, spacedArg, spacedWithQuote, refSelf) =>
 				{
 					formatterResult = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}", self, test, arg, argarg, spacedArg, spacedWithQuote,
 						refSelf);
-				}));	
+				}));
 
 			var results = Parser.ParseWithOptions(parsingOptions);
 			var result = results.CreateAndStringify(new Dictionary<string, object> { { "data", data } });
@@ -245,8 +247,8 @@ namespace Morestachio.Tests
 		{
 			var data = 123123123;
 			var parsingOptions = new ParserOptions("{{#data}}{{.(test, arg, 'arg, arg', ' spaced ', ' spaced with quote \\\" ' , $.$ )}}{{/data}}", null, DefaultEncoding);
-	
-			
+
+
 			parsingOptions.Formatters.AddFormatter<int>(new Func<int, string, string, string, string, string, int, string>(
 				(self, test, arg, argarg, spacedArg, spacedWithQuote, refSelf) =>
 			{
@@ -292,7 +294,7 @@ namespace Morestachio.Tests
 		{
 			return string.Format("{0}|{1}|{2}|{3}|{4}|{5}", self, testArgument, arg, twoArgs, anySpaceArg, refSelf);
 		}
-		
+
 		[Test]
 		public void ParserCanCheckCanFormat()
 		{
@@ -347,6 +349,102 @@ namespace Morestachio.Tests
 			});
 
 			Assert.That(andStringify, Is.EqualTo(dt.ToString(format)));
+		}
+
+		[Test]
+		public async Task ParserCanPartials()
+		{
+			var data = new Dictionary<string, object>();
+			data["Data"] = new List<object>()
+			{
+				new Dictionary<string, object>()
+				{
+					{
+						"self", new Dictionary<string, object>()
+						{
+							{"Test", 1}
+						}
+					}
+				},
+				new Dictionary<string, object>()
+				{
+					{
+						"self", new Dictionary<string, object>()
+						{
+							{"Test", 2}
+						}
+					}
+				},
+				new Dictionary<string, object>()
+				{
+					{
+						"self", new Dictionary<string, object>()
+						{
+							{"Test", 3}
+						}
+					}
+				}
+			};
+
+			var template = @"{{#declare TestPartial}}{{self.Test}}{{/declare}}{{#each Data}}{{#include TestPartial}}{{/each}}";
+
+			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
+			var andStringify = await parsed.CreateAndStringifyAsync(data);
+			Assert.That(andStringify, Is.EqualTo("123"));
+		}
+
+		[Test]
+		public async Task ParserCanPartialsOneUp()
+		{
+			var data = new Dictionary<string, object>();
+			data["Data"] = new List<object>()
+			{
+				new Dictionary<string, object>()
+				{
+					{
+						"self", new Dictionary<string, object>()
+						{
+							{"Test", 1}
+						}
+					}
+				},
+				new Dictionary<string, object>()
+				{
+					{
+						"self", new Dictionary<string, object>()
+						{
+							{"Test", 2}
+						}
+					}
+				}
+			};
+
+			data["DataOneUp"] =
+				new Dictionary<string, object>()
+				{
+					{
+						"self", new Dictionary<string, object>()
+						{
+							{"Test", "Is:"}
+						}
+					}
+				};
+
+			var template = @"{{#declare TestPartial}}{{../../DataOneUp.self.Test}}{{self.Test}}{{/declare}}{{#each Data}}{{#include TestPartial}}{{/each}}";
+
+			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
+			var andStringify = await parsed.CreateAndStringifyAsync(data);
+			Assert.That(andStringify, Is.EqualTo("Is:1Is:2"));
+		}
+
+		[Test]
+		public void ParserThrowsOnInfiniteNestedCalls()
+		{
+			var data = new Dictionary<string, object>();
+			var template = @"{{#declare TestPartial}}{{#include TestPartial}}{{/declare}}{{#include TestPartial}}";
+
+			var parsed = Parser.ParseWithOptions(new ParserOptions(template, null, DefaultEncoding));
+			Assert.That(async () => await parsed.CreateAndStringifyAsync(data), Throws.Exception.TypeOf<MustachioStackOverflowException>());
 		}
 
 		[Test]

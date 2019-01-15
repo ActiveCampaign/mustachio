@@ -25,11 +25,11 @@ namespace Morestachio
 			InferredModel = inferredModel;
 			ParserOptions = parserOptions;
 			TemplateTokens = tokens;
-			InternalTemplate = new Lazy<Func<Parser.ByteCounterStreamWriter, ContextObject, Task>>(
-				() => Parser.Parse(TemplateTokens, ParserOptions, ParserOptions.WithModelInference ? InferredModel : null));
+			InternalTemplate = new Lazy<Parser.AsyncParserAction>(
+				() => Parser.Parse(TemplateTokens, ParserOptions, new Parser.ScopeData(), ParserOptions.WithModelInference ? InferredModel : null));
 		}
 
-		internal Lazy<Func<Parser.ByteCounterStreamWriter, ContextObject, Task>> InternalTemplate;
+		internal Lazy<Parser.AsyncParserAction> InternalTemplate;
 
 		/// <summary>
 		///		The generated tokes from the tokeniser
@@ -110,7 +110,7 @@ namespace Morestachio
 			Stream result = null;
 			using (var async = AsyncHelper.Wait)
 			{
-				async.Run(Parser.CreateTemplateStreamAsync(this, source, token), e => result = e);
+				async.Run(CreateAsync(source, token), e => result = e);
 			}
 
 			return result;

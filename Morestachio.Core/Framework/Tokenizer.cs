@@ -24,7 +24,7 @@ namespace Morestachio.Framework
 				, RegexOptions.Compiled);
 
 		private static readonly Regex NewlineFinder
-			= new Regex("\n|\r", RegexOptions.Compiled);
+			= new Regex("\n", RegexOptions.Compiled);
 
 		private static readonly Regex FindSplitterRegEx
 			= new Regex(
@@ -147,6 +147,7 @@ namespace Morestachio.Framework
 
 			var parseErrors = new List<IndexedParseException>();
 			var lines = new List<int>();
+			var partialsNames = new List<string>();
 
 			foreach (Match m in matches)
 			{
@@ -156,11 +157,63 @@ namespace Morestachio.Framework
 					yield return new TokenPair(TokenType.Content, templateString.Substring(idx, m.Index - idx));
 				}
 
-				if (m.Value.StartsWith("{{#each"))
+				if (m.Value.StartsWith("{{#declare"))
 				{
 					scopestack.Push(Tuple.Create(m.Value, m.Index));
-					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim();
-					token = token.Substring(4);
+					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim().Substring("declare".Length);
+					if (string.IsNullOrWhiteSpace(token))
+					{
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
+						parseErrors.Add(new IndexedParseException(location,
+							@"The syntax to open the 'declare' block should be: '{{{{#declare name}}}}'. Missing the Name."));
+					}
+					else
+					{
+						partialsNames.Add(token);
+						yield return new TokenPair(TokenType.PartialOpen, token);
+					}
+				}
+				else if (m.Value.StartsWith("{{/declare"))
+				{
+					if (m.Value != "{{/declare}}")
+					{
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
+						parseErrors.Add(new IndexedParseException(location,
+							@"The syntax to close the 'declare' block should be: '{{{{/declare}}}}'."));
+					}
+					else if (scopestack.Any() && scopestack.Peek().Item1.StartsWith("{{#declare"))
+					{
+						var token = scopestack.Pop().Item1.TrimStart('{').TrimEnd('}').TrimStart('#').Trim()
+							.Substring("declare".Length);
+						yield return new TokenPair(TokenType.PartialClose, token);
+					}
+					else
+					{
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
+						parseErrors.Add(new IndexedParseException(location,
+							@"An 'declare' block is being closed, but no corresponding opening element ('{{{{#declare <name>}}}}') was detected."));
+					}
+				}
+				else if (m.Value.StartsWith("{{#include"))
+				{
+					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim().Substring("include".Length);
+					if (string.IsNullOrWhiteSpace(token) || !partialsNames.Contains(token))
+					{
+						var location = HumanizeCharacterLocation(templateString, m.Index, lines);
+						parseErrors.Add(new IndexedParseException(location,
+							@"The syntax to use the 'include' statement should be: '{{{{/include name}}}}'.
+There is no Partial declared '{0}'.
+Partial names are case sensitive and must be declared before an include.", token));
+					}
+					else
+					{
+						yield return new TokenPair(TokenType.RenderPartial, token);
+					}
+				}
+				else if (m.Value.StartsWith("{{#each"))
+				{
+					scopestack.Push(Tuple.Create(m.Value, m.Index));
+					var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim().Substring(4);
 
 					if (token.StartsWith(" ") && token.Trim() != "")
 					{

@@ -161,7 +161,7 @@ namespace Morestachio.Framework
 		/// <summary>
 		/// </summary>
 		public CancellationToken CancellationToken { get; set; }
-		
+
 		/// <summary>
 		///     if overwritten by a class it returns a context object for any non standard key or operation.
 		///     if non of that
@@ -175,7 +175,7 @@ namespace Morestachio.Framework
 			return null;
 		}
 
-		private async Task<ContextObject> GetContextForPath(Queue<string> elements)
+		private async Task<ContextObject> GetContextForPath(Queue<string> elements, Parser.ScopeData scopeData)
 		{
 			var retval = this;
 			if (elements.Any())
@@ -202,26 +202,34 @@ namespace Morestachio.Framework
 
 					if (lastParent != null)
 					{
-						retval = await lastParent.GetContextForPath(elements);
+						retval = await lastParent.GetContextForPath(elements, scopeData);
 					}
+				}
+				else if (path.Equals("$recursion")) //go the root object
+				{
+					retval = new ContextObject(Options, path)
+					{
+						Parent = this,
+						Value = scopeData.PartialDepth.Count
+					};
 				}
 				else if (path.StartsWith("..")) //go one level up
 				{
 					if (Parent != null)
 					{
-						var parentsRetVal = (await Parent.GetContextForPath(elements));
+						var parentsRetVal = (await Parent.GetContextForPath(elements, scopeData));
 						if (parentsRetVal != null)
 						{
 							retval = parentsRetVal;
 						}
 						else
 						{
-							retval = await GetContextForPath(elements);
+							retval = await GetContextForPath(elements, scopeData);
 						}
 					}
 					else
 					{
-						retval = await GetContextForPath(elements);
+						retval = await GetContextForPath(elements, scopeData);
 					}
 				}
 				else if (path.StartsWith("?")) //enumerate ether an IDictionary, an cs object or an IEnumerable to a KeyValuePair array
@@ -242,21 +250,21 @@ namespace Morestachio.Framework
 						//	innerContext.Value = ctx.OfType<object>().Select((item, index) => new KeyValuePair<string, object>(index.ToString(), item));
 						//	break;
 						default:
-						{
-							if (Value != null)
 							{
-								innerContext.Value = Value
-									.GetType()
-									.GetTypeInfo()
-									.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-									.Select(e => new KeyValuePair<string, object>(e.Name, e.GetValue(Value)));
-							}
+								if (Value != null)
+								{
+									innerContext.Value = Value
+										.GetType()
+										.GetTypeInfo()
+										.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+										.Select(e => new KeyValuePair<string, object>(e.Name, e.GetValue(Value)));
+								}
 
-							break;
-						}
+								break;
+							}
 					}
 
-					retval = await innerContext.GetContextForPath(elements);
+					retval = await innerContext.GetContextForPath(elements, scopeData);
 				}
 				//TODO: handle array accessors and maybe "special" keys.
 				else
@@ -281,7 +289,7 @@ namespace Morestachio.Framework
 						}
 					}
 
-					retval = await innerContext.GetContextForPath(elements);
+					retval = await innerContext.GetContextForPath(elements, scopeData);
 				}
 			}
 
@@ -293,7 +301,7 @@ namespace Morestachio.Framework
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		public async Task<ContextObject> GetContextForPath(string path)
+		internal async Task<ContextObject> GetContextForPath(string path, Parser.ScopeData scopeData)
 		{
 			var elements = new Queue<string>();
 			foreach (var m in PathFinder.Matches(path).OfType<Match>())
@@ -301,7 +309,7 @@ namespace Morestachio.Framework
 				elements.Enqueue(m.Value);
 			}
 
-			return await GetContextForPath(elements);
+			return await GetContextForPath(elements, scopeData);
 		}
 
 		/// <summary>

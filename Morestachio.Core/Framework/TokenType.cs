@@ -23,6 +23,21 @@
 		/// <summary>
 		///     Is used to "print" the current formatted value to the output
 		/// </summary>
-		PrintFormatted
+		PrintFormatted,
+
+		/// <summary>
+		///		A Partial that is inserted into the one or multiple places in the Template
+		/// </summary>
+		PartialOpen,
+
+		/// <summary>
+		///		End of a Partial
+		/// </summary>
+		PartialClose,
+
+		/// <summary>
+		///		Defines the place for rendering a single partial
+		/// </summary>
+		RenderPartial
 	}
 }

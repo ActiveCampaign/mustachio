@@ -56,6 +56,7 @@ namespace Morestachio
 			DisableContentEscaping = false;
 			WithModelInference = false;
 			Timeout = TimeSpan.Zero;
+			PartialStackSize = 255;
 		}
 
 		/// <summary>
@@ -102,6 +103,11 @@ namespace Morestachio
 				_formatters = value ?? throw new InvalidOperationException("You must set the Formatters matcher");
 			}
 		}
+		
+		/// <summary>
+		///		Gets or sets the max Stack size for nested Partials in execution. Recommended to be not exceeding 2000. Defaults to 255.
+		/// </summary>
+		public uint PartialStackSize { get; set; }
 
 		/// <summary>
 		///		Gets or sets the timeout. After the timeout is reached and the Template has not finished Processing and Exception is thrown.

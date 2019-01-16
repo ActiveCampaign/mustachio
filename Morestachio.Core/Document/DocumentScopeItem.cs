@@ -4,15 +4,23 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
-	public class ElementOpenDocumentItem : DocumentItemBase
+	/// <summary>
+	///		Defines the start of a Scope
+	/// </summary>
+	public class DocumentScopeItem : DocumentItemBase
 	{
-		public ElementOpenDocumentItem(string value)
+		/// <inheritdoc />
+		public DocumentScopeItem(string value)
 		{
 			Value = value;
 		}
 
+		/// <summary>
+		///		The expression for the value that should be scoped
+		/// </summary>
 		public string Value { get; private set; }
 
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context, ScopeData scopeData)
 		{
 			var c = await context.GetContextForPath(Value, scopeData);

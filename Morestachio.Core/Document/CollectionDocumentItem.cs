@@ -5,17 +5,32 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
+	/// <summary>
+	///		Emits N items that are in the <see cref="Value"/>
+	/// </summary>
 	public class CollectionDocumentItem : DocumentItemBase
 	{
+		/// <inheritdoc />
 		public CollectionDocumentItem(IDocumentItem itemDocument, string value)
 		{
 			ItemDocument = itemDocument;
 			Value = value;
 		}
 
+		/// <summary>
+		/// Gets the item document.
+		/// </summary>
+		/// <value>
+		/// The item document.
+		/// </value>
 		public IDocumentItem ItemDocument { get; private set; }
+
+		/// <summary>
+		///		Defines the expression from which the collection should be taken
+		/// </summary>
 		public string Value { get; private set; }
 
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context, ScopeData scopeData)
 		{
 			//if we're in the same scope, just negating, then we want to use the same object
@@ -56,12 +71,10 @@ namespace Morestachio
 
 				return scopes;
 			}
-			else
-			{
-				throw new IndexedParseException(
-					"'{0}' is used like an array by the template, but is a scalar value or object in your model.",
-					Value);
-			}
+
+			throw new IndexedParseException(
+				"'{0}' is used like an array by the template, but is a scalar value or object in your model.",
+				Value);
 		}
 	}
 }

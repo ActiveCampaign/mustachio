@@ -6,15 +6,29 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
+	/// <summary>
+	///		Defines a document that can be rendered. Does only store its Children
+	/// </summary>
 	public class MorestachioDocument : DocumentItemBase
 	{
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,
 			ScopeData scopeData)
 		{
-			await ProcessItemsAndChilds(Childs, outputStream, context, scopeData);
-			return new DocumentItemExecution[0];
+			await Task.CompletedTask;
+			return Childs.WithScope(context);
+			//await ProcessItemsAndChilds(Childs, outputStream, context, scopeData);
+			//return new DocumentItemExecution[0];
 		}
 
+		/// <summary>
+		/// Processes the items and childs.
+		/// </summary>
+		/// <param name="documentItems">The document items.</param>
+		/// <param name="outputStream">The output stream.</param>
+		/// <param name="context">The context.</param>
+		/// <param name="scopeData">The scope data.</param>
+		/// <returns></returns>
 		public static async Task ProcessItemsAndChilds(IEnumerable<IDocumentItem> documentItems, IByteCounterStream outputStream, ContextObject context,
 			ScopeData scopeData)
 		{

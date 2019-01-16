@@ -4,13 +4,18 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
+	/// <summary>
+	///		Defines a area that has no morestachio keywords and can be rendered as is
+	/// </summary>
 	public class ContentDocumentItem : DocumentItemBase
 	{
+		/// <inheritdoc />
 		public ContentDocumentItem(string content)
 		{
 			Content = content;
 		}
 
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,
 			ScopeData scopeData)
 		{
@@ -56,6 +61,9 @@ namespace Morestachio
 			}
 		}
 
+		/// <summary>
+		///		The content that should be rendered
+		/// </summary>
 		public string Content { get; private set; }
 	}
 }

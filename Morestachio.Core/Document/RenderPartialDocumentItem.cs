@@ -5,16 +5,22 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
+	/// <summary>
+	///		Prints a partial
+	/// </summary>
 	public class RenderPartialDocumentItem : DocumentItemBase
 	{
+		/// <inheritdoc />
 		public RenderPartialDocumentItem(string value)
 		{
 			Value = value;
 		}
-
+		
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,
 			ScopeData scopeData)
 		{
+			await Task.CompletedTask;
 			string partialName = Value;
 			var currentPartial = partialName + "_" + scopeData.PartialDepth.Count;
 			scopeData.PartialDepth.Push(currentPartial);
@@ -31,7 +37,6 @@ namespace Morestachio
 								{"Callstack", scopeData.PartialDepth}
 							}
 						};
-						break;
 					case ParserOptions.PartialStackOverflowBehavior.FailSilent:
 
 						break;
@@ -47,6 +52,9 @@ namespace Morestachio
 			};
 		}
 
+		/// <summary>
+		///		The name of the Partial to print
+		/// </summary>
 		public string Value { get; private set; }
 	}
 }

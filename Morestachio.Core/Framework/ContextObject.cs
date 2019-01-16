@@ -301,6 +301,7 @@ namespace Morestachio.Framework
 		///     Will walk the path by using the path seperator "." and evaluate the object at the end
 		/// </summary>
 		/// <param name="path"></param>
+		/// <param name="scopeData"></param>
 		/// <returns></returns>
 		internal async Task<ContextObject> GetContextForPath(string path, ScopeData scopeData)
 		{

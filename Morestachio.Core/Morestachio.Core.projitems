@@ -19,7 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentExtenstions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentItemBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentItemExecution.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Document\ElementOpenDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentScopeItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Document\FormattedElementItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Document\InvertedDocumentScopeItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Document\PathDocumentItem.cs" />

@@ -6,18 +6,29 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
+	/// <summary>
+	///		Calls a formatter on the current context value
+	/// </summary>
 	public class CallFormatterItem : DocumentItemBase
 	{
+		/// <inheritdoc />
 		public CallFormatterItem(FormatterPart[] formatString, string value)
 		{
 			FormatString = formatString;
 			Value = value;
 		}
 
+		/// <summary>
+		///		Gets the parsed list of arguments for <see cref="Value"/>
+		/// </summary>
 		public FormatterPart[] FormatString { get; private set; }
 
+		/// <summary>
+		///		The expression that defines the Value that should be formatted
+		/// </summary>
 		public string Value { get; private set; }
 
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context, ScopeData scopeData)
 		{
 			if (context == null)

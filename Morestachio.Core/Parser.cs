@@ -59,10 +59,10 @@ namespace Morestachio
 						buildArray.Add(new ContentDocumentItem(currentToken.Value));
 						break;
 					case TokenType.CollectionOpen:
-						buildArray.Add(new CollectionDocumentItem(Parse(tokens, options), tokens.Dequeue().Value));
+						buildArray.Add(new CollectionDocumentItem(Parse(tokens, options), currentToken.Value));
 						break;
 					case TokenType.ElementOpen:
-						var singleElement = new ElementOpenDocumentItem(currentToken.Value);
+						var singleElement = new DocumentScopeItem(currentToken.Value);
 						singleElement.Add(Parse(tokens, options));
 						buildArray.Add(singleElement);
 						break;
@@ -116,7 +116,7 @@ namespace Morestachio
 			var partialTokens = new Queue<TokenPair>();
 			var token = currentToken;
 			while (tokens.Any() &&
-				   (token.Type != TokenType.PartialDeclarationClose || token.Value != currentToken.Value)) //just look for the closing tag and buffer it seperate
+				   (token.Type != TokenType.PartialDeclarationClose || token.Value != currentToken.Value)) //just look for the closing tag and buffer it separate
 			{
 				token = tokens.Dequeue();
 				partialTokens.Enqueue(token);
@@ -141,12 +141,12 @@ namespace Morestachio
 						//we must copy the scope as the formatting action might break our chain and we are no longer able to 
 						//construct a valid path up
 						//after that there is always a PrintFormatted type that will print the "current" scope and
-						//reset it to the origial scope before we have entered the scope
+						//reset it to the original scope before we have entered the scope
 						currentToken = tokens.Dequeue();
 						buildArray.Add(new CallFormatterItem(currentToken.FormatString, currentToken.Value));
 						break;
 					case TokenType.PrintFormatted:
-						tokens.Dequeue(); //this must be the flow token type that has no real value execpt for a dot
+						tokens.Dequeue(); //this must be the flow token type that has no real value except for a dot
 						buildArray.Add(new PrintFormattedItem());
 						break;
 					case TokenType.CollectionOpen: //in this case we are in a formatting expression followed by a #each.
@@ -155,7 +155,7 @@ namespace Morestachio
 						break;
 					case TokenType.ElementOpen: //in this case we are in a formatting expression followed by a #.
 												//after this we need to reset the context so handle the open here
-						var singleElement = new ElementOpenDocumentItem(tokens.Dequeue().Value);
+						var singleElement = new DocumentScopeItem(tokens.Dequeue().Value);
 						singleElement.Add(Parse(tokens, options));
 						buildArray.Add(singleElement);
 						break;
@@ -177,20 +177,11 @@ namespace Morestachio
 		}
 	}
 
-	public interface IByteCounterStream : IDisposable
-	{
-		long BytesWritten { get; set; }
-		bool ReachedLimit { get; set; }
-		void Write(string value, long sizeOfContent);
-		void Write(string value);
-		void Write(char[] value, long sizeOfContent);
-	}
-
 	/// <summary>
 	///		Internal class to ensure that the given limit of bytes to write is never extended to ensure template quotas
 	/// </summary>
 	/// <seealso cref="System.IDisposable" />
-	internal class ByteCounterStream : IDisposable, IByteCounterStream
+	internal class ByteCounterStream : IByteCounterStream
 	{
 		public ByteCounterStream([NotNull] Stream stream, [NotNull] Encoding encoding, int bufferSize, bool leaveOpen)
 		{
@@ -226,4 +217,45 @@ namespace Morestachio
 		}
 	}
 
+	/// <summary>
+	///		Defines the output that can count on written bytes into a stream
+	/// </summary>
+	public interface IByteCounterStream : IDisposable
+	{
+		/// <summary>
+		/// Gets or sets the bytes written.
+		/// </summary>
+		/// <value>
+		/// The bytes written.
+		/// </value>
+		long BytesWritten { get; set; }
+
+		/// <summary>
+		/// Gets or sets a value indicating whether [reached limit].
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if [reached limit]; otherwise, <c>false</c>.
+		/// </value>
+		bool ReachedLimit { get; set; }
+
+		/// <summary>
+		/// Writes the specified value.
+		/// </summary>
+		/// <param name="value">The value.</param>
+		/// <param name="sizeOfContent">Content of the size of.</param>
+		void Write(string value, long sizeOfContent);
+
+		/// <summary>
+		/// Writes the specified value. Without counting its bytes.
+		/// </summary>
+		/// <param name="value">The value.</param>
+		void Write(string value);
+
+		/// <summary>
+		/// Writes the specified value.
+		/// </summary>
+		/// <param name="value">The value.</param>
+		/// <param name="sizeOfContent">Content of the size of.</param>
+		void Write(char[] value, long sizeOfContent);
+	}
 }

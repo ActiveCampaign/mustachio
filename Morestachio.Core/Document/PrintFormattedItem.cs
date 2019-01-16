@@ -4,8 +4,12 @@ using Morestachio.Framework;
 
 namespace Morestachio
 {
+	/// <summary>
+	///		If a formatter ends without using its value it is printed
+	/// </summary>
 	public class PrintFormattedItem : DocumentItemBase
 	{
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context, ScopeData scopeData)
 		{
 			if (context != null)

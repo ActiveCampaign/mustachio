@@ -12,66 +12,96 @@ namespace Morestachio
 	/// <summary>
 	///     Provided when parsing a template and getting information about the embedded variables.
 	/// </summary>
-	public class ExtendedParseInformation
+	public class MorestachioDocumentInfo
 	{
 		/// <summary>
 		///     ctor
 		/// </summary>
-		/// <param name="inferredModel"></param>
 		/// <param name="parserOptions"></param>
 		/// <param name="tokens"></param>
-		internal ExtendedParseInformation(InferredTemplateModel inferredModel, ParserOptions parserOptions, Queue<TokenPair> tokens)
+		internal MorestachioDocumentInfo(ParserOptions parserOptions, Queue<TokenPair> tokens)
 		{
-			InferredModel = inferredModel;
 			ParserOptions = parserOptions;
 			TemplateTokens = tokens;
-			InternalTemplate = new Lazy<Parser.AsyncParserAction>(
-				() => Parser.Parse(TemplateTokens, ParserOptions, new Parser.ScopeData(), ParserOptions.WithModelInference ? InferredModel : null));
 		}
-
-		internal Lazy<Parser.AsyncParserAction> InternalTemplate;
 
 		/// <summary>
 		///		The generated tokes from the tokeniser
 		/// </summary>
 		internal Queue<TokenPair> TemplateTokens { get; }
 
+		public IDocumentItem Document { get; internal set; }
+
 		/// <summary>
 		///     The parser Options object that was used to create the Template Delegate
 		/// </summary>
-
 		[NotNull]
 		public ParserOptions ParserOptions { get; }
 
-		/// <summary>
-		///     returns a model that contains all used placeholders and operations
-		/// </summary>
-		[CanBeNull]
-		public InferredTemplateModel InferredModel { get; }
+		private const int BufferSize = 2024;
 
 		/// <summary>
 		///     Calls the Underlying Template Delegate and Produces a Stream
 		/// </summary>
-		/// <param name="source"></param>
+		/// <param name="data"></param>
 		/// <param name="token"></param>
 		/// <returns></returns>
 		[MustUseReturnValue("The Stream contains the template. Use CreateAndStringify() to get the string of it")]
 		[NotNull]
-		public async Task<Stream> CreateAsync([NotNull]object source, CancellationToken token)
+		public async Task<Stream> CreateAsync([NotNull]object data, CancellationToken token)
 		{
-			return await Parser.CreateTemplateStreamAsync(this, source, token);
+			var timeoutCancellation = new CancellationTokenSource();
+			if (ParserOptions.Timeout != TimeSpan.Zero)
+			{
+				timeoutCancellation.CancelAfter(ParserOptions.Timeout);
+				var anyCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutCancellation.Token);
+				token = anyCancellationToken.Token;
+			}
+			var sourceStream = ParserOptions.SourceFactory();
+			try
+			{
+				if (!sourceStream.CanWrite)
+				{
+					throw new InvalidOperationException("The stream is ReadOnly");
+				}
+
+				using (var byteCounterStream = new ByteCounterStream(sourceStream,
+					ParserOptions.Encoding, BufferSize, true))
+				{
+					var context = new ContextObject(ParserOptions, "")
+					{
+						Value = data,
+						CancellationToken = token
+					};
+					await Document.Render(byteCounterStream, context, new ScopeData());
+				}
+
+				if (timeoutCancellation.IsCancellationRequested)
+				{
+					sourceStream.Dispose();
+					throw new TimeoutException($"The requested timeout of {ParserOptions.Timeout:g} for report generation was reached");
+				}
+			}
+			catch
+			{
+				//If there is any exception while generating the template we must dispose any data written to the stream as it will never returned and might 
+				//create a memory leak with this. This is also true for a timeout
+				sourceStream.Dispose();
+				throw;
+			}
+			return sourceStream;
 		}
 
 		/// <summary>
 		///     Calls the Underlying Template Delegate and Produces a Stream
 		/// </summary>
-		/// <param name="source"></param>
+		/// <param name="data"></param>
 		/// <returns></returns>
 		[MustUseReturnValue("The Stream contains the template. Use CreateAndStringify() to get the string of it")]
 		[NotNull]
-		public async Task<Stream> CreateAsync([NotNull]object source)
+		public async Task<Stream> CreateAsync([NotNull]object data)
 		{
-			return await CreateAsync(source, CancellationToken.None);
+			return await CreateAsync(data, CancellationToken.None);
 		}
 
 		/// <summary>

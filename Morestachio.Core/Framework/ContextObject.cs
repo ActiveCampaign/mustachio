@@ -175,7 +175,7 @@ namespace Morestachio.Framework
 			return null;
 		}
 
-		private async Task<ContextObject> GetContextForPath(Queue<string> elements, Parser.ScopeData scopeData)
+		private async Task<ContextObject> GetContextForPath(Queue<string> elements, ScopeData scopeData)
 		{
 			var retval = this;
 			if (elements.Any())
@@ -302,7 +302,7 @@ namespace Morestachio.Framework
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		internal async Task<ContextObject> GetContextForPath(string path, Parser.ScopeData scopeData)
+		internal async Task<ContextObject> GetContextForPath(string path, ScopeData scopeData)
 		{
 			var elements = new Queue<string>();
 			foreach (var m in PathFinder.Matches(path).OfType<Match>())

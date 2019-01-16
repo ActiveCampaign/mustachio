@@ -3,7 +3,7 @@
 namespace Morestachio.Formatter
 {
 	[DebuggerDisplay("[{Name ?? 'Unnamed'}] {Argument}")]
-	internal class FormatterPart
+	public class FormatterPart
 	{
 		public FormatterPart(string name, string argument)
 		{

@@ -13,7 +13,19 @@
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\RestParameterAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\SourceObjectAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CanExecute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ExtendedParseInformation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\CallFormatterItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\CollectionDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\ContentDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentExtenstions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentItemBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\DocumentItemExecution.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\ElementOpenDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\FormattedElementItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\InvertedDocumentScopeItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\PathDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\PrintFormattedItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\RenderPartialDoneItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MorestachioDocumentInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FormatTemplateElement.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Formatter\DisabledFormatterMatcher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Formatter\FormatterMatcher.cs" />
@@ -24,16 +36,21 @@
     <Compile Include="$(MSBuildThisFileDirectory)Framework\ContextCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Framework\ContextObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Framework\IndexedParseException.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Framework\InferredTemplateModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Framework\MustachioException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Framework\MustachioStackOverflowException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Framework\Tokenizer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Framework\TokenPair.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Framework\TokenType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helper\AsyncHelper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Helper\StreamExtentions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helper\StreamExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\IDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\MorestachioDocument.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MultiFormatterInfoCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ParserOptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\PartialDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Document\RenderPartialDocumentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ScopeData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)morestachioKey.snk" />

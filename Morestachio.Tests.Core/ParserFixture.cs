@@ -505,9 +505,11 @@ namespace Morestachio.Tests
 				}
 			}".EliminateWhitespace();
 
-			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+			var serializeObject = JsonConvert.SerializeObject(results.Document, Formatting.Indented);
 
-			Assert.That(actual, Is.EqualTo(expected));
+			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+
+			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
 		[Test]
@@ -523,9 +525,13 @@ namespace Morestachio.Tests
 				}
 			}".EliminateWhitespace();
 
-			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+	
 
-			Assert.That(actual, Is.EqualTo(expected));
+			var serializeObject = JsonConvert.SerializeObject(results.Document);
+
+			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+
+			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
 		[Test]
@@ -533,9 +539,13 @@ namespace Morestachio.Tests
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions("{{Name}}", null, null, 0, false, true));
 			var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
-			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
-			Assert.That(actual, Is.EqualTo(expected));
+
+			var serializeObject = JsonConvert.SerializeObject(results.Document);
+
+			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+
+			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
 		[Test]
@@ -914,9 +924,12 @@ namespace Morestachio.Tests
 
 			var expected = @"{}".EliminateWhitespace();
 
-			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
 
-			Assert.That(actual, Is.EqualTo(expected));
+			var serializeObject = JsonConvert.SerializeObject(results.Document);
+
+			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+
+			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
 
@@ -928,9 +941,11 @@ namespace Morestachio.Tests
 
 			var expected = @"{""Employees"" : [{ ""name"" : ""name_Value""}]}".EliminateWhitespace();
 
-			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+			var serializeObject = JsonConvert.SerializeObject(results.Document);
 
-			Assert.That(actual, Is.EqualTo(expected));
+			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+
+			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
 
@@ -949,9 +964,11 @@ namespace Morestachio.Tests
 								}]
 							}".EliminateWhitespace();
 
-			var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+			var serializeObject = JsonConvert.SerializeObject(results.Document);
 
-			Assert.That(actual, Is.EqualTo(expected));
+			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
+
+			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
 		[Test]

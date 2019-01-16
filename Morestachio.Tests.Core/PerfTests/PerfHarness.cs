@@ -95,7 +95,7 @@ namespace Morestachio.Tests.PerfTests
 				baseTemplate += model.Item2 + "\r\n";
 			}
 
-			ExtendedParseInformation template = null;
+			MorestachioDocumentInfo template = null;
 
 			//make sure this class is JIT'd before we start timing.
 			Parser.ParseWithOptions(new ParserOptions("asdf"));

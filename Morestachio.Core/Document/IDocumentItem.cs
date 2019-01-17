@@ -20,13 +20,18 @@ namespace Morestachio
 		Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context, ScopeData scopeData);
 
 		/// <summary>
-		///		The list of Childs that are children of this Document item
+		///		Gets the Kind of this Document item
 		/// </summary>
-		IList<IDocumentItem> Childs { get; }
+		string Kind { get; }
+
+		/// <summary>
+		///		The list of Children that are children of this Document item
+		/// </summary>
+		IList<IDocumentItem> Children { get; }
 
 		/// <summary>
 		///		Adds the specified childs.
 		/// </summary>
-		void Add(params IDocumentItem[] childs);
+		void Add(params IDocumentItem[] documentChildren);
 	}
 }

@@ -7,13 +7,16 @@ namespace Morestachio
 	/// <summary>
 	///		The end of a Partial declaration
 	/// </summary>
-	public class RenderPartialDoneItem : DocumentItemBase
+	public class RenderPartialDoneDocumentItem : DocumentItemBase
 	{
 		/// <inheritdoc />
-		public RenderPartialDoneItem(string partialName)
+		public RenderPartialDoneDocumentItem(string partialName)
 		{
 			Value = partialName;
 		}
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "EndPartial";
 
 		/// <summary>
 		///		The name of the Partial

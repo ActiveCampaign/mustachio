@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ParserCollectionFixture.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ParserFixture.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PerfTests\PerfHarness.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PerfTests\PerformanceCounter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TemplateFixture.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WhitespaceNormalizer.cs" />
   </ItemGroup>

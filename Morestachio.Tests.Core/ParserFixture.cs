@@ -495,20 +495,37 @@ namespace Morestachio.Tests
 				true));
 
 			var expected = @"{
-				""Person"" :{
-					""Name"" : ""Name_Value"",
-					""FavoriteColors"" : [
-						""FavoriteColors_1"",
-						""FavoriteColors_2"",
-						""FavoriteColors_3""
-					 ]
-				}
-			}".EliminateWhitespace();
+  ""Kind"": ""Document"",
+  ""Children"": [
+	{
+	  ""Kind"": ""ExpressionScope"",
+	  ""Value"": ""Person"",
+	  ""Children"": [
+		{
+		  ""Kind"": ""Expression"",
+		  ""Value"": ""Name"",
+		  ""EscapeValue"": true,
+		  ""Children"": []
+		},
+		{
+		  ""Kind"": ""OpenCollection"",
+		  ""Value"": ""../Person.FavoriteColors"",
+		  ""Children"": [
+			{
+			  ""Kind"": ""Expression"",
+			  ""Value"": ""."",
+			  ""EscapeValue"": true,
+			  ""Children"": []
+			}
+		  ]
+		}
+	  ]
+	}
+  ]
+}".EliminateWhitespace();
 
-			var serializeObject = JsonConvert.SerializeObject(results.Document, Formatting.Indented);
-
-			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
-
+			var serializeObject = JsonConvert.SerializeObject(results.Document).EliminateWhitespace();
+			
 			Assert.That(serializeObject, Is.EqualTo(expected));
 		}
 
@@ -519,14 +536,8 @@ namespace Morestachio.Tests
 				Parser.ParseWithOptions(new ParserOptions("{{#Person}}{{Name}}{{/Person}}", null, null, 0, false,
 					true));
 
-			var expected = @"{
-				""Person"" :{
-					""Name"" : ""Name_Value""
-				}
-			}".EliminateWhitespace();
-
-	
-
+			var expected = @"{""Kind"":""Document"",""Children"":[{""Kind"":""ExpressionScope"",""Value"":""Person"",""Children"":[{""Kind"":""Expression"",""Value"":""Name"",""EscapeValue"":true,""Children"":[]}]}]}".EliminateWhitespace();
+			
 			var serializeObject = JsonConvert.SerializeObject(results.Document);
 
 			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
@@ -538,7 +549,7 @@ namespace Morestachio.Tests
 		public void ParserCanInferScalar()
 		{
 			var results = Parser.ParseWithOptions(new ParserOptions("{{Name}}", null, null, 0, false, true));
-			var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
+			var expected = @"{""Kind"":""Document"",""Children"":[{""Kind"":""Expression"",""Value"":""Name"",""EscapeValue"":true,""Children"":[]}]}".EliminateWhitespace();
 
 
 			var serializeObject = JsonConvert.SerializeObject(results.Document);
@@ -922,9 +933,8 @@ namespace Morestachio.Tests
 			var results = Parser.ParseWithOptions(new ParserOptions("This template has no mustache thingies.", null,
 				null, 0, false, true));
 
-			var expected = @"{}".EliminateWhitespace();
-
-
+			var expected = @"{""Kind"":""Document"",""Children"":[{""Kind"":""Content"",""Content"":""This template has no mustache thingies."",""Children"":[]}]}";
+			
 			var serializeObject = JsonConvert.SerializeObject(results.Document);
 
 			//var actual = JsonConvert.SerializeObject(results.InferredModel?.RepresentedContext()).EliminateWhitespace();
@@ -939,7 +949,7 @@ namespace Morestachio.Tests
 			var results = Parser.ParseWithOptions(new ParserOptions("{{#each Employees}}{{name}}{{/each}}", null, null,
 				0, false, true));
 
-			var expected = @"{""Employees"" : [{ ""name"" : ""name_Value""}]}".EliminateWhitespace();
+			var expected = @"{""Kind"":""Document"",""Children"":[{""Kind"":""OpenCollection"",""Value"":""Employees"",""Children"":[{""Kind"":""Expression"",""Value"":""name"",""EscapeValue"":true,""Children"":[]}]}]}";
 
 			var serializeObject = JsonConvert.SerializeObject(results.Document);
 
@@ -956,13 +966,7 @@ namespace Morestachio.Tests
 				"{{#each Employees}}{{person.name}}{{#each favoriteColors}}{{hue}}{{/each}}{{#each workplaces}}{{.}}{{/each}}{{/each}}",
 				null, null, 0, false, true));
 
-			var expected = @"{
-							""Employees"" : [{
-								""person"" : { ""name"" : ""name_Value""},
-								""favoriteColors"" : [{""hue"" : ""hue_Value""}],
-								""workplaces"" : [ ""workplaces_1"",""workplaces_2"",""workplaces_3"" ]
-								}]
-							}".EliminateWhitespace();
+			var expected = @"{""Kind"":""Document"",""Children"":[{""Kind"":""OpenCollection"",""Value"":""Employees"",""Children"":[{""Kind"":""Expression"",""Value"":""person.name"",""EscapeValue"":true,""Children"":[]},{""Kind"":""OpenCollection"",""Value"":""favoriteColors"",""Children"":[{""Kind"":""Expression"",""Value"":""hue"",""EscapeValue"":true,""Children"":[]}]},{""Kind"":""OpenCollection"",""Value"":""workplaces"",""Children"":[{""Kind"":""Expression"",""Value"":""."",""EscapeValue"":true,""Children"":[]}]}]}]}".EliminateWhitespace();
 
 			var serializeObject = JsonConvert.SerializeObject(results.Document);
 

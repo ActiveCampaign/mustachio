@@ -7,13 +7,16 @@ namespace Morestachio
 	/// <summary>
 	///		Defines the start of a Scope
 	/// </summary>
-	public class DocumentScopeItem : DocumentItemBase
+	public class ExpressionScopeDocumentItem : DocumentItemBase
 	{
 		/// <inheritdoc />
-		public DocumentScopeItem(string value)
+		public ExpressionScopeDocumentItem(string value)
 		{
 			Value = value;
 		}
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "ExpressionScope";
 
 		/// <summary>
 		///		The expression for the value that should be scoped
@@ -27,7 +30,7 @@ namespace Morestachio
 			//"falsey" values by Javascript standards...
 			if (await c.Exists())
 			{
-				return Childs.WithScope(c);
+				return Children.WithScope(c);
 			}
 			return new DocumentItemExecution[0];
 		}

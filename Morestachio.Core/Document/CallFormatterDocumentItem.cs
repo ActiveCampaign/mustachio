@@ -9,14 +9,17 @@ namespace Morestachio
 	/// <summary>
 	///		Calls a formatter on the current context value
 	/// </summary>
-	public class CallFormatterItem : DocumentItemBase
+	public class CallFormatterDocumentItem : DocumentItemBase
 	{
 		/// <inheritdoc />
-		public CallFormatterItem(FormatterPart[] formatString, string value)
+		public CallFormatterDocumentItem(FormatterPart[] formatString, string value)
 		{
 			FormatString = formatString;
 			Value = value;
 		}
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "CallFormatter";
 
 		/// <summary>
 		///		Gets the parsed list of arguments for <see cref="Value"/>
@@ -65,7 +68,7 @@ namespace Morestachio
 			{
 				context.Value = c.Format(new KeyValuePair<string, object>[0]);
 			}
-			return Childs.WithScope(context);
+			return Children.WithScope(context);
 		}
 	}
 }

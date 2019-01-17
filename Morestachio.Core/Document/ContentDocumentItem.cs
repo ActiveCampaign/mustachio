@@ -14,6 +14,9 @@ namespace Morestachio
 		{
 			Content = content;
 		}
+		
+		/// <inheritdoc />
+		public override string Kind { get; } = "Content";
 
 		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,
@@ -21,7 +24,7 @@ namespace Morestachio
 		{
 			WriteContent(outputStream, Content, context);
 			await Task.CompletedTask;
-			return Childs.WithScope(context);
+			return Children.WithScope(context);
 		}
 
 		internal static void WriteContent(IByteCounterStream builder, string content, ContextObject context)

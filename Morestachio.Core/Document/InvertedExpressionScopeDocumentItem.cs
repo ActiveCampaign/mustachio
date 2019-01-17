@@ -7,14 +7,17 @@ namespace Morestachio
 	/// <summary>
 	///		Defines an inverted scope
 	/// </summary>
-	/// <seealso cref="DocumentScopeItem"/>
-	public class InvertedDocumentScopeItem : DocumentItemBase
+	/// <seealso cref="ExpressionScopeDocumentItem"/>
+	public class InvertedExpressionScopeDocumentItem : DocumentItemBase
 	{
 		/// <inheritdoc />
-		public InvertedDocumentScopeItem(string value)
+		public InvertedExpressionScopeDocumentItem(string value)
 		{
 			Value = value;
 		}
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "InvertedExpressionScope";
 
 		/// <summary>
 		///		The expression for the value that should be scoped
@@ -28,7 +31,7 @@ namespace Morestachio
 			//"falsey" values by Javascript standards...
 			if (!await c.Exists())
 			{
-				return Childs.WithScope(c);
+				return Children.WithScope(c);
 			}
 			return new DocumentItemExecution[0];
 		}

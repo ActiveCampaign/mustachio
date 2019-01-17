@@ -12,18 +12,18 @@ namespace Morestachio
 		/// <inheritdoc />
 		public DocumentItemBase()
 		{
-			Childs = new List<IDocumentItem>();
+			Children = new List<IDocumentItem>();
 		}
 		
 		/// <inheritdoc />
 		public abstract Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,
 			ScopeData scopeData);
 
-		
 		/// <inheritdoc />
-		public IDocumentItem Parent { get; set; }
+		public abstract string Kind { get; }
+
 		/// <inheritdoc />
-		public IList<IDocumentItem> Childs { get; }
+		public IList<IDocumentItem> Children { get; }
 
 		/// <summary>
 		///		Can be called to check if any stop is requested. If return true no stop is requested
@@ -36,13 +36,13 @@ namespace Morestachio
 		/// <summary>
 		/// Adds the specified childs.
 		/// </summary>
-		/// <param name="childs">The childs.</param>
-		public void Add(params IDocumentItem[] childs)
+		/// <param name="documentChildren">The childs.</param>
+		public void Add(params IDocumentItem[] documentChildren)
 		{
-			foreach (var documentItem in childs)
+			foreach (var documentItem in documentChildren)
 			{
 				//documentItem.Parent = this;
-				Childs.Add(documentItem);
+				Children.Add(documentItem);
 			}
 		}
 	}

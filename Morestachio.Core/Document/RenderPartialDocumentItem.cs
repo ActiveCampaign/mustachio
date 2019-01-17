@@ -15,6 +15,9 @@ namespace Morestachio
 		{
 			Value = value;
 		}
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "Include";
 		
 		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,

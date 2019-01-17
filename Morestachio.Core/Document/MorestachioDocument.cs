@@ -12,13 +12,14 @@ namespace Morestachio
 	public class MorestachioDocument : DocumentItemBase
 	{
 		/// <inheritdoc />
+		public override string Kind { get; } = "Document";
+
+		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context,
 			ScopeData scopeData)
 		{
 			await Task.CompletedTask;
-			return Childs.WithScope(context);
-			//await ProcessItemsAndChilds(Childs, outputStream, context, scopeData);
-			//return new DocumentItemExecution[0];
+			return Children.WithScope(context);
 		}
 
 		/// <summary>

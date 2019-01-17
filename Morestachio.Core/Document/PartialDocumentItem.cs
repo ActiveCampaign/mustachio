@@ -19,6 +19,10 @@ namespace Morestachio
 			Value = partialName;
 			Partial = partial;
 		}
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "Partial";
+
 		/// <summary>
 		///		The name of the Partial
 		/// </summary>

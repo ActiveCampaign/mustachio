@@ -17,6 +17,9 @@ namespace Morestachio
 			EscapeValue = escapeValue;
 		}
 
+		/// <inheritdoc />
+		public override string Kind { get; } = "Expression";
+
 		/// <summary>
 		///		The Path of the Expression
 		/// </summary>
@@ -53,7 +56,7 @@ namespace Morestachio
 				}
 			}
 			
-			return Childs.WithScope(contextObject);
+			return Children.WithScope(contextObject);
 		}
 	}
 }

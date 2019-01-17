@@ -11,19 +11,13 @@ namespace Morestachio
 	public class CollectionDocumentItem : DocumentItemBase
 	{
 		/// <inheritdoc />
-		public CollectionDocumentItem(IDocumentItem itemDocument, string value)
+		public CollectionDocumentItem(string value)
 		{
-			ItemDocument = itemDocument;
 			Value = value;
 		}
-
-		/// <summary>
-		/// Gets the item document.
-		/// </summary>
-		/// <value>
-		/// The item document.
-		/// </value>
-		public IDocumentItem ItemDocument { get; private set; }
+		
+		/// <inheritdoc />
+		public override string Kind { get; } = "OpenCollection";
 
 		/// <summary>
 		///		Defines the expression from which the collection should be taken
@@ -64,7 +58,7 @@ namespace Morestachio
 						Value = current,
 						Parent = c
 					};
-					scopes.Add(new DocumentItemExecution(ItemDocument, innerContext));
+					scopes.AddRange(Children.WithScope(innerContext));
 					index++;
 					current = next;
 				} while (current != null && StopOrAbortBuilding(outputStream, context));

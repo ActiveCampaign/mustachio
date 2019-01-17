@@ -9,6 +9,10 @@ namespace Morestachio
 	/// </summary>
 	public class PrintFormattedItem : DocumentItemBase
 	{
+
+		/// <inheritdoc />
+		public override string Kind { get; } = "PrintExpression";
+
 		/// <inheritdoc />
 		public override async Task<IEnumerable<DocumentItemExecution>> Render(IByteCounterStream outputStream, ContextObject context, ScopeData scopeData)
 		{
@@ -24,7 +28,7 @@ namespace Morestachio
 				ContentDocumentItem.WriteContent(outputStream, value, context);
 			}
 			
-			return Childs.WithScope(context);
+			return Children.WithScope(context);
 		}
 	}
 }

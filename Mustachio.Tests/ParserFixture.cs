@@ -1,11 +1,6 @@
-﻿using Mustachio;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions;
 
@@ -570,7 +565,8 @@ namespace Mustachio.Tests
             var model = new Dictionary<string, object>(){
                 {"content" , content}
             };
-            Assert.Equal(expected, Parser.Parse(template, true)(model));
+            var options = new ParsingOptions{DisableContentSafety = true};
+            Assert.Equal(expected, Parser.Parse(template, options)(model));
         }
     }
 }

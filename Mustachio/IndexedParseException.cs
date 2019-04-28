@@ -7,20 +7,22 @@ namespace Mustachio
     /// </summary>
     public class IndexedParseException : ParseException
     {
-        internal IndexedParseException(Mustachio.Tokenizer.CharacterLocation location, string message, params object[] replacements)
-            : this(message, replacements)
+        internal IndexedParseException(string sourceName, Tokenizer.CharacterLocation location, string message, params object[] replacements)
+            : this(sourceName, message, replacements)
         {
             this.LineNumber = location.Line;
             this.CharacterOnLine = location.Character;
+            this.SourceName = sourceName;
         }
 
-        public IndexedParseException(string message, params object[] replacements)
+        public IndexedParseException(string sourceName, string message, params object[] replacements)
             : base(String.Format(message, replacements))
         {
-
+            this.SourceName = sourceName;
         }
 
         public int LineNumber { get; set; }
         public int CharacterOnLine { get; set; }
+        public string SourceName { get; set; }
     }
 }

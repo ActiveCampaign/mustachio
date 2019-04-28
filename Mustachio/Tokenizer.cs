@@ -9,7 +9,7 @@ namespace Mustachio
     /// Reads in a mustache template and lexes it into tokens.
     /// </summary>
     /// <exception cref="Mustachio.IndexedParseException"></exception>
-    internal class Tokenizer
+    public class Tokenizer
     {
         internal class CharacterLocation
         {
@@ -51,38 +51,47 @@ namespace Mustachio
             return retval;
         }
 
-        public static IEnumerable<TokenPair> Tokenize(string templateString)
+        public static TokenizeResult Tokenize(string templateString, ParsingOptions parsingOptions)
         {
             templateString = templateString ?? "";
             var matches = _tokenFinder.Matches(templateString);
-            var scopestack = new Stack<Tuple<string, int>>();
+            var scopeStack = new Stack<Tuple<string, int>>();
+            var sourceName = parsingOptions.SourceName;
 
             var idx = 0;
 
+            var tokens = new List<TokenTuple>();
             var parseErrors = new List<IndexedParseException>();
             int[] lines = null;
+
+            var lowPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.Low).ToList() ?? new List<TokenExpander>();
+            var highPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.High).ToList() ?? new List<TokenExpander>();
 
             foreach (Match m in matches)
             {
                 //yield front content.
                 if (m.Index > idx)
                 {
-                    yield return new TokenPair(TokenType.Content, templateString.Substring(idx, m.Index - idx));
+                    tokens.Add(new TokenTuple(TokenType.Content, templateString.Substring(idx, m.Index - idx)));
                 }
-                if (m.Value.StartsWith("{{#each"))
+                if (highPrecedenceExpanders.Any(e => m.Value.StartsWith(e.Prefix)))
                 {
-                    scopestack.Push(Tuple.Create(m.Value, m.Index));
+                    TokenizeExpander(highPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                }
+                else if (m.Value.StartsWith("{{#each"))
+                {
+                    scopeStack.Push(Tuple.Create(m.Value, m.Index));
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim();
                     token = token.Substring(4);
 
                     if (token.StartsWith(" ") && token.Trim() != "")
                     {
-                        yield return new TokenPair(TokenType.CollectionOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors).Trim());
+                        tokens.Add(new TokenTuple(TokenType.CollectionOpen, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors).Trim()));
                     }
                     else
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, @"The 'each' block being opened requires a model path to be specified in the form '{{{{#each <name>}}}}'."));
+                        parseErrors.Add(new IndexedParseException(sourceName, location, @"The 'each' block being opened requires a model path to be specified in the form '{{{{#each <name>}}}}'."));
                     }
                 }
                 else if (m.Value.StartsWith("{{/each"))
@@ -90,78 +99,82 @@ namespace Mustachio
                     if (m.Value != "{{/each}}")
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, @"The syntax to close the 'each' block should be: '{{{{/each}}}}'."));
+                        parseErrors.Add(new IndexedParseException(sourceName, location, @"The syntax to close the 'each' block should be: '{{{{/each}}}}'."));
                     }
-                    else if (scopestack.Any() && scopestack.Peek().Item1.StartsWith("{{#each"))
+                    else if (scopeStack.Any() && scopeStack.Peek().Item1.StartsWith("{{#each"))
                     {
-                        var token = scopestack.Pop().Item1;
-                        yield return new TokenPair(TokenType.CollectionClose, token);
+                        var token = scopeStack.Pop().Item1;
+                        tokens.Add(new TokenTuple(TokenType.CollectionClose, token));
                     }
                     else
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, @"An 'each' block is being closed, but no corresponding opening element ('{{{{#each <name>}}}}') was detected."));
+                        parseErrors.Add(new IndexedParseException(sourceName, location, @"An 'each' block is being closed, but no corresponding opening element ('{{{{#each <name>}}}}') was detected."));
                     }
                 }
                 else if (m.Value.StartsWith("{{#"))
                 {
                     //open group
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('#').Trim();
-                    if (scopestack.Any() && scopestack.Peek().Item1 == token)
+                    if (scopeStack.Any() && scopeStack.Peek().Item1 == token)
                     {
-                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                        tokens.Add(new TokenTuple(TokenType.ElementClose, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                     }
                     else
                     {
-                        scopestack.Push(Tuple.Create(token, m.Index));
+                        scopeStack.Push(Tuple.Create(token, m.Index));
                     }
-                    yield return new TokenPair(TokenType.ElementOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                    tokens.Add(new TokenTuple(TokenType.ElementOpen, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                 }
                 else if (m.Value.StartsWith("{{^"))
                 {
                     //open inverted group
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('^').Trim();
 
-                    if (scopestack.Any() && scopestack.Peek().Item1 == token)
+                    if (scopeStack.Any() && scopeStack.Peek().Item1 == token)
                     {
-                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                        tokens.Add(new TokenTuple(TokenType.ElementClose, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                     }
                     else
                     {
-                        scopestack.Push(Tuple.Create(token, m.Index));
+                        scopeStack.Push(Tuple.Create(token, m.Index));
                     }
-                    yield return new TokenPair(TokenType.InvertedElementOpen, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                    tokens.Add(new TokenTuple(TokenType.InvertedElementOpen, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                 }
                 else if (m.Value.StartsWith("{{/"))
                 {
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('/').Trim();
                     //close group
-                    if (scopestack.Any() && scopestack.Peek().Item1 == token)
+                    if (scopeStack.Any() && scopeStack.Peek().Item1 == token)
                     {
-                        scopestack.Pop();
-                        yield return new TokenPair(TokenType.ElementClose, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                        scopeStack.Pop();
+                        tokens.Add(new TokenTuple(TokenType.ElementClose, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                     }
                     else
                     {
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
-                        parseErrors.Add(new IndexedParseException(location, "It appears that open and closing elements are mismatched."));
+                        parseErrors.Add(new IndexedParseException(sourceName, location, "It appears that open and closing elements are mismatched."));
                     }
                 }
                 else if (m.Value.StartsWith("{{{") | m.Value.StartsWith("{{&"))
                 {
                     //escaped single element
                     var token = m.Value.TrimStart('{').TrimEnd('}').TrimStart('&').Trim();
-                    yield return new TokenPair(TokenType.UnescapedSingleValue, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                    tokens.Add(new TokenTuple(TokenType.UnescapedSingleValue, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                 }
                 else if (m.Value.StartsWith("{{!"))
                 {
                     //it's a comment drop this on the floor, no need to even yield it.
                 }
+                else if (lowPrecedenceExpanders.Any(e => m.Value.StartsWith(e.Prefix)))
+                {
+                    TokenizeExpander(lowPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                }
                 else
                 {
-                    //unsingle value.
+                    //un-single value.
                     var token = m.Value.TrimStart('{').TrimEnd('}').Trim();
-                    yield return new TokenPair(TokenType.EscapedSingleValue, Validated(token, templateString, m.Index, ref lines, ref parseErrors));
+                    tokens.Add(new TokenTuple(TokenType.EscapedSingleValue, Validated(token, templateString, m.Index, sourceName, ref lines, ref parseErrors)));
                 }
 
                 //move forward in the string.
@@ -170,13 +183,13 @@ namespace Mustachio
 
             if (idx < templateString.Length)
             {
-                yield return new TokenPair(TokenType.Content, templateString.Substring(idx));
+                tokens.Add(new TokenTuple(TokenType.Content, templateString.Substring(idx)));
             }
 
             #region Assert that any scopes opened must be closed.
-            if (scopestack.Any())
+            if (scopeStack.Any())
             {
-                var scopes = scopestack.Select(k =>
+                var scopes = scopeStack.Select(k =>
                 {
                     var value = k.Item1.Trim('{', '#', '}');
                     if (value.StartsWith("each "))
@@ -190,35 +203,43 @@ namespace Mustachio
                 foreach (var unclosedScope in scopes)
                 {
                     //var line = FindLineForLocation(templateString, m.Index, ref lines);
-                    parseErrors.Add(new IndexedParseException(unclosedScope.location,
+                    parseErrors.Add(new IndexedParseException(sourceName, unclosedScope.location,
                         "A scope block to the following path was opened but not closed: '{0}', please close it using the appropriate syntax.",
                         unclosedScope.scope));
                 }
             }
             #endregion
 
-            //We want to throw an aggregate template exception, but in due time.
-            if (parseErrors.Any())
-            {
-                var innerExceptions = parseErrors.OrderBy(k => k.LineNumber).ThenBy(k => k.CharacterOnLine).ToArray();
-                throw new AggregateException(innerExceptions);
-            }
-            yield break;
+            return new TokenizeResult { Tokens = tokens, Errors = parseErrors };
         }
 
+        private static void TokenizeExpander(IEnumerable<TokenExpander> expanders, Match m, ParsingOptions options, 
+            ref List<TokenTuple> tokens, ref List<IndexedParseException> parseErrors)
+        {
+            var expander = expanders.First(e => m.Value.StartsWith(e.Prefix));
+            if (expander.ExpandTokens == null)
+            {
+                throw new ArgumentException($"ExpandTokens function was not provided for expander with prefix: {expander.Prefix}");
+            }
+            var tokenizeResult = expander.ExpandTokens(m.Value, options);
+            tokens.Add(new TokenTuple(TokenType.Custom, m.Value, expander.RenderTokens));
+            tokens.AddRange(tokenizeResult.Tokens);
+            parseErrors.AddRange(tokenizeResult.Errors);
+        }
+        
         /// <summary>
-        /// Specifies combnations of paths that don't work.
+        /// Specifies combinations of paths that don't work.
         /// </summary>
         private static readonly Regex _negativePathSpec = new Regex("([.]{3,})|([^\\w./_]+)|((?<![.]{2})[/])|([.]{2,}($|[^/]))", RegexOptions.Singleline | RegexOptions.Compiled);
 
-        private static string Validated(string token, string content, int index, ref int[] lines, ref List<IndexedParseException> exceptions)
+        private static string Validated(string token, string content, int index, string sourceName, ref int[] lines, ref List<IndexedParseException> exceptions)
         {
             token = token.Trim();
 
             if (_negativePathSpec.Match(token).Success)
             {
                 var location = HumanizeCharacterLocation(content, index, ref lines);
-                exceptions.Add(new IndexedParseException(location, "The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
+                exceptions.Add(new IndexedParseException(sourceName, location, "The path '{0}' is not valid. Please see documentation for examples of valid paths.", token));
             }
             return token;
         }

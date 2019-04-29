@@ -16,17 +16,22 @@ namespace Mustachio
         /// <summary>
         /// Parse the template content, producing a function that can be used to apply variables to the template. 
         /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
+        /// Default parsing options will be used.
         /// </summary>
         /// <param name="template">The content of the template to be parsed.</param>
-        /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
-        /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-
         public static Func<IDictionary<String, object>, String> Parse(string template)
         {
             return Parse(template, new ParsingOptions());
         }
 
+        /// <summary>
+        /// Parse the template content, producing a function that can be used to apply variables to the template. 
+        /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
+        /// </summary>
+        /// <param name="template">The content of the template to be parsed.</param>
+        /// <param name="options">Options for configuring/extending the parser.</param>
+        /// <returns></returns>
         public static Func<IDictionary<String, object>, String> Parse(string template, ParsingOptions options)
         {
             var tokensQueue = GetTokensQueue(template, options);
@@ -57,16 +62,21 @@ namespace Mustachio
 
         /// <summary>
         /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
+        /// Default parsing options will be used.
         /// </summary>
         /// <param name="templateSource">The template content to parse.</param>
-        /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
-        /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
         public static ExtendedParseInformation ParseWithModelInference(string templateSource)
         {
             return ParseWithModelInference(templateSource, new ParsingOptions());
         }
 
+        /// <summary>
+        /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
+        /// </summary>
+        /// <param name="templateSource">The template content to parse.</param>
+        /// <param name="options">Options for configuring/extending the parser.</param>
+        /// <returns></returns>
         public static ExtendedParseInformation ParseWithModelInference(string templateSource, ParsingOptions options)
         {
             var tokensQueue = GetTokensQueue(templateSource, options);

@@ -65,6 +65,7 @@ namespace Mustachio
             int[] lines = null;
 
             var lowPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.Low).ToList() ?? new List<TokenExpander>();
+            var mediumPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.Medium).ToList() ?? new List<TokenExpander>();
             var highPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.High).ToList() ?? new List<TokenExpander>();
 
             foreach (Match m in matches)
@@ -155,6 +156,10 @@ namespace Mustachio
                         var location = HumanizeCharacterLocation(templateString, m.Index, ref lines);
                         parseErrors.Add(new IndexedParseException(sourceName, location, "It appears that open and closing elements are mismatched."));
                     }
+                }
+                else if (mediumPrecedenceExpanders.Any(e => m.Value.StartsWith(e.Prefix)))
+                {
+                    TokenizeCustomExpander(mediumPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
                 }
                 else if (m.Value.StartsWith("{{{") | m.Value.StartsWith("{{&"))
                 {

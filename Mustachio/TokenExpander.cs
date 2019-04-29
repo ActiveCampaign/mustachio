@@ -6,7 +6,7 @@ namespace Mustachio
 {
     public enum Precedence
     {
-        Low, High
+        Low, Medium, High
     }
 
     public class TokenExpander
@@ -17,8 +17,9 @@ namespace Mustachio
         public string Prefix { get; set; }
 
         /// <summary>
-        /// Low precedence expanders will be evaluated after Mustache syntax tokens (e.g.: each blocks, groups, etc.).
-        /// High precedence expanders will be evaluated before Mustache syntax tokens.
+        /// Low precedence expanders will be evaluated after all Mustache syntax tokens (e.g.: "each" blocks, groups, etc.).
+        /// Medium precedence expanders will be evaluated after "each" blocks and groups, but before unescaped variables {{{ var }}} syntax
+        /// High precedence expanders will be evaluated before all Mustache syntax tokens.
         /// </summary>
         public Precedence Precedence { get; set; }
 

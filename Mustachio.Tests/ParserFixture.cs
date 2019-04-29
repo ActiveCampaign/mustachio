@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Xunit;
@@ -140,7 +141,7 @@ namespace Mustachio.Tests
             var results = Parser.ParseWithModelInference("This template has no mustache thingies.");
 
             var expected = @"{}".EliminateWhitespace();
-            
+
             var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
@@ -568,6 +569,160 @@ namespace Mustachio.Tests
             };
             var options = new ParsingOptions { DisableContentSafety = true };
             Assert.Equal(expected, Parser.Parse(template, options)(model));
+        }
+
+
+        [Fact]
+        public void NoExpandTokensFunctionThrowsArgumentException()
+        {
+            var baseTemplate = "Hello, {{{ @title }}}!!!";
+
+            var tokenExpander = new TokenExpander
+            {
+                Prefix = "{{{ @title }}}",
+                Precedence = Precedence.Medium
+            };
+            var model = new Dictionary<string, object>();
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+
+            Assert.Throws(typeof(ArgumentException), () => Parser.Parse(baseTemplate, parsingOptions)(model));
+        }
+
+        [Fact]
+        public void ParseErrorsHaveSourceNamesSet()
+        {
+            var template = "Hello, {{##each}}!!!";
+            var model = new Dictionary<string, object>();
+            var expectedSourceName = "TestBase";
+            var parsingOptions = new ParsingOptions { SourceName = expectedSourceName };
+
+            // Checking to see that it does indeed throw
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse(template, parsingOptions)(model));
+
+            try
+            {
+                Parser.Parse(template, parsingOptions)(model);
+            }
+            catch (AggregateException e)
+            {
+                Assert.Equal(true, e.InnerExceptions.Any(ex =>
+                {
+                    var parseException = ex as IndexedParseException;
+                    return parseException?.SourceName == expectedSourceName;
+                }));
+            }
+        }
+
+        [Fact]
+        public void TokenExpandersPropagateParseErrorsWithProperSourceName()
+        {
+            var baseTemplate = "Hello, {{#each}} {{{ @title }}}!!!";
+            var titleData = "Mr. {{## userId }}";
+
+            var titleSourceName = "Title";
+            var baseSourceName = "TestBase";
+
+            var tokenExpander = new TokenExpander
+            {
+                Prefix = "{{{ @title }}}",
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions { SourceName = titleSourceName }),
+                Precedence = Precedence.Medium
+            };
+            var model = new Dictionary<string, object>();
+            var parsingOptions = new ParsingOptions { SourceName = baseSourceName, TokenExpanders = new[] { tokenExpander } };
+
+            // Checking to see that an exception does indeed throw
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse(baseTemplate, parsingOptions)(model));
+
+            try
+            {
+                Parser.Parse(baseTemplate, parsingOptions)(model);
+            }
+            catch (AggregateException e)
+            {
+                var baseTemplateErrors = e.InnerExceptions.Count(ex =>
+                {
+                    var parseException = ex as IndexedParseException;
+                    return parseException?.SourceName == baseSourceName;
+                });
+                var titleTemplateErrors = e.InnerExceptions.Count(ex =>
+                {
+                    var parseException = ex as IndexedParseException;
+                    return parseException?.SourceName == titleSourceName;
+                });
+                Assert.Equal(3, e.InnerExceptions.Count);
+                Assert.Equal(2, baseTemplateErrors);
+                Assert.Equal(1, titleTemplateErrors);
+            }
+        }
+
+        [Fact]
+        public void TokenExpandersPropagateParseErrorsWithProperCharacterLocation()
+        {
+            var baseTemplate = "Welcome to our website!\r\nHello, {{{ @title }}} {{##each}}!!!";
+            var titleData = "Mr. {{## userId }}";
+
+            var titleSourceName = "Title";
+            var baseSourceName = "TestBase";
+
+            var tokenExpander = new TokenExpander
+            {
+                Prefix = "{{{ @title }}}",
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions { SourceName = titleSourceName }),
+                Precedence = Precedence.Medium
+            };
+            var model = new Dictionary<string, object>();
+            var parsingOptions = new ParsingOptions { SourceName = baseSourceName, TokenExpanders = new[] { tokenExpander } };
+
+            // Checking to see that an exception does indeed throw
+            Assert.Throws(typeof(AggregateException), () => Parser.Parse(baseTemplate, parsingOptions)(model));
+
+            try
+            {
+                Parser.Parse(baseTemplate, parsingOptions)(model);
+            }
+            catch (AggregateException e)
+            {
+                var baseTemplateErrors = e.InnerExceptions.Count(ex =>
+                {
+                    var parseException = ex as IndexedParseException;
+                    return parseException?.SourceName == baseSourceName &&
+                           parseException?.LineNumber == 2;
+                });
+                var titleTemplateErrors = e.InnerExceptions.Count(ex =>
+                {
+                    var parseException = ex as IndexedParseException;
+                    return parseException?.SourceName == titleSourceName &&
+                           parseException?.LineNumber == 1 &&
+                           parseException?.CharacterOnLine == 5;
+                });
+                Assert.Equal(2, e.InnerExceptions.Count);
+                Assert.Equal(1, baseTemplateErrors);
+                Assert.Equal(1, titleTemplateErrors);
+            }
+        }
+
+        [Fact]
+        public void ParserCanInferVariablesUsedInExpandedTokens()
+        {
+            var baseTemplate = "Welcome to our website!\r\nHello, {{{ @title }}}!!!";
+            var titleData = "Mr. {{ userId }}";
+
+            var tokenExpander = new TokenExpander
+            {
+                Prefix = "{{{ @title }}}",
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
+                Precedence = Precedence.Medium
+            };
+
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+            var results = Parser.ParseWithModelInference(baseTemplate, parsingOptions);
+
+            var expected = @"{""userId"" : ""userId_Value""}".EliminateWhitespace();
+
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
+
+            Assert.Equal(expected, actual);
         }
 
         private string SerializeInferredModel(InferredTemplateModel model)

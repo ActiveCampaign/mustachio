@@ -214,7 +214,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };
@@ -235,7 +235,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };
@@ -272,7 +272,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @content }}}",
+                RegEx = "{{{ @content }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(contentData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };
@@ -294,7 +294,7 @@ namespace Mustachio.Tests
             var expectedCustomToken = "1234";
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 RenderTokens = (tokenString, queue, options, inferredModel) =>
                 {
                     return (builder, context) => { builder.Append(expectedCustomToken); };
@@ -315,14 +315,14 @@ namespace Mustachio.Tests
         {
             var baseTemplate = "Hello, {{{ title }}}!!!";
             var titleData = "Mr. User";
-            
+
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ title }}}",
+                RegEx = "{{{ title }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Low
             };
-            var model = new Dictionary<string, object> {["title"] = "Mr. Bob"};
+            var model = new Dictionary<string, object> { ["title"] = "Mr. Bob" };
             var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
 
             var result = Parser.Parse(baseTemplate, parsingOptions)(model);
@@ -334,7 +334,6 @@ namespace Mustachio.Tests
             result = Parser.Parse(baseTemplate, parsingOptions)(model);
 
             Assert.Equal($"Hello, Mr. User!!!", result);
-
         }
     }
 }

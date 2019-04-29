@@ -573,13 +573,13 @@ namespace Mustachio.Tests
 
 
         [Fact]
-        public void NoExpandTokensFunctionThrowsArgumentException()
+        public void NullExpandTokensFunctionThrowsArgumentException()
         {
             var baseTemplate = "Hello, {{{ @title }}}!!!";
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 Precedence = Precedence.Medium
             };
             var model = new Dictionary<string, object>();
@@ -624,7 +624,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions { SourceName = titleSourceName }),
                 Precedence = Precedence.Medium
             };
@@ -667,7 +667,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions { SourceName = titleSourceName }),
                 Precedence = Precedence.Medium
             };
@@ -710,7 +710,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                Prefix = "{{{ @title }}}",
+                RegEx = "{{{ @title }}}",
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };

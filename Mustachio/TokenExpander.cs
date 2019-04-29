@@ -12,16 +12,16 @@ namespace Mustachio
     public class TokenExpander
     {
         /// <summary>
-        /// Prefix used to identify the custom token.
+        /// RegEx used to identify the custom token.
         /// </summary>
-        public string Prefix { get; set; }
+        public string RegEx { get; set; }
 
         /// <summary>
         /// Low precedence expanders will be evaluated after all Mustache syntax tokens (e.g.: "each" blocks, groups, etc.).
         /// Medium precedence expanders will be evaluated after "each" blocks and groups, but before unescaped variables {{{ var }}} syntax
         /// High precedence expanders will be evaluated before all Mustache syntax tokens.
         /// </summary>
-        public Precedence Precedence { get; set; }
+        public Precedence Precedence { get; set; } = Precedence.Medium;
 
         /// <summary>
         /// A function that generates new tokens to be used in the parent template.

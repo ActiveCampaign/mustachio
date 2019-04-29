@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -94,7 +93,7 @@ namespace Mustachio
             Collection
         }
 
-        private object RepresentedContext()
+        public object RepresentedContext()
         {
             object retval = null;
             if (!Usages.Any())
@@ -124,11 +123,6 @@ namespace Mustachio
                 }
             }
             return retval;
-        }
-
-        public override string ToString()
-        {
-            return JsonConvert.SerializeObject(RepresentedContext());
         }
     }
 }

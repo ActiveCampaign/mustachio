@@ -76,7 +76,7 @@ namespace Mustachio
                 }
                 if (highPrecedenceExpanders.Any(e => m.Value.StartsWith(e.Prefix)))
                 {
-                    TokenizeExpander(highPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                    TokenizeCustomExpander(highPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
                 }
                 else if (m.Value.StartsWith("{{#each"))
                 {
@@ -168,7 +168,7 @@ namespace Mustachio
                 }
                 else if (lowPrecedenceExpanders.Any(e => m.Value.StartsWith(e.Prefix)))
                 {
-                    TokenizeExpander(lowPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                    TokenizeCustomExpander(lowPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
                 }
                 else
                 {
@@ -213,7 +213,7 @@ namespace Mustachio
             return new TokenizeResult { Tokens = tokens, Errors = parseErrors };
         }
 
-        private static void TokenizeExpander(IEnumerable<TokenExpander> expanders, Match m, ParsingOptions options, 
+        private static void TokenizeCustomExpander(IEnumerable<TokenExpander> expanders, Match m, ParsingOptions options, 
             ref List<TokenTuple> tokens, ref List<IndexedParseException> parseErrors)
         {
             var expander = expanders.First(e => m.Value.StartsWith(e.Prefix));

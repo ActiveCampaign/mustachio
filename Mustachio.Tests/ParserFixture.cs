@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using Xunit;
 using Xunit.Extensions;
 
@@ -102,7 +103,7 @@ namespace Mustachio.Tests
                 }
             }".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
         }
@@ -112,7 +113,7 @@ namespace Mustachio.Tests
         {
             var results = Parser.ParseWithModelInference("{{Name}}");
             var expected = @"{""Name"" : ""Name_Value""}".EliminateWhitespace();
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
         }
@@ -128,7 +129,7 @@ namespace Mustachio.Tests
                 }
             }".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
         }
@@ -139,8 +140,8 @@ namespace Mustachio.Tests
             var results = Parser.ParseWithModelInference("This template has no mustache thingies.");
 
             var expected = @"{}".EliminateWhitespace();
-
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+            
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
         }
@@ -153,7 +154,7 @@ namespace Mustachio.Tests
 
             var expected = @"{""Employees"" : [{ ""name"" : ""name_Value""}]}".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
         }
@@ -172,7 +173,7 @@ namespace Mustachio.Tests
                                 }]
                             }".EliminateWhitespace();
 
-            var actual = results.InferredModel.ToString().EliminateWhitespace();
+            var actual = SerializeInferredModel(results.InferredModel).EliminateWhitespace();
 
             Assert.Equal(expected, actual);
         }
@@ -565,8 +566,14 @@ namespace Mustachio.Tests
             var model = new Dictionary<string, object>(){
                 {"content" , content}
             };
-            var options = new ParsingOptions{DisableContentSafety = true};
+            var options = new ParsingOptions { DisableContentSafety = true };
             Assert.Equal(expected, Parser.Parse(template, options)(model));
+        }
+
+        private string SerializeInferredModel(InferredTemplateModel model)
+        {
+            var modelRepresentation = model.RepresentedContext();
+            return JsonConvert.SerializeObject(modelRepresentation);
         }
     }
 }

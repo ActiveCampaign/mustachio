@@ -12,36 +12,30 @@ branches:
 # Operating system (build VM template)
 os: Windows Server 2012
 
-# enable patching of AssemblyInfo.* files
-assembly_info:
-  patch: true
-  file: AssemblyInfo.*
-  assembly_version: "1.0.{build}"
-  assembly_file_version: "{version}"
-  assembly_informational_version: "{version}"
+# enable patching of .NET Standard csproj.* files
 
-# Automatically register private account and/or project AppVeyor NuGet feeds.
-nuget:
-  account_feed: true
-  project_feed: true
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: "1.0.{build}"
+  file_version: '{version}'
+  informational_version: '{version}'
 
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
 
-# build platform, i.e. x86, x64, Any CPU. This setting is optional.
-platform: Any CPU
+before_build:
+  # Display .NET Core version
+  - cmd: dotnet --version
+  # Display minimal restore text
+  - cmd: dotnet restore ./Mustachio.sln --verbosity m
 
-# build Configuration, i.e. Debug, Release, etc.
-configuration: Release
-
-build:
-  project: ./Mustachio.sln  # path to Visual Studio solution or project
-
-  # MSBuild verbosity level
-  # quiet|minimal|normal|detailed
-  verbosity: normal
-
+build_script:
+  - cmd: dotnet build ./Mustachio.sln -c Release
+  
 #---------------------------------#
 #       tests configuration       #
 #---------------------------------#

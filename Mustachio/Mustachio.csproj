@@ -3,13 +3,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <AssemblyTitle>Mustachio</AssemblyTitle>
+    <Version>1.0.0</Version>
+    <PackageVersion>1.0.0</PackageVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
     <Company>Wildbit, LLC.</Company>
     <Product>Mustachio</Product>
     <Description>Mustache templating, with just a little more flavor.</Description>
     <Copyright>Copyright 2019</Copyright>
-    <Version>0.0.0-dev</Version>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>1.0.0</FileVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Authors>wildbit</Authors>
     <PackageIconUrl>https://raw.githubusercontent.com/wildbit/mustachio/master/mustachio%402x.png?token=AACKAYixw-BltuR0nu9GbhOUjcyl95QWks5VyKjawA%3D%3D</PackageIconUrl>

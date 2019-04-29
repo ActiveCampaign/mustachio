@@ -640,19 +640,19 @@ namespace Mustachio.Tests
             }
             catch (AggregateException e)
             {
-                var baseTemplateErrors = e.InnerExceptions.Count(ex =>
+                var baseTemplateErrorsCount = e.InnerExceptions.Count(ex =>
                 {
                     var parseException = ex as IndexedParseException;
                     return parseException?.SourceName == baseSourceName;
                 });
-                var titleTemplateErrors = e.InnerExceptions.Count(ex =>
+                var titleTemplateErrorsCount = e.InnerExceptions.Count(ex =>
                 {
                     var parseException = ex as IndexedParseException;
                     return parseException?.SourceName == titleSourceName;
                 });
                 Assert.Equal(3, e.InnerExceptions.Count);
-                Assert.Equal(2, baseTemplateErrors);
-                Assert.Equal(1, titleTemplateErrors);
+                Assert.Equal(2, baseTemplateErrorsCount);
+                Assert.Equal(1, titleTemplateErrorsCount);
             }
         }
 
@@ -683,13 +683,13 @@ namespace Mustachio.Tests
             }
             catch (AggregateException e)
             {
-                var baseTemplateErrors = e.InnerExceptions.Count(ex =>
+                var baseTemplateErrorsCount = e.InnerExceptions.Count(ex =>
                 {
                     var parseException = ex as IndexedParseException;
                     return parseException?.SourceName == baseSourceName &&
                            parseException?.LineNumber == 2;
                 });
-                var titleTemplateErrors = e.InnerExceptions.Count(ex =>
+                var titleTemplateErrorsCount = e.InnerExceptions.Count(ex =>
                 {
                     var parseException = ex as IndexedParseException;
                     return parseException?.SourceName == titleSourceName &&
@@ -697,8 +697,8 @@ namespace Mustachio.Tests
                            parseException?.CharacterOnLine == 5;
                 });
                 Assert.Equal(2, e.InnerExceptions.Count);
-                Assert.Equal(1, baseTemplateErrors);
-                Assert.Equal(1, titleTemplateErrors);
+                Assert.Equal(1, baseTemplateErrorsCount);
+                Assert.Equal(1, titleTemplateErrorsCount);
             }
         }
 

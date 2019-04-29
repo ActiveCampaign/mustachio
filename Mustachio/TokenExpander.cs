@@ -26,12 +26,11 @@ namespace Mustachio
         /// <summary>
         /// A function that generates new tokens to be used in the parent template.
         /// Note that the custom token will be added before the expanded tokens.
-        /// To add a partial, you can plug in data and return Tokenizer.Tokenize(dataString, options).
         /// </summary>
         public Func<string, ParsingOptions, TokenizeResult> ExpandTokens { get; set; }
 
         /// <summary>
-        /// A function that allows to render the custom token and the following tokens.
+        /// A function that allows the rendering of the custom token and the following tokens.
         /// If this function is not provided, the custom token will not be rendered at all
         /// and the following tokens will be rendered using the default behaviour.
         /// </summary>

@@ -326,7 +326,7 @@ namespace Mustachio.Tests
             var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
 
             var result = Parser.Parse(baseTemplate, parsingOptions)(model);
-
+            // Because we used Low Precedence, the token was evaluated as an Unescaped value and it was taken from the model.
             Assert.Equal($"Hello, Mr. Bob!!!", result);
 
             // Testing with Medium Precedence. It should use our token expander this time.

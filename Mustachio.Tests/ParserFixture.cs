@@ -571,7 +571,6 @@ namespace Mustachio.Tests
             Assert.Equal(expected, Parser.Parse(template, options)(model));
         }
 
-
         [Fact]
         public void NullExpandTokensFunctionThrowsArgumentException()
         {

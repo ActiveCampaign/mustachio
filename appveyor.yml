@@ -13,7 +13,6 @@ branches:
 os: Windows Server 2012
 
 # enable patching of .NET Standard csproj.* files
-
 dotnet_csproj:
   patch: true
   file: '**\*.csproj'

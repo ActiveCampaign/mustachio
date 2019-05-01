@@ -33,18 +33,18 @@ namespace Mustachio
         }
 
         public TokenTuple(TokenType type, String value, 
-            Func<string, Queue<TokenTuple>, ParsingOptions, InferredTemplateModel, Action<StringBuilder, ContextObject>> renderTokens)
+            Func<string, Queue<TokenTuple>, ParsingOptions, InferredTemplateModel, Action<StringBuilder, ContextObject>> renderer)
         {
             this.Type = type;
             this.Value = value;
-            this.RenderTokens = renderTokens;
+            this.Renderer = renderer;
         }
 
         public TokenType Type { get; set; }
 
         public string Value { get; set; }
 
-        public Func<string, Queue<TokenTuple>, ParsingOptions, InferredTemplateModel, Action<StringBuilder, ContextObject>> RenderTokens { get; set; }
+        public Func<string, Queue<TokenTuple>, ParsingOptions, InferredTemplateModel, Action<StringBuilder, ContextObject>> Renderer { get; set; }
 
         public override string ToString()
         {

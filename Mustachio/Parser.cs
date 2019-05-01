@@ -143,9 +143,9 @@ namespace Mustachio
                         buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
                         break;
                     case TokenType.Custom:
-                        if (currentToken.RenderTokens != null)
+                        if (currentToken.Renderer != null)
                         {
-                            buildArray.Add(currentToken.RenderTokens(currentToken.Value, tokens, options, currentScope));
+                            buildArray.Add(currentToken.Renderer(currentToken.Value, tokens, options, currentScope));
                         }
                         break;
                 }

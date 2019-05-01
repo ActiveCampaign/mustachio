@@ -64,9 +64,7 @@ namespace Mustachio
             var parseErrors = new List<IndexedParseException>();
             int[] lines = null;
 
-            var lowPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.Low).ToList() ?? new List<TokenExpander>();
-            var mediumPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.Medium).ToList() ?? new List<TokenExpander>();
-            var highPrecedenceExpanders = parsingOptions.TokenExpanders?.Where(e => e.Precedence == Precedence.High).ToList() ?? new List<TokenExpander>();
+            var expanders = parsingOptions.TokenExpanders.ToLookup(k => k.Precedence);
 
             foreach (Match m in matches)
             {
@@ -75,9 +73,9 @@ namespace Mustachio
                 {
                     tokens.Add(new TokenTuple(TokenType.Content, templateString.Substring(idx, m.Index - idx)));
                 }
-                if (highPrecedenceExpanders.Any(e => Regex.IsMatch(m.Value, e.RegEx)))
+                if (DidTokenizeCustomExpander(expanders, Precedence.High, m, parsingOptions, ref tokens, ref parseErrors))
                 {
-                    TokenizeCustomExpander(highPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                    // already tokenized; do nothing;
                 }
                 else if (m.Value.StartsWith("{{#each"))
                 {
@@ -157,9 +155,9 @@ namespace Mustachio
                         parseErrors.Add(new IndexedParseException(sourceName, location, "It appears that open and closing elements are mismatched."));
                     }
                 }
-                else if (mediumPrecedenceExpanders.Any(e => Regex.IsMatch(m.Value, e.RegEx)))
+                else if (DidTokenizeCustomExpander(expanders, Precedence.Medium, m, parsingOptions, ref tokens, ref parseErrors))
                 {
-                    TokenizeCustomExpander(mediumPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                    // already tokenized; do nothing;
                 }
                 else if (m.Value.StartsWith("{{{") | m.Value.StartsWith("{{&"))
                 {
@@ -171,9 +169,9 @@ namespace Mustachio
                 {
                     //it's a comment drop this on the floor, no need to even yield it.
                 }
-                else if (lowPrecedenceExpanders.Any(e => Regex.IsMatch(m.Value, e.RegEx)))
+                else if (DidTokenizeCustomExpander(expanders, Precedence.Low, m, parsingOptions, ref tokens, ref parseErrors))
                 {
-                    TokenizeCustomExpander(lowPrecedenceExpanders, m, parsingOptions, ref tokens, ref parseErrors);
+                    // already tokenized; do nothing;
                 }
                 else
                 {
@@ -218,18 +216,25 @@ namespace Mustachio
             return new TokenizeResult { Tokens = tokens, Errors = parseErrors };
         }
 
-        private static void TokenizeCustomExpander(IEnumerable<TokenExpander> expanders, Match m, ParsingOptions options,
+        private static bool DidTokenizeCustomExpander(ILookup<Precedence, TokenExpander> expanders, Precedence precedence, Match m, ParsingOptions options,
             ref List<TokenTuple> tokens, ref List<IndexedParseException> parseErrors)
         {
-            var expander = expanders.First(e => Regex.IsMatch(m.Value, e.RegEx));
+            var expander = expanders[precedence].FirstOrDefault(e => Regex.IsMatch(m.Value, e.RegEx));
+            if (expander == null)
+            {
+                return false;
+            }
             if (expander.ExpandTokens == null)
             {
                 throw new ArgumentException($"ExpandTokens function was not provided for expander with RegEx: {expander.RegEx}");
             }
+
             var tokenizeResult = expander.ExpandTokens(m.Value, options);
-            tokens.Add(new TokenTuple(TokenType.Custom, m.Value, expander.RenderTokens));
+            tokens.Add(new TokenTuple(TokenType.Custom, m.Value, expander.Renderer));
             tokens.AddRange(tokenizeResult.Tokens);
             parseErrors.AddRange(tokenizeResult.Errors);
+
+            return true;
         }
 
         /// <summary>

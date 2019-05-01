@@ -295,7 +295,7 @@ namespace Mustachio.Tests
             var tokenExpander = new TokenExpander
             {
                 RegEx = "{{{ @title }}}",
-                RenderTokens = (tokenString, queue, options, inferredModel) =>
+                Renderer = (tokenString, queue, options, inferredModel) =>
                 {
                     return (builder, context) => { builder.Append(expectedCustomToken); };
                 },

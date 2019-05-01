@@ -18,6 +18,6 @@
         /// Allows to extend Mustachio to support unknown tokens. You can use this to include partials,
         /// or any custom behaviour such as date/time formatters, localization, etc.
         /// </summary>
-        public TokenExpander[] TokenExpanders { get; set; }
+        public TokenExpander[] TokenExpanders { get; set; } = new TokenExpander[0];
     }
 }

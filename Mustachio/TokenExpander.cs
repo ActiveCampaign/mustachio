@@ -20,6 +20,7 @@ namespace Mustachio
         /// Low precedence expanders will be evaluated after all Mustache syntax tokens (e.g.: "each" blocks, groups, etc.).
         /// Medium precedence expanders will be evaluated after "each" blocks and groups, but before unescaped variables {{{ var }}} syntax
         /// High precedence expanders will be evaluated before all Mustache syntax tokens.
+        /// The order of the expanders passed in the array in ParsingOptions will be honored when applying them if more granularity is required.
         /// </summary>
         public Precedence Precedence { get; set; } = Precedence.Medium;
 
@@ -34,6 +35,6 @@ namespace Mustachio
         /// If this function is not provided, the custom token will not be rendered at all
         /// and the following tokens will be rendered using the default behaviour.
         /// </summary>
-        public Func<string, Queue<TokenTuple>, ParsingOptions, InferredTemplateModel, Action<StringBuilder, ContextObject>> RenderTokens { get; set; }
+        public Func<string, Queue<TokenTuple>, ParsingOptions, InferredTemplateModel, Action<StringBuilder, ContextObject>> Renderer { get; set; }
     }
 }

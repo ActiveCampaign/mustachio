@@ -219,7 +219,7 @@ namespace Mustachio
         private static bool DidTokenizeCustomExpander(ILookup<Precedence, TokenExpander> expanders, Precedence precedence, Match m, ParsingOptions options,
             ref List<TokenTuple> tokens, ref List<IndexedParseException> parseErrors)
         {
-            var expander = expanders[precedence].FirstOrDefault(e => Regex.IsMatch(m.Value, e.RegEx));
+            var expander = expanders[precedence].FirstOrDefault(e => e.RegEx.IsMatch(m.Value));
             if (expander == null)
             {
                 return false;

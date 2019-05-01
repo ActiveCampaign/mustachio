@@ -32,7 +32,7 @@ var sourceTemplate = "Welcome to our website! {{{ @content }}} Yours Truly, John
 var stringData = "This is a partial. You can also add variables here {{ testVar }} or use other expanders. Watch out for infinite loops!";
 var tokenExpander = new TokenExpander
     {
-        RegEx = "{{{ @content }}}", // you can also use Mustache syntax: {{> content }}
+        RegEx = new Regex("{{{ @content }}}"), // you can also use Mustache syntax: {{> content }}
         ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(stringData, baseOptions) // Instead of baseOptions, you can pass a new ParsingOptions object, which has no TokenExpanders to avoid infinite loops.
     };
 var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };

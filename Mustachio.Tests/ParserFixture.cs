@@ -578,7 +578,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 Precedence = Precedence.Medium
             };
             var model = new Dictionary<string, object>();
@@ -623,7 +623,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions { SourceName = titleSourceName }),
                 Precedence = Precedence.Medium
             };
@@ -666,7 +666,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions { SourceName = titleSourceName }),
                 Precedence = Precedence.Medium
             };
@@ -709,7 +709,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Extensions;
 
@@ -214,7 +215,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };
@@ -235,7 +236,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };
@@ -272,7 +273,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @content }}}",
+                RegEx = new Regex("{{{ @content }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(contentData, new ParsingOptions()),
                 Precedence = Precedence.Medium
             };
@@ -294,7 +295,7 @@ namespace Mustachio.Tests
             var expectedCustomToken = "1234";
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ @title }}}",
+                RegEx = new Regex("{{{ @title }}}"),
                 Renderer = (tokenString, queue, options, inferredModel) =>
                 {
                     return (builder, context) => { builder.Append(expectedCustomToken); };
@@ -318,7 +319,7 @@ namespace Mustachio.Tests
 
             var tokenExpander = new TokenExpander
             {
-                RegEx = "{{{ title }}}",
+                RegEx = new Regex("{{{ title }}}"),
                 ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
                 Precedence = Precedence.Low
             };

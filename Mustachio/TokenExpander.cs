@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Mustachio
 {
@@ -14,7 +15,7 @@ namespace Mustachio
         /// <summary>
         /// RegEx used to identify the custom token.
         /// </summary>
-        public string RegEx { get; set; }
+        public Regex RegEx { get; set; }
 
         /// <summary>
         /// Low precedence expanders will be evaluated after all Mustache syntax tokens (e.g.: "each" blocks, groups, etc.).

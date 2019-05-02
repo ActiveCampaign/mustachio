@@ -572,22 +572,6 @@ namespace Mustachio.Tests
         }
 
         [Fact]
-        public void NullExpandTokensFunctionThrowsArgumentException()
-        {
-            var baseTemplate = "Hello, {{{ @title }}}!!!";
-
-            var tokenExpander = new TokenExpander
-            {
-                RegEx = new Regex("{{{ @title }}}"),
-                Precedence = Precedence.Medium
-            };
-            var model = new Dictionary<string, object>();
-            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
-
-            Assert.Throws(typeof(ArgumentException), () => Parser.Parse(baseTemplate, parsingOptions)(model));
-        }
-
-        [Fact]
         public void ParseErrorsHaveSourceNamesSet()
         {
             var template = "Hello, {{##each}}!!!";

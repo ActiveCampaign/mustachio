@@ -73,7 +73,7 @@ namespace Mustachio
                 {
                     tokens.Add(new TokenTuple(TokenType.Content, templateString.Substring(idx, m.Index - idx)));
                 }
-                if (DidTokenizeCustomExpander(expanders, Precedence.High, m, parsingOptions, ref tokens, ref parseErrors))
+                if (ExpandTokens(expanders[Precedence.High], m, parsingOptions, ref tokens, ref parseErrors))
                 {
                     // already tokenized; do nothing;
                 }
@@ -155,7 +155,7 @@ namespace Mustachio
                         parseErrors.Add(new IndexedParseException(sourceName, location, "It appears that open and closing elements are mismatched."));
                     }
                 }
-                else if (DidTokenizeCustomExpander(expanders, Precedence.Medium, m, parsingOptions, ref tokens, ref parseErrors))
+                else if (ExpandTokens(expanders[Precedence.Medium], m, parsingOptions, ref tokens, ref parseErrors))
                 {
                     // already tokenized; do nothing;
                 }
@@ -169,7 +169,7 @@ namespace Mustachio
                 {
                     //it's a comment drop this on the floor, no need to even yield it.
                 }
-                else if (DidTokenizeCustomExpander(expanders, Precedence.Low, m, parsingOptions, ref tokens, ref parseErrors))
+                else if (ExpandTokens(expanders[Precedence.Low], m, parsingOptions, ref tokens, ref parseErrors))
                 {
                     // already tokenized; do nothing;
                 }
@@ -216,24 +216,28 @@ namespace Mustachio
             return new TokenizeResult { Tokens = tokens, Errors = parseErrors };
         }
 
-        private static bool DidTokenizeCustomExpander(ILookup<Precedence, TokenExpander> expanders, Precedence precedence, Match m, ParsingOptions options,
+        private static bool ExpandTokens(IEnumerable<TokenExpander> expanders, Match m, ParsingOptions options,
             ref List<TokenTuple> tokens, ref List<IndexedParseException> parseErrors)
         {
-            var expander = expanders[precedence].FirstOrDefault(e => e.RegEx.IsMatch(m.Value));
+            var expander = expanders.FirstOrDefault(e => e.RegEx.IsMatch(m.Value));
+
             if (expander == null)
             {
                 return false;
             }
-            if (expander.ExpandTokens == null)
+
+            if (expander.Renderer != null)
             {
-                throw new ArgumentException($"ExpandTokens function was not provided for expander with RegEx: {expander.RegEx}");
+                tokens.Add(new TokenTuple(TokenType.Custom, m.Value, expander.Renderer));
             }
 
-            var tokenizeResult = expander.ExpandTokens(m.Value, options);
-            tokens.Add(new TokenTuple(TokenType.Custom, m.Value, expander.Renderer));
-            tokens.AddRange(tokenizeResult.Tokens);
-            parseErrors.AddRange(tokenizeResult.Errors);
-
+            if (expander.ExpandTokens != null)
+            {
+                var tokenizeResult = expander.ExpandTokens(m.Value, options);
+                tokens.AddRange(tokenizeResult.Tokens);
+                parseErrors.AddRange(tokenizeResult.Errors);
+            }
+            
             return true;
         }
 

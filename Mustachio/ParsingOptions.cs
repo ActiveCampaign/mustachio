@@ -12,7 +12,7 @@
         /// <summary>
         /// The source name for this template. Will be used in error reporting to identify the location of parsing errors.
         /// </summary>
-        public string SourceName { get; set; } = "Base";
+        public string SourceName { get; set; }
 
         /// <summary>
         /// Allows to extend Mustachio to support unknown tokens. You can use this to include partials,

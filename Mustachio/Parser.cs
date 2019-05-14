@@ -26,7 +26,6 @@ namespace Mustachio
         }
 
         /// <summary>
-        /// This function is now obsolete. You should use the function accepting a ParsingOptions type instead.
         /// Parse the template content, producing a function that can be used to apply variables to the template. 
         /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
         /// Other parsing options will have default values.
@@ -35,7 +34,7 @@ namespace Mustachio
         /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
         /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("You should use the function accepting a ParsingOptions type instead.")]
         public static Func<IDictionary<String, object>, String> Parse(string template, bool disableContentEscaping)
         {
             return Parse(template, new ParsingOptions { DisableContentSafety = disableContentEscaping });
@@ -88,7 +87,6 @@ namespace Mustachio
         }
 
         /// <summary>
-        /// This function is now obsolete. You should use the function accepting a ParsingOptions type instead.
         /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
         /// Other parsing options will have default values.
         /// </summary>
@@ -96,7 +94,7 @@ namespace Mustachio
         /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
         /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("You should use the function accepting a ParsingOptions type instead.")]
         public static ExtendedParseInformation ParseWithModelInference(string templateSource, bool disableContentEscaping)
         {
             return ParseWithModelInference(templateSource, new ParsingOptions { DisableContentSafety = disableContentEscaping });

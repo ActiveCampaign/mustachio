@@ -197,3 +197,4 @@ FakesAssemblies/
 
 #ignore built nuget packages.
 *.nupkg
+.idea/

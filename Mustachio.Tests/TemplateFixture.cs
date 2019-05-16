@@ -9,6 +9,13 @@ namespace Mustachio.Tests
 {
     public class TemplateFixture
     {
+    
+        [Fact]
+        public void TestTravis()
+        {
+            throw new Exception("Ensuring unit tests fail in travis will halt build before publish.");
+        }
+    
         [Fact]
         public void TemplateRendersContentWithNoVariables()
         {

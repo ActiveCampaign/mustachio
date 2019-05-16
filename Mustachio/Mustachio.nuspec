@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package >
+<package>
 	<metadata>
 		<id>Mustachio</id>
 		<version>0.0.0-dev</version>
@@ -9,12 +9,9 @@
 		<iconUrl>https://raw.githubusercontent.com/wildbit/mustachio/master/mustachio%402x.png?token=AACKAYixw-BltuR0nu9GbhOUjcyl95QWks5VyKjawA%3D%3D</iconUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>Mustache templating, with just a little more flavor.</description>
-		<copyright>Copyright 2015</copyright>
-		<dependencies>
-			<dependency id="Newtonsoft.Json" version="6.0.8" />
-		</dependencies>
+		<copyright>Copyright 2019</copyright>
 	</metadata>
 	<files>
-		<file src="bin\Release\Mustachio.*" target="lib\net45" />
+		<file src="bin\Release\Mustachio.*" target="lib\netstandard2.0" />
 	</files>
 </package>

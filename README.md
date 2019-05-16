@@ -22,7 +22,29 @@ model.sender = "Sally";
 // Combine the model with the template to get content:
 var content = template(model);
 ```
+#### Extending Mustachio with Token Expanders:
 
+```csharp
+// You can add support for Partials via Token Expanders.
+// Token Expanders can be used to extend Mustachio for many other use cases, such as: Date/Time formatters, Localization, etc., allowing also custom Token Render functions.
+
+var sourceTemplate = "Welcome to our website! {{{ @content }}} Yours Truly, John Smith.";
+var stringData = "This is a partial. You can also add variables here {{ testVar }} or use other expanders. Watch out for infinite loops!";
+var tokenExpander = new TokenExpander
+    {
+        RegEx = new Regex("{{{ @content }}}"), // you can also use Mustache syntax: {{> content }}
+        ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(stringData, baseOptions) // Instead of baseOptions, you can pass a new ParsingOptions object, which has no TokenExpanders to avoid infinite loops.
+    };
+var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+var template = Mustachio.Parser.Parse(sourceTemplate, parsingOptions);
+
+// Create the values for the template model:
+dynamic model = new ExpandoObject();
+model.testVar = "Test";
+
+// Combine the model with the template to get content:
+var content = template(model);
+```
 #### Installing Mustachio:
 
 Mustachio can be installed via [NuGet](https://www.nuget.org/packages/Mustachio/):
@@ -37,19 +59,10 @@ Mustachio contains a few modifications to the core Mustache language that are im
 
 1. `each` blocks are recommended for handling arrays of values. (We have a good reason!)
 2. Complex paths are supported, for example `{{ this.is.a.valid.path }}` and `{{ ../this.goes.up.one.level }}`
-3. Template partials (`{{> secondary_template }}`) are not supported. (We have a good reason!)
+3. Template partials are supported via Token Expanders.
  
 ###### A little more about the differences:
 
 One awesome feature of Mustachio is that with a minor alteration in the mustache syntax, we can infer what model will be required to completely fill out a template. By using the `each` keyword when interating over an array, our parser can infer whether an array or object (or scalar) should be expected when the template is used. Normal mustache syntax would prevent us from determining this.
 
 We think the model inference feature is compelling, because it allows for error detection, and faster debugging iterations when developing templates, which justifies this minor change to 'vanilla' mustache syntax.
-
-**Template partials** are a great feature for large scale template development. However, they introduce the risk of _infinite recursion_ if used improperly (especially since Mustachio allows for one to navigate 'up' a model with `../`).
-
-In our use case (email templating), including partials would complicate the general process of creating the templates, and allow unknown users to create potentially unbound processing requirements on our servers. It is possible to detect these cycles while parsing templates, so, if this is important to our customers, or the broader OSS community, partial template support may be added to Mustachio in the future.
-
-
-
-
-

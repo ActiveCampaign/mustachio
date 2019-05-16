@@ -1,11 +1,7 @@
-﻿using System.Collections;
-using Mustachio;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Extensions;
 
@@ -124,7 +120,7 @@ namespace Mustachio.Tests
             Assert.Equal("a placeholder value", result);
         }
 
-        [InlineData(new int[]{})]
+        [InlineData(new int[] { })]
         [InlineData(false)]
         [InlineData("")]
         [InlineData(0.0)]
@@ -144,7 +140,7 @@ namespace Mustachio.Tests
             Assert.Equal(String.Empty, result);
         }
 
-        [InlineData(new int[]{})]
+        [InlineData(new int[] { })]
         [InlineData(false)]
         [InlineData("")]
         [InlineData(0.0)]
@@ -209,6 +205,136 @@ namespace Mustachio.Tests
             var result = Parser.Parse(template)(model);
 
             Assert.Equal("You've won  times!", result);
+        }
+
+        [Fact]
+        public void ExpandedTokensShouldBeRenderedByDefault()
+        {
+            var baseTemplate = "Hello, {{{ @title }}}!!!";
+            var titleData = "Mr. User";
+
+            var tokenExpander = new TokenExpander
+            {
+                RegEx = new Regex("{{{ @title }}}"),
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
+                Precedence = Precedence.Medium
+            };
+            var model = new Dictionary<string, object>();
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+
+            var result = Parser.Parse(baseTemplate, parsingOptions)(model);
+
+            // The custom token will not be rendered by default.
+            Assert.Equal("Hello, Mr. User!!!", result);
+        }
+
+        [Fact]
+        public void ExpandedTokensShouldProcessVariables()
+        {
+            var baseTemplate = "Hello, {{{ @title }}}!!!";
+            var titleData = "Mr. {{ userId }}";
+
+            var tokenExpander = new TokenExpander
+            {
+                RegEx = new Regex("{{{ @title }}}"),
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
+                Precedence = Precedence.Medium
+            };
+            var expectedName = "Ralph";
+            var model = new Dictionary<string, object> { ["userId"] = expectedName };
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+
+            var result = Parser.Parse(baseTemplate, parsingOptions)(model);
+
+            Assert.Equal($"Hello, Mr. {expectedName}!!!", result);
+        }
+
+        [Fact]
+        public void ExpandedTokensShouldProcessComplexVariableStructures()
+        {
+            var baseTemplate = @"{{#each Company.ceo.products}}{{{ @content }}}{{/each}}";
+            var contentData = "<li>{{ name }} and {{version}} and has a CEO: {{../../last_name}}</li>";
+
+            var model = new Dictionary<string, object>();
+
+            var company = new Dictionary<string, object>();
+            model["Company"] = company;
+
+            var ceo = new Dictionary<string, object>();
+            company["ceo"] = ceo;
+            ceo["last_name"] = "Smith";
+
+            var products = Enumerable
+                .Range(0, 3)
+                .Select(k => new Dictionary<string, object> { ["name"] = "name " + k, ["version"] = "version " + k })
+                .ToArray();
+
+            ceo["products"] = products;
+
+            var tokenExpander = new TokenExpander
+            {
+                RegEx = new Regex("{{{ @content }}}"),
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(contentData, new ParsingOptions()),
+                Precedence = Precedence.Medium
+            };
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+
+            var result = Parser.Parse(baseTemplate, parsingOptions)(model);
+
+            Assert.Equal("<li>name 0 and version 0 and has a CEO: Smith</li>" +
+                         "<li>name 1 and version 1 and has a CEO: Smith</li>" +
+                         "<li>name 2 and version 2 and has a CEO: Smith</li>", result);
+        }
+
+        [Fact]
+        public void ExpandedTokensCustomRenderingIsUsed()
+        {
+            var baseTemplate = "Hello, {{{ @title }}}!!!";
+            var titleData = "Mr. User";
+
+            var expectedCustomToken = "1234";
+            var tokenExpander = new TokenExpander
+            {
+                RegEx = new Regex("{{{ @title }}}"),
+                Renderer = (tokenString, queue, options, inferredModel) =>
+                {
+                    return (builder, context) => { builder.Append(expectedCustomToken); };
+                },
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
+                Precedence = Precedence.Medium
+            };
+            var model = new Dictionary<string, object>();
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+
+            var result = Parser.Parse(baseTemplate, parsingOptions)(model);
+
+            Assert.Equal($"Hello, {expectedCustomToken}Mr. User!!!", result);
+        }
+
+        [Fact]
+        public void TokenExpanderPrecedenceIsRespected()
+        {
+            var baseTemplate = "Hello, {{{ title }}}!!!";
+            var titleData = "Mr. User";
+
+            var tokenExpander = new TokenExpander
+            {
+                RegEx = new Regex("{{{ title }}}"),
+                ExpandTokens = (s, baseOptions) => Tokenizer.Tokenize(titleData, new ParsingOptions()),
+                Precedence = Precedence.Low
+            };
+            var model = new Dictionary<string, object> { ["title"] = "Mr. Bob" };
+            var parsingOptions = new ParsingOptions { TokenExpanders = new[] { tokenExpander } };
+
+            var result = Parser.Parse(baseTemplate, parsingOptions)(model);
+            // Because we used Low Precedence, the token was evaluated as an Unescaped value and it was taken from the model.
+            Assert.Equal($"Hello, Mr. Bob!!!", result);
+
+            // Testing with Medium Precedence. It should use our token expander this time.
+            tokenExpander.Precedence = Precedence.Medium;
+            result = Parser.Parse(baseTemplate, parsingOptions)(model);
+
+            Assert.Equal($"Hello, Mr. User!!!", result);
         }
     }
 }

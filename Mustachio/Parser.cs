@@ -16,15 +16,41 @@ namespace Mustachio
         /// <summary>
         /// Parse the template content, producing a function that can be used to apply variables to the template. 
         /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
+        /// Default parsing options will be used.
+        /// </summary>
+        /// <param name="template">The content of the template to be parsed.</param>
+        /// <returns></returns>
+        public static Func<IDictionary<String, object>, String> Parse(string template)
+        {
+            return Parse(template, new ParsingOptions());
+        }
+
+        /// <summary>
+        /// Parse the template content, producing a function that can be used to apply variables to the template. 
+        /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
+        /// Other parsing options will have default values.
         /// </summary>
         /// <param name="template">The content of the template to be parsed.</param>
         /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
         /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-        public static Func<IDictionary<String, object>, String> Parse(string template, bool disableContentEscaping = false)
+        [Obsolete("You should use the function accepting a ParsingOptions type instead.")]
+        public static Func<IDictionary<String, object>, String> Parse(string template, bool disableContentEscaping)
         {
-            var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(template));
-            var internalTemplate = Parse(tokens, new ParsingOptions { DisableContentSafety = disableContentEscaping });
+            return Parse(template, new ParsingOptions { DisableContentSafety = disableContentEscaping });
+        }
+
+        /// <summary>
+        /// Parse the template content, producing a function that can be used to apply variables to the template. 
+        /// The provided function can be reused (i.e. no state will "leak" from one application of the function to the next).
+        /// </summary>
+        /// <param name="template">The content of the template to be parsed.</param>
+        /// <param name="options">Options for configuring/extending the parser.</param>
+        /// <returns></returns>
+        public static Func<IDictionary<String, object>, String> Parse(string template, ParsingOptions options)
+        {
+            var tokensQueue = GetTokensQueue(template, options);
+            var internalTemplate = Parse(tokensQueue, options);
             return (model) =>
             {
                 var retval = new StringBuilder();
@@ -38,20 +64,54 @@ namespace Mustachio
             };
         }
 
+        private static Queue<TokenTuple> GetTokensQueue(string template, ParsingOptions options)
+        {
+            var tokenizeResult = Tokenizer.Tokenize(template, options);
+            if (tokenizeResult.Errors.Any())
+            {
+                var innerExceptions = tokenizeResult.Errors.OrderBy(k => k.LineNumber).ThenBy(k => k.CharacterOnLine).ToArray();
+                throw new AggregateException(innerExceptions);
+            }
+            return new Queue<TokenTuple>(tokenizeResult.Tokens);
+        }
+
         /// <summary>
         /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
+        /// Default parsing options will be used.
+        /// </summary>
+        /// <param name="templateSource">The template content to parse.</param>
+        /// <returns></returns>
+        public static ExtendedParseInformation ParseWithModelInference(string templateSource)
+        {
+            return ParseWithModelInference(templateSource, new ParsingOptions());
+        }
+
+        /// <summary>
+        /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
+        /// Other parsing options will have default values.
         /// </summary>
         /// <param name="templateSource">The template content to parse.</param>
         /// <param name="disableContentEscaping">In some cases, content should not be escaped (such as when rendering text bodies and subjects in emails). 
         /// By default, we use content escaping, but this parameter allows it to be disabled.</param>
         /// <returns></returns>
-        public static ExtendedParseInformation ParseWithModelInference(string templateSource, bool disableContentEscaping = false)
+        [Obsolete("You should use the function accepting a ParsingOptions type instead.")]
+        public static ExtendedParseInformation ParseWithModelInference(string templateSource, bool disableContentEscaping)
         {
-            var tokens = new Queue<TokenPair>(Tokenizer.Tokenize(templateSource));
-            var options = new ParsingOptions { DisableContentSafety = disableContentEscaping };
+            return ParseWithModelInference(templateSource, new ParsingOptions { DisableContentSafety = disableContentEscaping });
+        }
+
+        /// <summary>
+        /// Parse the template, and capture paths used in the template to determine a suitable structure for the required model.
+        /// </summary>
+        /// <param name="templateSource">The template content to parse.</param>
+        /// <param name="options">Options for configuring/extending the parser.</param>
+        /// <returns></returns>
+        public static ExtendedParseInformation ParseWithModelInference(string templateSource, ParsingOptions options)
+        {
+            var tokensQueue = GetTokensQueue(templateSource, options);
             var inferredModel = new InferredTemplateModel();
 
-            var internalTemplate = Parse(tokens, options, inferredModel);
+            var internalTemplate = Parse(tokensQueue, options, inferredModel);
             Func<IDictionary<String, object>, String> template = (model) =>
             {
                 var retval = new StringBuilder();
@@ -73,10 +133,10 @@ namespace Mustachio
             return result;
         }
 
-        private static Action<StringBuilder, ContextObject> Parse(Queue<TokenPair> tokens, ParsingOptions options, InferredTemplateModel currentScope = null)
+        private static Action<StringBuilder, ContextObject> Parse(Queue<TokenTuple> tokens, ParsingOptions options, InferredTemplateModel currentScope = null)
         {
             var buildArray = new List<Action<StringBuilder, ContextObject>>();
-            
+
             while (tokens.Any())
             {
                 var currentToken = tokens.Dequeue();
@@ -88,7 +148,7 @@ namespace Mustachio
                         buildArray.Add(HandleContent(currentToken.Value));
                         break;
                     case TokenType.CollectionOpen:
-                        buildArray.Add(HandleCollectionOpen(currentToken, tokens, options,  currentScope));
+                        buildArray.Add(HandleCollectionOpen(currentToken, tokens, options, currentScope));
                         break;
                     case TokenType.ElementOpen:
                         buildArray.Add(HandleElementOpen(currentToken, tokens, options, currentScope));
@@ -111,6 +171,9 @@ namespace Mustachio
                     case TokenType.UnescapedSingleValue:
                         buildArray.Add(HandleSingleValue(currentToken, options, currentScope));
                         break;
+                    case TokenType.Custom:
+                        buildArray.Add(currentToken.Renderer(currentToken.Value, tokens, options, currentScope));
+                        break;
                 }
             }
 
@@ -128,7 +191,7 @@ namespace Mustachio
             return HttpUtility.HtmlEncode(context);
         }
 
-        private static Action<StringBuilder, ContextObject> HandleSingleValue(TokenPair token, ParsingOptions options, InferredTemplateModel scope )
+        private static Action<StringBuilder, ContextObject> HandleSingleValue(TokenTuple token, ParsingOptions options, InferredTemplateModel scope)
         {
 
             if (scope != null)
@@ -162,7 +225,7 @@ namespace Mustachio
             return (builder, context) => builder.Append(token);
         }
 
-        private static Action<StringBuilder, ContextObject> HandleInvertedElementOpen(TokenPair token, Queue<TokenPair> remainder,
+        private static Action<StringBuilder, ContextObject> HandleInvertedElementOpen(TokenTuple token, Queue<TokenTuple> remainder,
             ParsingOptions options, InferredTemplateModel scope)
         {
             if (scope != null)
@@ -183,7 +246,7 @@ namespace Mustachio
             };
         }
 
-        private static Action<StringBuilder, ContextObject> HandleCollectionOpen(TokenPair token, Queue<TokenPair> remainder, ParsingOptions options, InferredTemplateModel scope)
+        private static Action<StringBuilder, ContextObject> HandleCollectionOpen(TokenTuple token, Queue<TokenTuple> remainder, ParsingOptions options, InferredTemplateModel scope)
         {
             if (scope != null)
             {
@@ -222,7 +285,7 @@ namespace Mustachio
             };
         }
 
-        private static Action<StringBuilder, ContextObject> HandleElementOpen(TokenPair token, Queue<TokenPair> remainder, ParsingOptions options, InferredTemplateModel scope)
+        private static Action<StringBuilder, ContextObject> HandleElementOpen(TokenTuple token, Queue<TokenTuple> remainder, ParsingOptions options, InferredTemplateModel scope)
         {
             if (scope != null)
             {

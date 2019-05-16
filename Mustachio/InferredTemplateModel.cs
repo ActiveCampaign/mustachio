@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -94,12 +93,16 @@ namespace Mustachio
             Collection
         }
 
-        private object RepresentedContext()
+        /// <summary>
+        /// Returns a JSON object containing the current inferred model representation.
+        /// </summary>
+        /// <returns></returns>
+        public object GetModelRepresentation()
         {
             object retval = null;
             if (!Usages.Any())
             {
-                retval = Children.ToDictionary(k => k.Key, v => v.Value.RepresentedContext());
+                retval = Children.ToDictionary(k => k.Key, v => v.Value.GetModelRepresentation());
             }
             else if (Usages.Contains(UsedAs.Scalar) && this.Usages.Count == 1)
             {
@@ -111,7 +114,7 @@ namespace Mustachio
                 {
                     if (Children.Any())
                     {
-                        retval = new[] { Children.ToDictionary(k => k.Key, v => v.Value.RepresentedContext()) };
+                        retval = new[] { Children.ToDictionary(k => k.Key, v => v.Value.GetModelRepresentation()) };
                     }
                     else
                     {
@@ -120,15 +123,10 @@ namespace Mustachio
                 }
                 else
                 {
-                    retval = Children.ToDictionary(k => k.Key, v => v.Value.RepresentedContext());
+                    retval = Children.ToDictionary(k => k.Key, v => v.Value.GetModelRepresentation());
                 }
             }
             return retval;
-        }
-
-        public override string ToString()
-        {
-            return JsonConvert.SerializeObject(RepresentedContext());
         }
     }
 }

@@ -11,12 +11,6 @@ namespace Mustachio.Tests
     {
     
         [Fact]
-        public void TestTravis()
-        {
-            throw new Exception("Ensuring unit tests fail in travis will halt build before publish.");
-        }
-    
-        [Fact]
         public void TemplateRendersContentWithNoVariables()
         {
             var plainText = "ASDF";

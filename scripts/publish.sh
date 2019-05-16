@@ -16,8 +16,10 @@ dotnet pack -c Release -o ../tmp ./Mustachio/Mustachio.csproj -p:AssemblyVersion
 package_path="./tmp/Postmark.$descriptive_version.nupkg"
 
 echo "The package path is located at: $package_path"
-echo 'Here is what is located at that path:'
-ls ./tmp
+echo 'Working directory:'
+pwd
+echo 'Here is what is in the current dir:'
+ls
 
 if [[ $TRAVIS_TAG && $NUGET_API_KEY && $MYGET_API_KEY ]]; then
     echo 'This package will be published to NuGet, and MyGet'

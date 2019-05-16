@@ -710,7 +710,7 @@ namespace Mustachio.Tests
 
         private string SerializeInferredModel(InferredTemplateModel model)
         {
-            var modelRepresentation = model.RepresentedContext();
+            var modelRepresentation = model.GetModelRepresentation();
             return JsonConvert.SerializeObject(modelRepresentation);
         }
     }

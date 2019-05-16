@@ -1,4 +1,4 @@
-version: 1.2.{build}
+version: 2.0.{build}
 
 # branches to build
 branches:
@@ -18,7 +18,7 @@ dotnet_csproj:
   file: '**\*.csproj'
   version: '{version}'
   package_version: '{version}'
-  assembly_version: "1.2.{build}"
+  assembly_version: "2.0.{build}"
   file_version: '{version}'
   informational_version: '{version}'
 

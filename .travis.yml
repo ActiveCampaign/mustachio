@@ -1,7 +1,8 @@
 sudo: false
 language: csharp
+dist: trusty
 mono: none
-dotnet: 2.2.107
+dotnet: 2.1
 script:
   - dotnet restore
   - dotnet build

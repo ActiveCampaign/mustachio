@@ -13,13 +13,8 @@ descriptive_version=${TRAVIS_TAG:-"$version-git-${revision:0:6}"}
 # build and test in one step.
 dotnet pack -c Release -o ../tmp ./Mustachio/Mustachio.csproj -p:AssemblyVersion=$version -p:PackageVersion=$descriptive_version
 
-package_path="./tmp/Postmark.$descriptive_version.nupkg"
-
+package_path="./tmp/Mustachio.$descriptive_version.nupkg"
 echo "The package path is located at: $package_path"
-echo 'Working directory:'
-pwd
-echo 'Here is what is in the current dir:'
-ls
 
 if [[ $TRAVIS_TAG && $NUGET_API_KEY && $MYGET_API_KEY ]]; then
     echo 'This package will be published to NuGet, and MyGet'

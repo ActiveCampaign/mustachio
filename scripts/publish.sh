@@ -13,7 +13,7 @@ descriptive_version=${TRAVIS_TAG:-"$version-git-${revision:0:6}"}
 # build and test in one step.
 dotnet pack -c Release -o ../tmp ./Mustachio/Mustachio.csproj -p:AssemblyVersion=$version -p:PackageVersion=$descriptive_version
 
-package_path="../tmp/Postmark.$descriptive_version.nupkg"
+package_path="./tmp/Postmark.$descriptive_version.nupkg"
 
 echo "The package path is located at: $package_path"
 echo 'Here is what is located at that path:'

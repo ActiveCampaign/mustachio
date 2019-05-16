@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit.Extensions;
+using Xunit;
 
 namespace Mustachio.Tests
 {
@@ -25,7 +23,8 @@ namespace Mustachio.Tests
         public void TestRuns(string variation, int modelDepth, int sizeOfTemplate, int inserts, int runs)
         {
             var model = ConstructModelAndPath(modelDepth);
-            var baseTemplate = Enumerable.Range(1, 5).Aggregate("", (seed, current) => seed += " {{" + model.Item2 + "}}");
+            var baseTemplate = Enumerable.Range(1, 5)
+                .Aggregate("", (seed, current) => seed += " {{" + model.Item2 + "}}");
             while (baseTemplate.Length <= sizeOfTemplate)
             {
                 baseTemplate += model.Item2 + "\r\n";
@@ -50,10 +49,13 @@ namespace Mustachio.Tests
             {
                 var f = template(model.Item1);
             }
+
             renderTime.Stop();
             totalTime.Stop();
-            Console.WriteLine("Variation: '{8}', Time/Run: {7}ms, Runs: {0}x, Model Depth: {1}, SubstitutionCount: {2}, Template Size: {3}, ParseTime: {4}, RenderTime: {5}, Total Time: {6}",
-                runs, modelDepth, inserts, sizeOfTemplate, parseTime.Elapsed, renderTime.Elapsed, totalTime.Elapsed, totalTime.ElapsedMilliseconds / (double)runs, variation);
+            Console.WriteLine(
+                "Variation: '{8}', Time/Run: {7}ms, Runs: {0}x, Model Depth: {1}, SubstitutionCount: {2}, Template Size: {3}, ParseTime: {4}, RenderTime: {5}, Total Time: {6}",
+                runs, modelDepth, inserts, sizeOfTemplate, parseTime.Elapsed, renderTime.Elapsed, totalTime.Elapsed,
+                totalTime.ElapsedMilliseconds / (double) runs, variation);
         }
 
         private Tuple<Dictionary<string, object>, string> ConstructModelAndPath(int modelDepth, string path = null)
@@ -70,6 +72,5 @@ namespace Mustachio.Tests
 
             return Tuple.Create(model, path);
         }
-
     }
 }

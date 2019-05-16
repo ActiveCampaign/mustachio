@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <IsTestProject>false</IsTestProject>
     <TargetFramework>netstandard2.0</TargetFramework>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <AssemblyTitle>Mustachio</AssemblyTitle>

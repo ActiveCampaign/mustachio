@@ -9,6 +9,7 @@ namespace Mustachio.Tests
 {
     public class TemplateFixture
     {
+    
         [Fact]
         public void TemplateRendersContentWithNoVariables()
         {

@@ -100,6 +100,9 @@ namespace Mustachio
             typeof(byte),
             typeof(sbyte),
             typeof(decimal),
+            typeof(uint),
+            typeof(ushort),
+            typeof(ulong),
             typeof(int?),
             typeof(bool?),
             typeof(double?),
@@ -109,7 +112,10 @@ namespace Mustachio
             typeof(long?),
             typeof(byte?),
             typeof(sbyte?),
-            typeof(decimal?)
+            typeof(decimal?),
+            typeof(uint?),
+            typeof(ushort?),
+            typeof(ulong?)
         };
 
         public override string ToString()

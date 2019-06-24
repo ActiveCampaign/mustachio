@@ -9,7 +9,7 @@ namespace Mustachio.Tests
 {
     public class TemplateFixture
     {
-    
+
         [Fact]
         public void TemplateRendersContentWithNoVariables()
         {
@@ -71,6 +71,17 @@ namespace Mustachio.Tests
             Assert.Equal("No Stuff Here.", rendered);
         }
 
+        [Fact]
+        public void UnsignedIntegralTypeModelVariablesAreSupported()
+        {
+            var model = new Dictionary<string, object>(){
+                {"uint", (uint)123},
+                {"ushort", (ushort)234},
+                {"ulong", (ulong)18446744073709551615} // max ulong
+            };
+
+            Assert.Equal("123;234;18446744073709551615", Parser.Parse("{{uint}};{{ushort}};{{ulong}}")(model));
+        }
 
         [Fact]
         public void TemplateRendersWithComplextEachPath()

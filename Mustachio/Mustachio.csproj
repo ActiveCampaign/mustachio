@@ -18,7 +18,7 @@
     <PackageIconUrl>https://raw.githubusercontent.com/wildbit/mustachio/master/mustachio%402x.png?token=AACKAYixw-BltuR0nu9GbhOUjcyl95QWks5VyKjawA%3D%3D</PackageIconUrl>
     <PackageId>Mustachio</PackageId>
     <PackageProjectUrl>https://github.com/wildbit/mustachio</PackageProjectUrl>
-    <PackageTags>Library</PackageTags>
+    <PackageTags>Library;mustache;template-engine</PackageTags>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

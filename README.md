@@ -1,6 +1,9 @@
 <img src="http://assets.wildbit.com/postmark/misc/mustachio-logo@2x.png" alt="Mustachio Logo" title="Pistachio + Mustache =&gt; Mustachio" width="148" height="149">
 
 # Mustachio
+
+[![Nuget](https://img.shields.io/nuget/v/Mustachio)](https://www.nuget.org/packages/Mustachio/)
+
 A Lightweight, powerful, flavorful, templating engine for C# and other .net-based languages.
 
 #### What's this for?

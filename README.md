@@ -1,4 +1,4 @@
-<img src="http://assets.wildbit.com/postmark/misc/mustachio-logo@2x.png" alt="Mustachio Logo" title="Pistachio + Mustache =&gt; Mustachio" width="148" height="149">
+<img src="https://newsletter.postmarkapp.com/assets/images/open-source/mustachio-logo@2x.png" alt="Mustachio Logo" title="Pistachio + Mustache =&gt; Mustachio" width="148" height="149">
 
 # Mustachio
 

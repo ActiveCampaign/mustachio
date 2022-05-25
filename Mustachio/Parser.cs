@@ -263,25 +263,31 @@ namespace Mustachio
                 //"falsey" values by Javascript standards...
                 if (!c.Exists()) return;
 
+                IEnumerable cVal = null;
+
                 if (c.Value is IEnumerable && !(c.Value is String) && !(c.Value is IDictionary<string, object>))
                 {
-                    var index = 0;
-                    foreach (object i in c.Value as IEnumerable)
-                    {
-                        var innerContext = new ContextObject()
-                        {
-                            Value = i,
-                            Key = String.Format("[{0}]", index),
-                            Parent = c
-                        };
-                        innerTemplate(builder, innerContext);
-                        index++;
-                    }
+                    cVal = c.Value as IEnumerable;
                 }
                 else
                 {
-                    throw new IndexedParseException("'{0}' is used like an array by the template, but is a scalar value or object in your model.", token.Value);
+                    //Ok, this is a scalar value or an Object. So lets box it into an IEnumerable
+                    cVal = new ArrayList() { c.Value }; 
                 }
+
+                var index = 0;
+                foreach (object i in cVal)
+                {
+                    var innerContext = new ContextObject()
+                    {
+                        Value = i,
+                        Key = String.Format("[{0}]", index),
+                        Parent = c
+                    };
+                    innerTemplate(builder, innerContext);
+                    index++;
+                }
+                
             };
         }
 

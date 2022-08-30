@@ -31,7 +31,5 @@
     <DocumentationFile>bin\$(Configuration)\Mustachio.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.*" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.*" />
   </ItemGroup>
 </Project>

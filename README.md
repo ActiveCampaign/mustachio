@@ -8,7 +8,7 @@ A Lightweight, powerful, flavorful, templating engine for C# and other .net-base
 
 #### What's this for?
 
-*Mustachio* allows you to create simple text-based templates that are fast and safe to render. It's the heart of [Postmark Templates](http://blog.postmarkapp.com/post/125849089273/special-delivery-postmark-templates), and we're ecstatic to provide it as Open Source to the .net community.
+*Mustachio* allows you to create simple text-based templates that are fast and safe to render. It's the heart of [Postmark Templates](https://postmarkapp.com/blog/special-delivery-postmark-templates), and we're ecstatic to provide it as Open Source to the .net community.
 
 #### How to use Mustachio:
 

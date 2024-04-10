@@ -4,7 +4,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/Mustachio)](https://www.nuget.org/packages/Mustachio/)
 
-A Lightweight, powerful, flavorful, templating engine for C# and other .net-based languages.
+A lightweight, powerful, templating engine for C# and other .net-based languages.
 
 #### What's this for?
 
